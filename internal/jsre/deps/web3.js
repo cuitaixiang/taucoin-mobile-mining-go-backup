@@ -2613,11 +2613,6 @@ var properties = function () {
             getter: 'tau_protocolVersion',
             inputFormatter: utils.toDecimal
         }),
-        new Property({
-            name: 'version.whisper',
-            getter: 'shh_version',
-            inputFormatter: utils.toDecimal
-        })
     ];
 };
 

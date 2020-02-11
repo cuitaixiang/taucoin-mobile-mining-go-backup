@@ -76,9 +76,7 @@ var (
 		executablePath("bootnode"),
 		executablePath("evm"),
 		executablePath("gtau"),
-		executablePath("pupptau"),
 		executablePath("rlpdump"),
-		executablePath("wnode"),
 		executablePath("clef"),
 	}
 
@@ -101,16 +99,8 @@ var (
 			Description: "Tau CLI client.",
 		},
 		{
-			BinaryName:  "pupptau",
-			Description: "Tau private network manager.",
-		},
-		{
 			BinaryName:  "rlpdump",
 			Description: "Developer utility tool that prints RLP structures.",
-		},
-		{
-			BinaryName:  "wnode",
-			Description: "Tau Whisper diagnostic tool",
 		},
 		{
 			BinaryName:  "clef",

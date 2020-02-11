@@ -28,11 +28,9 @@ import (
 	cli "gopkg.in/urfave/cli.v1"
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/cmd/utils"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/dashboard"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/node"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
-	whisper "github.com/Tau-Coin/taucoin-mobile-mining-go/whisper/whisperv6"
 	"github.com/naoina/toml"
 )
 
@@ -42,7 +40,7 @@ var (
 		Name:        "dumpconfig",
 		Usage:       "Show configuration values",
 		ArgsUsage:   "",
-		Flags:       append(append(nodeFlags, rpcFlags...), whisperFlags...),
+		Flags:       append(nodeFlags, rpcFlags...),
 		Category:    "MISCELLANEOUS COMMANDS",
 		Description: `The dumpconfig command shows configuration values.`,
 	}
@@ -76,10 +74,8 @@ type taustatsConfig struct {
 
 type gtauConfig struct {
 	Tau       tau.Config
-	Shh       whisper.Config
 	Node      node.Config
 	Taustats  taustatsConfig
-	Dashboard dashboard.Config
 }
 
 func loadConfig(file string, cfg *gtauConfig) error {
@@ -111,9 +107,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gtauConfig) {
 	// Load defaults.
 	cfg := gtauConfig{
 		Tau:       tau.DefaultConfig,
-		Shh:       whisper.DefaultConfig,
 		Node:      defaultNodeConfig(),
-		Dashboard: dashboard.DefaultConfig,
 	}
 
 	// Load config file.
@@ -133,20 +127,9 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gtauConfig) {
 	if ctx.GlobalIsSet(utils.TauStatsURLFlag.Name) {
 		cfg.Taustats.URL = ctx.GlobalString(utils.TauStatsURLFlag.Name)
 	}
-	utils.SetShhConfig(ctx, stack, &cfg.Shh)
-	utils.SetDashboardConfig(ctx, &cfg.Dashboard)
+	// ctc utils.SetShhConfig(ctx, stack, &cfg.Shh)
 
 	return stack, cfg
-}
-
-// enableWhisper returns true in case one of the whisper flags is set.
-func enableWhisper(ctx *cli.Context) bool {
-	for _, flag := range whisperFlags {
-		if ctx.GlobalIsSet(flag.GetName()) {
-			return true
-		}
-	}
-	return false
 }
 
 func makeFullNode(ctx *cli.Context) *node.Node {
@@ -156,32 +139,18 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 	}
 	utils.RegisterTauService(stack, &cfg.Tau)
 
-	if ctx.GlobalBool(utils.DashboardEnabledFlag.Name) {
-		utils.RegisterDashboardService(stack, &cfg.Dashboard, gitCommit)
-	}
-	// Whisper must be explicitly enabled by specifying at least 1 whisper flag or in dev mode
-	shhEnabled := enableWhisper(ctx)
-	shhAutoEnabled := !ctx.GlobalIsSet(utils.WhisperEnabledFlag.Name) && ctx.GlobalIsSet(utils.DeveloperFlag.Name)
-	if shhEnabled || shhAutoEnabled {
-		if ctx.GlobalIsSet(utils.WhisperMaxMessageSizeFlag.Name) {
-			cfg.Shh.MaxMessageSize = uint32(ctx.Int(utils.WhisperMaxMessageSizeFlag.Name))
-		}
-		if ctx.GlobalIsSet(utils.WhisperMinPOWFlag.Name) {
-			cfg.Shh.MinimumAcceptedPOW = ctx.Float64(utils.WhisperMinPOWFlag.Name)
-		}
-		if ctx.GlobalIsSet(utils.WhisperRestrictConnectionBetweenLightClientsFlag.Name) {
-			cfg.Shh.RestrictConnectionBetweenLightClients = true
-		}
-		utils.RegisterShhService(stack, &cfg.Shh)
-	}
+    /* ctc 
 	// Configure GraphQL if requested
 	if ctx.GlobalIsSet(utils.GraphQLEnabledFlag.Name) {
 		utils.RegisterGraphQLService(stack, cfg.Node.GraphQLEndpoint(), cfg.Node.GraphQLCors, cfg.Node.GraphQLVirtualHosts, cfg.Node.HTTPTimeouts)
 	}
+	*/
+
 	// Add the Tau Stats daemon if requested.
 	if cfg.Taustats.URL != "" {
 		utils.RegisterTauStatsService(stack, cfg.Taustats.URL)
 	}
+
 	return stack
 }
 
