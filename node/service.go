@@ -86,7 +86,7 @@ func (ctx *ServiceContext) Service(service interface{}) error {
 }
 
 // ExtRPCEnabled returns the indicator whtauer node enables the external
-// RPC(http, ws or graphql).
+// RPC(http, ws).
 func (ctx *ServiceContext) ExtRPCEnabled() bool {
 	return ctx.config.ExtRPCEnabled()
 }

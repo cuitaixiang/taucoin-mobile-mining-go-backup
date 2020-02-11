@@ -70,7 +70,6 @@ var (
 		"consensus/tauhash/xor.go",
 		"crypto/bn256/",
 		"crypto/ecies/",
-		"graphql/graphiql.go",
 		"internal/jsre/deps",
 		"log/",
 		"metrics/",

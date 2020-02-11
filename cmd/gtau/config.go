@@ -139,13 +139,6 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 	}
 	utils.RegisterTauService(stack, &cfg.Tau)
 
-    /* ctc 
-	// Configure GraphQL if requested
-	if ctx.GlobalIsSet(utils.GraphQLEnabledFlag.Name) {
-		utils.RegisterGraphQLService(stack, cfg.Node.GraphQLEndpoint(), cfg.Node.GraphQLCors, cfg.Node.GraphQLVirtualHosts, cfg.Node.HTTPTimeouts)
-	}
-	*/
-
 	// Add the Tau Stats daemon if requested.
 	if cfg.Taustats.URL != "" {
 		utils.RegisterTauStatsService(stack, cfg.Taustats.URL)

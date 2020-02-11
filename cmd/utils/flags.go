@@ -19,7 +19,6 @@ package utils
 
 import (
 	"crypto/ecdsa"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -47,7 +46,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/gasprice"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/taustats"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/graphql"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/les"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/metrics"
@@ -60,7 +58,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/p2p/nat"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/p2p/netutil"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/rpc"
 	pcsclite "github.com/gballet/go-libpcsclite"
 	cli "gopkg.in/urfave/cli.v1"
 )
@@ -553,30 +550,6 @@ var (
 		Usage: "Origins from which to accept websockets requests",
 		Value: "",
 	}
-	GraphQLEnabledFlag = cli.BoolFlag{
-		Name:  "graphql",
-		Usage: "Enable the GraphQL server",
-	}
-	GraphQLListenAddrFlag = cli.StringFlag{
-		Name:  "graphql.addr",
-		Usage: "GraphQL server listening interface",
-		Value: node.DefaultGraphQLHost,
-	}
-	GraphQLPortFlag = cli.IntFlag{
-		Name:  "graphql.port",
-		Usage: "GraphQL server listening port",
-		Value: node.DefaultGraphQLPort,
-	}
-	GraphQLCORSDomainFlag = cli.StringFlag{
-		Name:  "graphql.corsdomain",
-		Usage: "Comma separated list of domains from which to accept cross origin requests (browser enforced)",
-		Value: "",
-	}
-	GraphQLVirtualHostsFlag = cli.StringFlag{
-		Name:  "graphql.vhosts",
-		Usage: "Comma separated list of virtual hostnames from which to accept requests (server enforced). Accepts '*' wildcard.",
-		Value: strings.Join(node.DefaultConfig.GraphQLVirtualHosts, ","),
-	}
 	ExecFlag = cli.StringFlag{
 		Name:  "exec",
 		Usage: "Execute JavaScript statement",
@@ -888,23 +861,6 @@ func setHTTP(ctx *cli.Context, cfg *node.Config) {
 	}
 }
 
-// setGraphQL creates the GraphQL listener interface string from the set
-// command line flags, returning empty if the GraphQL endpoint is disabled.
-func setGraphQL(ctx *cli.Context, cfg *node.Config) {
-	if ctx.GlobalBool(GraphQLEnabledFlag.Name) && cfg.GraphQLHost == "" {
-		cfg.GraphQLHost = "127.0.0.1"
-		if ctx.GlobalIsSet(GraphQLListenAddrFlag.Name) {
-			cfg.GraphQLHost = ctx.GlobalString(GraphQLListenAddrFlag.Name)
-		}
-	}
-	cfg.GraphQLPort = ctx.GlobalInt(GraphQLPortFlag.Name)
-	if ctx.GlobalIsSet(GraphQLCORSDomainFlag.Name) {
-		cfg.GraphQLCors = splitAndTrim(ctx.GlobalString(GraphQLCORSDomainFlag.Name))
-	}
-	if ctx.GlobalIsSet(GraphQLVirtualHostsFlag.Name) {
-		cfg.GraphQLVirtualHosts = splitAndTrim(ctx.GlobalString(GraphQLVirtualHostsFlag.Name))
-	}
-}
 
 // setWS creates the WebSocket RPC listener interface string from the set
 // command line flags, returning empty if the HTTP endpoint is disabled.
@@ -1135,7 +1091,6 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
 	SetP2PConfig(ctx, &cfg.P2P)
 	setIPC(ctx, cfg)
 	setHTTP(ctx, cfg)
-	setGraphQL(ctx, cfg)
 	setWS(ctx, cfg)
 	setNodeUserIdent(ctx, cfg)
 	setDataDir(ctx, cfg)
@@ -1511,26 +1466,6 @@ func RegisterTauStatsService(stack *node.Node, url string) {
 		return taustats.New(url, tauServ, lesServ)
 	}); err != nil {
 		Fatalf("Failed to register the Tau Stats service: %v", err)
-	}
-}
-
-// RegisterGraphQLService is a utility function to construct a new service and register it against a node.
-func RegisterGraphQLService(stack *node.Node, endpoint string, cors, vhosts []string, timeouts rpc.HTTPTimeouts) {
-	if err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-		// Try to construct the GraphQL service backed by a full node
-		var tauServ *tau.Tau
-		if err := ctx.Service(&tauServ); err == nil {
-			return graphql.New(tauServ.APIBackend, endpoint, cors, vhosts, timeouts)
-		}
-		// Try to construct the GraphQL service backed by a light node
-		var lesServ *les.LightTau
-		if err := ctx.Service(&lesServ); err == nil {
-			return graphql.New(lesServ.ApiBackend, endpoint, cors, vhosts, timeouts)
-		}
-		// Well, this should not have happened, bail out
-		return nil, errors.New("no Tau service")
-	}); err != nil {
-		Fatalf("Failed to register the GraphQL service: %v", err)
 	}
 }
 
