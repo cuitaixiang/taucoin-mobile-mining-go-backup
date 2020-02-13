@@ -957,7 +957,6 @@ type StructLogRes struct {
 	Op      string             `json:"op"`
 	Gas     uint64             `json:"gas"`
 	GasCost uint64             `json:"gasCost"`
-	Depth   int                `json:"depth"`
 	Error   error              `json:"error,omitempty"`
 	Stack   *[]string          `json:"stack,omitempty"`
 	Memory  *[]string          `json:"memory,omitempty"`
@@ -973,7 +972,6 @@ func FormatLogs(logs []vm.StructLog) []StructLogRes {
 			Op:      trace.Op.String(),
 			Gas:     trace.Gas,
 			GasCost: trace.GasCost,
-			Depth:   trace.Depth,
 			Error:   trace.Err,
 		}
 		if trace.Stack != nil {

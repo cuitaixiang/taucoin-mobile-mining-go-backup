@@ -293,7 +293,6 @@ type Tracer struct {
 	pcValue     *uint   // Swappable pc value wrapped by a log accessor
 	gasValue    *uint   // Swappable gas value wrapped by a log accessor
 	costValue   *uint   // Swappable cost value wrapped by a log accessor
-	depthValue  *uint   // Swappable depth value wrapped by a log accessor
 	errorValue  *string // Swappable error value wrapped by a log accessor
 	refundValue *uint   // Swappable refund value wrapped by a log accessor
 
@@ -323,7 +322,6 @@ func New(code string) (*Tracer, error) {
 		pcValue:         new(uint),
 		gasValue:        new(uint),
 		costValue:       new(uint),
-		depthValue:      new(uint),
 		refundValue:     new(uint),
 	}
 	// Set up builtins for this environment
@@ -463,9 +461,6 @@ func New(code string) (*Tracer, error) {
 	tracer.vm.PushGoFunction(func(ctx *duktape.Context) int { ctx.PushUint(*tracer.costValue); return 1 })
 	tracer.vm.PutPropString(logObject, "getCost")
 
-	tracer.vm.PushGoFunction(func(ctx *duktape.Context) int { ctx.PushUint(*tracer.depthValue); return 1 })
-	tracer.vm.PutPropString(logObject, "getDepth")
-
 	tracer.vm.PushGoFunction(func(ctx *duktape.Context) int { ctx.PushUint(*tracer.refundValue); return 1 })
 	tracer.vm.PutPropString(logObject, "getRefund")
 
@@ -532,7 +527,7 @@ func (jst *Tracer) CaptureStart(from common.Address, to common.Address, create b
 }
 
 // CaptureState implements the Tracer interface to trace a single step of VM execution.
-func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *vm.Contract, depth int, err error) error {
+func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *vm.Contract, err error) error {
 	if jst.err == nil {
 		// Initialize the context if it wasn't done yet
 		if !jst.inited {
@@ -553,7 +548,6 @@ func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost 
 		*jst.pcValue = uint(pc)
 		*jst.gasValue = uint(gas)
 		*jst.costValue = uint(cost)
-		*jst.depthValue = uint(depth)
 		*jst.refundValue = uint(env.StateDB.GetRefund())
 
 		jst.errorValue = nil
@@ -571,7 +565,7 @@ func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost 
 
 // CaptureFault implements the Tracer interface to trace an execution fault
 // while running an opcode.
-func (jst *Tracer) CaptureFault(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *vm.Contract, depth int, err error) error {
+func (jst *Tracer) CaptureFault(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *vm.Contract, err error) error {
 	if jst.err == nil {
 		// Apart from the error, everything matches the previous invocation
 		jst.errorValue = new(string)
