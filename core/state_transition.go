@@ -153,8 +153,12 @@ func (st *StateTransition) useGas(amount uint64) error {
 	return nil
 }
 
-func (st *StateTransition) buyGas() error {
-	mgval := new(big.Int).Mul(new(big.Int).SetUint64(st.msg.Gas()), st.gasPrice)
+// ctc buyGas -> buyFee
+func (st *StateTransition) buyFee() error {
+
+	//mgval := new(big.Int).Mul(new(big.Int).SetUint64(st.msg.Gas()), st.gasPrice)
+	var  coe int64 = 1
+	mgval := new(big.Int).Mul(new(big.Int).SetUint64(st.msg.Gas()), new(big.Int).SetInt64(coe))
 	if st.state.GetBalance(st.msg.From()).Cmp(mgval) < 0 {
 		return errInsufficientBalanceForGas
 	}
@@ -178,7 +182,8 @@ func (st *StateTransition) preCheck() error {
 			return ErrNonceTooLow
 		}
 	}
-	return st.buyGas()
+	// ctc buyGas -> buyFee
+	return st.buyFee()
 }
 
 // TransitionDb will transition the state by applying the current message and
@@ -190,10 +195,11 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 	}
 	msg := st.msg
 	sender := vm.AccountRef(msg.From())
-	homestead := st.evm.ChainConfig().IsHomestead(st.evm.BlockNumber)
-	istanbul := st.evm.ChainConfig().IsIstanbul(st.evm.BlockNumber)
-	contractCreation := msg.To() == nil
+	// ctc delete used by IntrinsicGas
+	// homestead := st.evm.ChainConfig().IsHomestead(st.evm.BlockNumber)
+	// istanbul := st.evm.ChainConfig().IsIstanbul(st.evm.BlockNumber)
 
+	 /* ctc delete
 	// Pay intrinsic gas
 	gas, err := IntrinsicGas(st.data, contractCreation, homestead, istanbul)
 	if err != nil {
@@ -202,6 +208,7 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 	if err = st.useGas(gas); err != nil {
 		return nil, 0, false, err
 	}
+	*/
 
 	var (
 		evm = st.evm
@@ -210,13 +217,10 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 		// error.
 		vmerr error
 	)
-	if contractCreation {
-		ret, _, st.gas, vmerr = evm.Create(sender, st.data, st.gas, st.value)
-	} else {
-		// Increment the nonce for the next transaction
-		st.state.SetNonce(msg.From(), st.state.GetNonce(sender.Address())+1)
-		ret, st.gas, vmerr = evm.Call(sender, st.to(), st.data, st.gas, st.value)
-	}
+	// Increment the nonce for the next transaction
+	// ctc modify only call
+	st.state.SetNonce(msg.From(), st.state.GetNonce(sender.Address())+1)
+	ret, st.gas, vmerr = evm.Call(sender, st.to(), st.data, st.gas, st.value)
 	if vmerr != nil {
 		log.Debug("VM returned with error", "err", vmerr)
 		// The only possible consensus-error would be if there wasn't
@@ -226,7 +230,8 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 			return nil, 0, false, vmerr
 		}
 	}
-	st.refundGas()
+	// ctc delete
+	// st.refundGas()
 	st.state.AddBalance(st.evm.Coinbase, new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), st.gasPrice))
 
 	return ret, st.gasUsed(), vmerr != nil, err
