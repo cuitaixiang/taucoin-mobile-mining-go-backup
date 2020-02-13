@@ -23,7 +23,7 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/state"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/vm"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/crypto"
+	// "github.com/Tau-Coin/taucoin-mobile-mining-go/crypto" ctc delete
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
 )
 
@@ -100,18 +100,16 @@ func ApplyTransaction(config *params.ChainConfig, bc ChainContext, author *commo
 	if err != nil {
 		return nil, 0, err
 	}
-	// Update the state with pending changes
+	// Update the state with pending changes ctc delete
 	var root []byte
-	if config.IsByzantium(header.Number) {
-		statedb.Finalise(true)
-	} else {
-		root = statedb.IntermediateRoot(config.IsEIP158(header.Number)).Bytes()
-	}
+	root = statedb.IntermediateRoot(config.IsEIP158(header.Number)).Bytes()
 	*usedGas += gas
 
 	// Create a new receipt for the transaction, storing the intermediate root and gas used by the tx
 	// based on the eip phase, we're passing whtauer the root touch-delete accounts.
+	// ctc delete
 	receipt := types.NewReceipt(root, failed, *usedGas)
+	/*
 	receipt.TxHash = tx.Hash()
 	receipt.GasUsed = gas
 	// if the transaction created a contract, store the creation address in the receipt.
@@ -124,6 +122,6 @@ func ApplyTransaction(config *params.ChainConfig, bc ChainContext, author *commo
 	receipt.BlockHash = statedb.BlockHash()
 	receipt.BlockNumber = header.Number
 	receipt.TransactionIndex = uint(statedb.TxIndex())
-
+    */
 	return receipt, gas, err
 }
