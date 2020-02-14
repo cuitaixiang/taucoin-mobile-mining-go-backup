@@ -55,14 +55,6 @@ type operation struct {
 
 var (
 	frontierInstructionSet         = newFrontierInstructionSet()
-	/*
-	homesteadInstructionSet        = newHomesteadInstructionSet()
-	tangerineWhistleInstructionSet = newTangerineWhistleInstructionSet()
-	spuriousDragonInstructionSet   = newSpuriousDragonInstructionSet()
-	byzantiumInstructionSet        = newByzantiumInstructionSet()
-	constantinopleInstructionSet   = newConstantinopleInstructionSet()
-	istanbulInstructionSet         = newIstanbulInstructionSet()
-	*/
 )
 
 // JumpTable contains the EVM opcodes supported at a given fork.
@@ -979,18 +971,6 @@ func newFrontierInstructionSet() JumpTable {
 			valid:       true,
 			returns:     true,
 		},
-		/*
-		CALLCODE: {
-			execute:     opCallCode,
-			constantGas: params.CallGasFrontier,
-			dynamicGas:  gasCallCode,
-			minStack:    minStack(7, 1),
-			maxStack:    maxStack(7, 1),
-			memorySize:  memoryCall,
-			valid:       true,
-			returns:     true,
-		},
-		*/
 		RETURN: {
 			execute:    opReturn,
 			dynamicGas: gasReturn,
