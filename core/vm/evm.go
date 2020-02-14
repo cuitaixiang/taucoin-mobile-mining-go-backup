@@ -39,36 +39,6 @@ type (
 	GetHashFunc func(uint64) common.Hash
 )
 
-// run runs the given contract and takes care of running precompiles with a fallback to the byte code interpreter.
-func run(evm *EVM, contract *Contract, input []byte, readOnly bool) ([]byte, error) {
-	if contract.CodeAddr != nil {
-		precompiles := PrecompiledContractsHomestead
-		if evm.chainRules.IsByzantium {
-			precompiles = PrecompiledContractsByzantium
-		}
-		if evm.chainRules.IsIstanbul {
-			precompiles = PrecompiledContractsIstanbul
-		}
-		if p := precompiles[*contract.CodeAddr]; p != nil {
-			return RunPrecompiledContract(p, input, contract)
-		}
-	}
-	for _, interpreter := range evm.interpreters {
-		if interpreter.CanRun(contract.Code) {
-			if evm.interpreter != interpreter {
-				// Ensure that the interpreter pointer is set back
-				// to its current value upon return.
-				defer func(i Interpreter) {
-					evm.interpreter = i
-				}(evm.interpreter)
-				evm.interpreter = interpreter
-			}
-			return interpreter.Run(contract, input, readOnly)
-		}
-	}
-	return nil, ErrNoCompatibleInterpreter
-}
-
 // Context provides the EVM with auxiliary information. Once provided
 // it shouldn't be modified.
 type Context struct {
@@ -229,7 +199,6 @@ func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, 
 	}
 
 	var (
-		snapshot = evm.StateDB.Snapshot()
 		to       = AccountRef(caller.Address())
 	)
 	// Initialise a new contract and set the code that is to be used by the EVM.
@@ -237,13 +206,6 @@ func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, 
 	contract := NewContract(caller, to, value, gas)
 	contract.SetCallCode(&addr, evm.StateDB.GetCodeHash(addr), evm.StateDB.GetCode(addr))
 
-	ret, err = run(evm, contract, input, false)
-	if err != nil {
-		evm.StateDB.RevertToSnapshot(snapshot)
-		if err != errExecutionReverted {
-			contract.UseGas(contract.Gas)
-		}
-	}
 	return ret, contract.Gas, err
 }
 
@@ -254,7 +216,6 @@ func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, 
 // code with the caller as context and the caller is set to the caller of the caller.
 func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error) {
 	var (
-		snapshot = evm.StateDB.Snapshot()
 		to       = AccountRef(caller.Address())
 	)
 
@@ -262,13 +223,6 @@ func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []by
 	contract := NewContract(caller, to, nil, gas).AsDelegate()
 	contract.SetCallCode(&addr, evm.StateDB.GetCodeHash(addr), evm.StateDB.GetCode(addr))
 
-	ret, err = run(evm, contract, input, false)
-	if err != nil {
-		evm.StateDB.RevertToSnapshot(snapshot)
-		if err != errExecutionReverted {
-			contract.UseGas(contract.Gas)
-		}
-	}
 	return ret, contract.Gas, err
 }
 
@@ -279,7 +233,6 @@ func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []by
 func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error) {
 	var (
 		to       = AccountRef(addr)
-		snapshot = evm.StateDB.Snapshot()
 	)
 	// Initialise a new contract and set the code that is to be used by the EVM.
 	// The contract is a scoped environment for this execution context only.
@@ -295,13 +248,7 @@ func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte
 	// When an error was returned by the EVM or when setting the creation code
 	// above we revert to the snapshot and consume any gas remaining. Additionally
 	// when we're in Homestead this also counts for code storage gas errors.
-	ret, err = run(evm, contract, input, true)
-	if err != nil {
-		evm.StateDB.RevertToSnapshot(snapshot)
-		if err != errExecutionReverted {
-			contract.UseGas(contract.Gas)
-		}
-	}
+
 	return ret, contract.Gas, err
 }
 
@@ -343,7 +290,8 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	contract := NewContract(caller, AccountRef(address), value, gas)
 	contract.SetCodeOptionalHash(&address, codeAndHash)
 
-	ret, err := run(evm, contract, nil, false)
+	var ret []byte
+	var err error
 
 	// check whtauer the max code size has been exceeded
 	maxCodeSizeExceeded := evm.chainRules.IsEIP158 && len(ret) > params.MaxCodeSize
