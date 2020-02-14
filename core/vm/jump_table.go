@@ -1105,6 +1105,7 @@ func newFrontierInstructionSet() JumpTable {
 			valid:       true,
 			returns:     true,
 		},
+		/*
 		CALLCODE: {
 			execute:     opCallCode,
 			constantGas: params.CallGasFrontier,
@@ -1115,6 +1116,7 @@ func newFrontierInstructionSet() JumpTable {
 			valid:       true,
 			returns:     true,
 		},
+		*/
 		RETURN: {
 			execute:    opReturn,
 			dynamicGas: gasReturn,
