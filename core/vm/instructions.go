@@ -687,67 +687,6 @@ func opGas(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *
 	return nil, nil
 }
 
-func opCreate(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
-	var (
-		value        = stack.pop()
-		offset, size = stack.pop(), stack.pop()
-		input        = memory.Get(offset.Int64(), size.Int64())
-		gas          = contract.Gas
-	)
-	if interpreter.evm.chainRules.IsEIP150 {
-		gas -= gas / 64
-	}
-
-	contract.UseGas(gas)
-	res, addr, returnGas, suberr := interpreter.evm.Create(contract, input, gas, value)
-	// Push item on the stack based on the returned error. If the ruleset is
-	// homestead we must check for CodeStoreOutOfGasError (homestead only
-	// rule) and treat as an error, if the ruleset is frontier we must
-	// ignore this error and pretend the operation was successful.
-	if interpreter.evm.chainRules.IsHomestead && suberr == ErrCodeStoreOutOfGas {
-		stack.push(interpreter.intPool.getZero())
-	} else if suberr != nil && suberr != ErrCodeStoreOutOfGas {
-		stack.push(interpreter.intPool.getZero())
-	} else {
-		stack.push(interpreter.intPool.get().SetBytes(addr.Bytes()))
-	}
-	contract.Gas += returnGas
-	interpreter.intPool.put(value, offset, size)
-
-	if suberr == errExecutionReverted {
-		return res, nil
-	}
-	return nil, nil
-}
-
-func opCreate2(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
-	var (
-		endowment    = stack.pop()
-		offset, size = stack.pop(), stack.pop()
-		salt         = stack.pop()
-		input        = memory.Get(offset.Int64(), size.Int64())
-		gas          = contract.Gas
-	)
-
-	// Apply EIP150
-	gas -= gas / 64
-	contract.UseGas(gas)
-	res, addr, returnGas, suberr := interpreter.evm.Create2(contract, input, gas, endowment, salt)
-	// Push item on the stack based on the returned error.
-	if suberr != nil {
-		stack.push(interpreter.intPool.getZero())
-	} else {
-		stack.push(interpreter.intPool.get().SetBytes(addr.Bytes()))
-	}
-	contract.Gas += returnGas
-	interpreter.intPool.put(endowment, offset, size, salt)
-
-	if suberr == errExecutionReverted {
-		return res, nil
-	}
-	return nil, nil
-}
-
 func opCall(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	// Pop gas. The actual gas in interpreter.evm.callGasTemp.
 	interpreter.intPool.put(stack.pop())

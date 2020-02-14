@@ -121,31 +121,6 @@ func Execute(code, input []byte, cfg *Config) ([]byte, *state.StateDB, error) {
 	return ret, cfg.State, err
 }
 
-// Create executes the code using the EVM create method
-func Create(input []byte, cfg *Config) ([]byte, common.Address, uint64, error) {
-	if cfg == nil {
-		cfg = new(Config)
-	}
-	setDefaults(cfg)
-
-	if cfg.State == nil {
-		cfg.State, _ = state.New(common.Hash{}, state.NewDatabase(rawdb.NewMemoryDatabase()))
-	}
-	var (
-		vmenv  = NewEnv(cfg)
-		sender = vm.AccountRef(cfg.Origin)
-	)
-
-	// Call the code with the given configuration.
-	code, address, leftOverGas, err := vmenv.Create(
-		sender,
-		input,
-		cfg.GasLimit,
-		cfg.Value,
-	)
-	return code, address, leftOverGas, err
-}
-
 // Call executes the code given by the contract's address. It will return the
 // EVM's return value or an error if it failed.
 //

@@ -110,17 +110,6 @@ func newConstantinopleInstructionSet() JumpTable {
 		maxStack:    maxStack(1, 1),
 		valid:       true,
 	}
-	instructionSet[CREATE2] = operation{
-		execute:     opCreate2,
-		constantGas: params.Create2Gas,
-		dynamicGas:  gasCreate2,
-		minStack:    minStack(4, 1),
-		maxStack:    maxStack(4, 1),
-		memorySize:  memoryCreate2,
-		valid:       true,
-		writes:      true,
-		returns:     true,
-	}
 	return instructionSet
 }
 
@@ -1105,17 +1094,6 @@ func newFrontierInstructionSet() JumpTable {
 			memorySize: memoryLog,
 			valid:      true,
 			writes:     true,
-		},
-		CREATE: {
-			execute:     opCreate,
-			constantGas: params.CreateGas,
-			dynamicGas:  gasCreate,
-			minStack:    minStack(3, 1),
-			maxStack:    maxStack(3, 1),
-			memorySize:  memoryCreate,
-			valid:       true,
-			writes:      true,
-			returns:     true,
 		},
 		CALL: {
 			execute:     opCall,
