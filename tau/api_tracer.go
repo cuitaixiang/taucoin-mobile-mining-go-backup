@@ -501,7 +501,7 @@ func (api *PrivateDebugAPI) traceBlock(ctx context.Context, block *types.Block, 
 		msg, _ := tx.AsMessage(signer)
 		vmctx := core.NewEVMContext(msg, block.Header(), api.tau.blockchain, nil)
 
-		vmenv := vm.NewEVM(vmctx, statedb, api.tau.blockchain.Config(), vm.Config{})
+		vmenv := vm.NewEVM(vmctx, statedb, api.tau.blockchain.Config())
 		if _, _, _, err := core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(msg.Gas())); err != nil {
 			failed = err
 			break
@@ -570,7 +570,6 @@ func (api *PrivateDebugAPI) standardTraceBlockToFile(ctx context.Context, block 
 			msg, _ = tx.AsMessage(signer)
 			vmctx  = core.NewEVMContext(msg, block.Header(), api.tau.blockchain, nil)
 
-			vmConf vm.Config
 			dump   *os.File
 			writer *bufio.Writer
 			err    error
@@ -588,14 +587,9 @@ func (api *PrivateDebugAPI) standardTraceBlockToFile(ctx context.Context, block 
 
 			// Swap out the noop logger to the standard tracer
 			writer = bufio.NewWriter(dump)
-			vmConf = vm.Config{
-				Debug:                   true,
-				Tracer:                  vm.NewJSONLogger(&logConfig, writer),
-				EnablePreimageRecording: true,
-			}
 		}
 		// Execute the transaction and flush any traces to disk
-		vmenv := vm.NewEVM(vmctx, statedb, api.tau.blockchain.Config(), vmConf)
+		vmenv := vm.NewEVM(vmctx, statedb, api.tau.blockchain.Config())
 		_, _, _, err = core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(msg.Gas()))
 		if writer != nil {
 			writer.Flush()
@@ -756,7 +750,7 @@ func (api *PrivateDebugAPI) traceTx(ctx context.Context, message core.Message, v
 		tracer = vm.NewStructLogger(config.LogConfig)
 	}
 	// Run the transaction with tracing enabled.
-	vmenv := vm.NewEVM(vmctx, statedb, api.tau.blockchain.Config(), vm.Config{Debug: true, Tracer: tracer})
+	vmenv := vm.NewEVM(vmctx, statedb, api.tau.blockchain.Config())
 
 	ret, gas, failed, err := core.ApplyMessage(vmenv, message, new(core.GasPool).AddGas(message.Gas()))
 	if err != nil {
@@ -811,7 +805,7 @@ func (api *PrivateDebugAPI) computeTxEnv(blockHash common.Hash, txIndex int, ree
 			return msg, context, statedb, nil
 		}
 		// Not yet the searched for transaction, execute on top of the current state
-		vmenv := vm.NewEVM(context, statedb, api.tau.blockchain.Config(), vm.Config{})
+		vmenv := vm.NewEVM(context, statedb, api.tau.blockchain.Config())
 		if _, _, _, err := core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(tx.Gas())); err != nil {
 			return nil, vm.Context{}, nil, fmt.Errorf("transaction %#x failed: %v", tx.Hash(), err)
 		}

@@ -136,7 +136,7 @@ func (b *TauAPIBackend) GetEVM(ctx context.Context, msg core.Message, state *sta
 	vmError := func() error { return nil }
 
 	context := core.NewEVMContext(msg, header, b.tau.BlockChain(), nil)
-	return vm.NewEVM(context, state, b.tau.blockchain.Config(), *b.tau.blockchain.GetVMConfig()), vmError, nil
+	return vm.NewEVM(context, state, b.tau.blockchain.Config()), vmError, nil
 }
 
 func (b *TauAPIBackend) SubscribeRemovedLogsEvent(ch chan<- core.RemovedLogsEvent) event.Subscription {

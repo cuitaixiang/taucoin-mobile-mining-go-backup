@@ -81,9 +81,7 @@ type EVM struct {
 	chainConfig *params.ChainConfig
 	// chain rules contains the chain rules for the current epoch
 	chainRules params.Rules
-	// virtual machine configuration options used to initialise the
-	// evm.
-	vmConfig Config
+
 	// abort is used to abort the EVM calling operations
 	// NOTE: must be set atomically
 	abort int32
@@ -95,11 +93,10 @@ type EVM struct {
 
 // NewEVM returns a new EVM. The returned EVM is not thread safe and should
 // only ever be used *once*.
-func NewEVM(ctx Context, statedb StateDB, chainConfig *params.ChainConfig, vmConfig Config) *EVM {
+func NewEVM(ctx Context, statedb StateDB, chainConfig *params.ChainConfig) *EVM {
 	evm := &EVM{
 		Context:      ctx,
 		StateDB:      statedb,
-		vmConfig:     vmConfig,
 		chainConfig:  chainConfig,
 		chainRules:   chainConfig.Rules(ctx.BlockNumber),
 	}
