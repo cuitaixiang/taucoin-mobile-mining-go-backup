@@ -19,7 +19,6 @@ package core
 import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/state"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/vm"
 )
 
 // Validator is an interface which defines the standard for block validation. It
@@ -47,5 +46,5 @@ type Processor interface {
 	// Process processes the state changes according to the Tau rules by running
 	// the transaction messages using the statedb and applying any rewards to both
 	// the processor (coinbase) and any included uncles.
-	Process(block *types.Block, statedb *state.StateDB, cfg vm.Config) (types.Receipts, []*types.Log, uint64, error)
+	Process(block *types.Block, statedb *state.StateDB) (types.Receipts, []*types.Log, uint64, error)
 }

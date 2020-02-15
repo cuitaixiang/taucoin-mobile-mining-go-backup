@@ -514,7 +514,7 @@ func (api *RetesttauAPI) mineBlock() error {
 					&api.author,
 					gasPool,
 					statedb,
-					header, tx, &header.GasUsed, *api.blockchain.GetVMConfig(),
+					header, tx, &header.GasUsed,
 				)
 				if err != nil {
 					statedb.RevertToSnapshot(snap)

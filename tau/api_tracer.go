@@ -289,7 +289,7 @@ func (api *PrivateDebugAPI) traceChain(ctx context.Context, start, end *types.Bl
 				traced += uint64(len(txs))
 			}
 			// Generate the next state snapshot fast without tracing
-			_, _, _, err := api.tau.blockchain.Processor().Process(block, statedb, vm.Config{})
+			_, _, _, err := api.tau.blockchain.Processor().Process(block, statedb)
 			if err != nil {
 				failed = err
 				break
@@ -670,7 +670,7 @@ func (api *PrivateDebugAPI) computeStateDB(block *types.Block, reexec uint64) (*
 		if block = api.tau.blockchain.GetBlockByNumber(block.NumberU64() + 1); block == nil {
 			return nil, fmt.Errorf("block #%d not found", block.NumberU64()+1)
 		}
-		_, _, _, err := api.tau.blockchain.Processor().Process(block, statedb, vm.Config{})
+		_, _, _, err := api.tau.blockchain.Processor().Process(block, statedb)
 		if err != nil {
 			return nil, fmt.Errorf("processing block %d failed: %v", block.NumberU64(), err)
 		}
