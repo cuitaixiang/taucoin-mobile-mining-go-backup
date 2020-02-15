@@ -146,11 +146,10 @@ func (t *StateTest) Subtests() []StateSubtest {
 
 // Run executes a specific subtest.
 func (t *StateTest) Run(subtest StateSubtest, vmconfig vm.Config) (*state.StateDB, error) {
-	config, eips, err := getVMConfig(subtest.Fork)
+	config, _, err := getVMConfig(subtest.Fork)
 	if err != nil {
 		return nil, UnsupportedForkError{subtest.Fork}
 	}
-	vmconfig.ExtraEips = eips
 	block := t.genesis(config).ToBlock(nil)
 	statedb := MakePreState(rawdb.NewMemoryDatabase(), t.json.Pre)
 
