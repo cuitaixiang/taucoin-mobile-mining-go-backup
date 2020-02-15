@@ -36,7 +36,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/bloombits"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/rawdb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/vm"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/filters"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/gasprice"
@@ -173,11 +172,6 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 		}
 	}
 	var (
-		vmConfig = vm.Config{
-			EnablePreimageRecording: config.EnablePreimageRecording,
-			EWASMInterpreter:        config.EWASMInterpreter,
-			EVMInterpreter:          config.EVMInterpreter,
-		}
 		cacheConfig = &core.CacheConfig{
 			TrieCleanLimit:      config.TrieCleanCache,
 			TrieCleanNoPrefetch: config.NoPrefetch,
@@ -186,7 +180,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 			TrieTimeLimit:       config.TrieTimeout,
 		}
 	)
-	tau.blockchain, err = core.NewBlockChain(chainDb, cacheConfig, chainConfig, tau.engine, vmConfig, tau.shouldPreserve)
+	tau.blockchain, err = core.NewBlockChain(chainDb, cacheConfig, chainConfig, tau.engine, tau.shouldPreserve)
 	if err != nil {
 		return nil, err
 	}

@@ -70,7 +70,7 @@ type SimulatedBackend struct {
 func NewSimulatedBackendWithDatabase(database taudb.Database, alloc core.GenesisAlloc, gasLimit uint64) *SimulatedBackend {
 	genesis := core.Genesis{Config: params.AllTauashProtocolChanges, GasLimit: gasLimit, Alloc: alloc}
 	genesis.MustCommit(database)
-	blockchain, _ := core.NewBlockChain(database, nil, genesis.Config, tauhash.NewFaker(), vm.Config{}, nil)
+	blockchain, _ := core.NewBlockChain(database, nil, genesis.Config, tauhash.NewFaker(), nil)
 
 	backend := &SimulatedBackend{
 		database:   database,

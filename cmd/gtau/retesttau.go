@@ -398,7 +398,7 @@ func (api *RetesttauAPI) SetChainParams(ctx context.Context, chainParams ChainPa
 	}
 	engine := &NoRewardEngine{inner: inner, rewardsOn: chainParams.SealEngine != "NoReward"}
 
-	blockchain, err := core.NewBlockChain(tauDb, nil, chainConfig, engine, vm.Config{}, nil)
+	blockchain, err := core.NewBlockChain(tauDb, nil, chainConfig, engine, nil)
 	if err != nil {
 		return false, err
 	}
