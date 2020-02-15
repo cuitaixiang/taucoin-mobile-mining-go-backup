@@ -65,26 +65,6 @@ func pushBigInt(n *big.Int, ctx *duktape.Context) {
 	ctx.Call(1)
 }
 
-// opWrapper provides a JavaScript wrapper around OpCode.
-type opWrapper struct {
-	op vm.OpCode
-}
-
-// pushObject assembles a JSVM object wrapping a swappable opcode and pushes it
-// onto the VM stack.
-func (ow *opWrapper) pushObject(vm *duktape.Context) {
-	obj := vm.PushObject()
-
-	vm.PushGoFunction(func(ctx *duktape.Context) int { ctx.PushInt(int(ow.op)); return 1 })
-	vm.PutPropString(obj, "toNumber")
-
-	vm.PushGoFunction(func(ctx *duktape.Context) int { ctx.PushString(ow.op.String()); return 1 })
-	vm.PutPropString(obj, "toString")
-
-	vm.PushGoFunction(func(ctx *duktape.Context) int { ctx.PushBoolean(ow.op.IsPush()); return 1 })
-	vm.PutPropString(obj, "isPush")
-}
-
 // memoryWrapper provides a JavaScript wrapper around vm.Memory.
 type memoryWrapper struct {
 	memory *vm.Memory
@@ -239,7 +219,6 @@ type Tracer struct {
 	tracerObject int // Stack index of the tracer JavaScript object
 	stateObject  int // Stack index of the global state to pull arguments from
 
-	opWrapper       *opWrapper       // Wrapper around the VM opcode
 	stackWrapper    *stackWrapper    // Wrapper around the VM stack
 	memoryWrapper   *memoryWrapper   // Wrapper around the VM memory
 	dbWrapper       *dbWrapper       // Wrapper around the VM environment
@@ -268,7 +247,6 @@ func New(code string) (*Tracer, error) {
 	tracer := &Tracer{
 		vm:              duktape.New(),
 		ctx:             make(map[string]interface{}),
-		opWrapper:       new(opWrapper),
 		stackWrapper:    new(stackWrapper),
 		memoryWrapper:   new(memoryWrapper),
 		dbWrapper:       new(dbWrapper),
@@ -352,9 +330,6 @@ func New(code string) (*Tracer, error) {
 
 	logObject := tracer.vm.PushObject()
 
-	tracer.opWrapper.pushObject(tracer.vm)
-	tracer.vm.PutPropString(logObject, "op")
-
 	tracer.stackWrapper.pushObject(tracer.vm)
 	tracer.vm.PutPropString(logObject, "stack")
 
@@ -436,7 +411,7 @@ func (jst *Tracer) CaptureStart(from common.Address, to common.Address, create b
 }
 
 // CaptureState implements the Tracer interface to trace a single step of VM execution.
-func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, err error) error {
+func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, err error) error {
 	if jst.err == nil {
 		// Initialize the context if it wasn't done yet
 		if !jst.inited {
@@ -448,7 +423,6 @@ func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost 
 			jst.err = jst.reason
 			return nil
 		}
-		jst.opWrapper.op = op
 		jst.stackWrapper.stack = stack
 		jst.memoryWrapper.memory = memory
 		jst.dbWrapper.db = env.StateDB
@@ -473,7 +447,7 @@ func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost 
 
 // CaptureFault implements the Tracer interface to trace an execution fault
 // while running an opcode.
-func (jst *Tracer) CaptureFault(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, err error) error {
+func (jst *Tracer) CaptureFault(env *vm.EVM, pc uint64, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, err error) error {
 	if jst.err == nil {
 		// Apart from the error, everything matches the previous invocation
 		jst.errorValue = new(string)

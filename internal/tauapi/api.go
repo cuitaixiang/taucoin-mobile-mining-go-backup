@@ -954,7 +954,6 @@ type ExecutionResult struct {
 // transaction in debug mode
 type StructLogRes struct {
 	Pc      uint64             `json:"pc"`
-	Op      string             `json:"op"`
 	Gas     uint64             `json:"gas"`
 	GasCost uint64             `json:"gasCost"`
 	Error   error              `json:"error,omitempty"`
@@ -969,7 +968,6 @@ func FormatLogs(logs []vm.StructLog) []StructLogRes {
 	for index, trace := range logs {
 		formatted[index] = StructLogRes{
 			Pc:      trace.Pc,
-			Op:      trace.Op.String(),
 			Gas:     trace.Gas,
 			GasCost: trace.GasCost,
 			Error:   trace.Err,
