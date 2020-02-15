@@ -98,8 +98,8 @@ func (s *StructLog) ErrorString() string {
 // if you need to retain them beyond the current call.
 type Tracer interface {
 	CaptureStart(from common.Address, to common.Address, call bool, input []byte, gas uint64, value *big.Int) error
-	CaptureState(env *EVM, pc uint64, op OpCode, gas, cost uint64, memory *Memory, stack *Stack, contract *Contract, err error) error
-	CaptureFault(env *EVM, pc uint64, op OpCode, gas, cost uint64, memory *Memory, stack *Stack, contract *Contract, err error) error
+	CaptureState(env *EVM, pc uint64, op OpCode, gas, cost uint64, memory *Memory, stack *Stack, err error) error
+	CaptureFault(env *EVM, pc uint64, op OpCode, gas, cost uint64, memory *Memory, stack *Stack, err error) error
 	CaptureEnd(output []byte, gasUsed uint64, t time.Duration, err error) error
 }
 
@@ -136,27 +136,12 @@ func (l *StructLogger) CaptureStart(from common.Address, to common.Address, crea
 // CaptureState logs a new structured log message and pushes it out to the environment
 //
 // CaptureState also tracks SSTORE ops to track dirty values.
-func (l *StructLogger) CaptureState(env *EVM, pc uint64, op OpCode, gas, cost uint64, memory *Memory, stack *Stack, contract *Contract, err error) error {
+func (l *StructLogger) CaptureState(env *EVM, pc uint64, op OpCode, gas, cost uint64, memory *Memory, stack *Stack, err error) error {
 	// check if already accumulated the specified number of logs
 	if l.cfg.Limit != 0 && l.cfg.Limit <= len(l.logs) {
 		return ErrTraceLimitReached
 	}
 
-	// initialise new changed values storage container for this contract
-	// if not present.
-	if l.changedValues[contract.Address()] == nil {
-		l.changedValues[contract.Address()] = make(Storage)
-	}
-
-	// capture SSTORE opcodes and determine the changed value and store
-	// it in the local storage container.
-	if op == SSTORE && stack.len() >= 2 {
-		var (
-			value   = common.BigToHash(stack.data[stack.len()-2])
-			address = common.BigToHash(stack.data[stack.len()-1])
-		)
-		l.changedValues[contract.Address()][address] = value
-	}
 	// Copy a snapshot of the current memory state to a new buffer
 	var mem []byte
 	if !l.cfg.DisableMemory {
@@ -171,11 +156,8 @@ func (l *StructLogger) CaptureState(env *EVM, pc uint64, op OpCode, gas, cost ui
 			stck[i] = new(big.Int).Set(item)
 		}
 	}
-	// Copy a snapshot of the current storage to a new container
 	var storage Storage
-	if !l.cfg.DisableStorage {
-		storage = l.changedValues[contract.Address()].Copy()
-	}
+
 	// create a new snapshot of the EVM.
 	log := StructLog{pc, op, gas, cost, mem, memory.Len(), stck, storage, env.StateDB.GetRefund(), err}
 
@@ -185,7 +167,7 @@ func (l *StructLogger) CaptureState(env *EVM, pc uint64, op OpCode, gas, cost ui
 
 // CaptureFault implements the Tracer interface to trace an execution fault
 // while running an opcode.
-func (l *StructLogger) CaptureFault(env *EVM, pc uint64, op OpCode, gas, cost uint64, memory *Memory, stack *Stack, contract *Contract, err error) error {
+func (l *StructLogger) CaptureFault(env *EVM, pc uint64, op OpCode, gas, cost uint64, memory *Memory, stack *Stack, err error) error {
 	return nil
 }
 

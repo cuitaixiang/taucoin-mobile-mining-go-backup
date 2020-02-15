@@ -17,8 +17,6 @@
 package vm
 
 import (
-	"math/big"
-
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 )
 
@@ -39,6 +37,7 @@ type AccountRef common.Address
 // Address casts AccountRef to a Address
 func (ar AccountRef) Address() common.Address { return (common.Address)(ar) }
 
+/*
 // Contract represents an tau contract in the state database. It contains
 // the contract code, calling arguments. Contract implements ContractRef
 type Contract struct {
@@ -182,3 +181,4 @@ func (c *Contract) SetCodeOptionalHash(addr *common.Address, codeAndHash *codeAn
 	c.CodeHash = codeAndHash.hash
 	c.CodeAddr = addr
 }
+*/

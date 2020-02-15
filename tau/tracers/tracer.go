@@ -28,7 +28,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/hexutil"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/vm"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/crypto"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	duktape "gopkg.in/olebedev/go-duktape.v3"
 )
@@ -230,50 +229,6 @@ func (dw *dbWrapper) pushObject(vm *duktape.Context) {
 	vm.PutPropString(obj, "exists")
 }
 
-// contractWrapper provides a JavaScript wrapper around vm.Contract
-type contractWrapper struct {
-	contract *vm.Contract
-}
-
-// pushObject assembles a JSVM object wrapping a swappable contract and pushes it
-// onto the VM stack.
-func (cw *contractWrapper) pushObject(vm *duktape.Context) {
-	obj := vm.PushObject()
-
-	// Push the wrapper for contract.Caller
-	vm.PushGoFunction(func(ctx *duktape.Context) int {
-		ptr := ctx.PushFixedBuffer(20)
-		copy(makeSlice(ptr, 20), cw.contract.Caller().Bytes())
-		return 1
-	})
-	vm.PutPropString(obj, "getCaller")
-
-	// Push the wrapper for contract.Address
-	vm.PushGoFunction(func(ctx *duktape.Context) int {
-		ptr := ctx.PushFixedBuffer(20)
-		copy(makeSlice(ptr, 20), cw.contract.Address().Bytes())
-		return 1
-	})
-	vm.PutPropString(obj, "getAddress")
-
-	// Push the wrapper for contract.Value
-	vm.PushGoFunction(func(ctx *duktape.Context) int {
-		pushBigInt(cw.contract.Value(), ctx)
-		return 1
-	})
-	vm.PutPropString(obj, "getValue")
-
-	// Push the wrapper for contract.Input
-	vm.PushGoFunction(func(ctx *duktape.Context) int {
-		blob := cw.contract.Input
-
-		ptr := ctx.PushFixedBuffer(len(blob))
-		copy(makeSlice(ptr, uint(len(blob))), blob)
-		return 1
-	})
-	vm.PutPropString(obj, "getInput")
-}
-
 // Tracer provides an implementation of Tracer that evaluates a Javascript
 // function for each VM execution step.
 type Tracer struct {
@@ -287,7 +242,6 @@ type Tracer struct {
 	opWrapper       *opWrapper       // Wrapper around the VM opcode
 	stackWrapper    *stackWrapper    // Wrapper around the VM stack
 	memoryWrapper   *memoryWrapper   // Wrapper around the VM memory
-	contractWrapper *contractWrapper // Wrapper around the contract object
 	dbWrapper       *dbWrapper       // Wrapper around the VM environment
 
 	pcValue     *uint   // Swappable pc value wrapped by a log accessor
@@ -317,7 +271,6 @@ func New(code string) (*Tracer, error) {
 		opWrapper:       new(opWrapper),
 		stackWrapper:    new(stackWrapper),
 		memoryWrapper:   new(memoryWrapper),
-		contractWrapper: new(contractWrapper),
 		dbWrapper:       new(dbWrapper),
 		pcValue:         new(uint),
 		gasValue:        new(uint),
@@ -349,47 +302,6 @@ func New(code string) (*Tracer, error) {
 		}
 		ctx.Pop()
 		copy(makeSlice(ctx.PushFixedBuffer(20), 20), addr[:])
-		return 1
-	})
-	tracer.vm.PushGlobalGoFunction("toContract", func(ctx *duktape.Context) int {
-		var from common.Address
-		if ptr, size := ctx.GetBuffer(-2); ptr != nil {
-			from = common.BytesToAddress(makeSlice(ptr, size))
-		} else {
-			from = common.HexToAddress(ctx.GetString(-2))
-		}
-		nonce := uint64(ctx.GetInt(-1))
-		ctx.Pop2()
-
-		contract := crypto.CreateAddress(from, nonce)
-		copy(makeSlice(ctx.PushFixedBuffer(20), 20), contract[:])
-		return 1
-	})
-	tracer.vm.PushGlobalGoFunction("toContract2", func(ctx *duktape.Context) int {
-		var from common.Address
-		if ptr, size := ctx.GetBuffer(-3); ptr != nil {
-			from = common.BytesToAddress(makeSlice(ptr, size))
-		} else {
-			from = common.HexToAddress(ctx.GetString(-3))
-		}
-		// Retrieve salt hex string from js stack
-		salt := common.HexToHash(ctx.GetString(-2))
-		// Retrieve code slice from js stack
-		var code []byte
-		if ptr, size := ctx.GetBuffer(-1); ptr != nil {
-			code = common.CopyBytes(makeSlice(ptr, size))
-		} else {
-			code = common.FromHex(ctx.GetString(-1))
-		}
-		codeHash := crypto.Keccak256(code)
-		ctx.Pop3()
-		contract := crypto.CreateAddress2(from, salt, codeHash)
-		copy(makeSlice(ctx.PushFixedBuffer(20), 20), contract[:])
-		return 1
-	})
-	tracer.vm.PushGlobalGoFunction("isPrecompiled", func(ctx *duktape.Context) int {
-		_, ok := vm.PrecompiledContractsIstanbul[common.BytesToAddress(popSlice(ctx))]
-		ctx.PushBoolean(ok)
 		return 1
 	})
 	tracer.vm.PushGlobalGoFunction("slice", func(ctx *duktape.Context) int {
@@ -448,9 +360,6 @@ func New(code string) (*Tracer, error) {
 
 	tracer.memoryWrapper.pushObject(tracer.vm)
 	tracer.vm.PutPropString(logObject, "memory")
-
-	tracer.contractWrapper.pushObject(tracer.vm)
-	tracer.vm.PutPropString(logObject, "contract")
 
 	tracer.vm.PushGoFunction(func(ctx *duktape.Context) int { ctx.PushUint(*tracer.pcValue); return 1 })
 	tracer.vm.PutPropString(logObject, "getPC")
@@ -527,7 +436,7 @@ func (jst *Tracer) CaptureStart(from common.Address, to common.Address, create b
 }
 
 // CaptureState implements the Tracer interface to trace a single step of VM execution.
-func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *vm.Contract, err error) error {
+func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, err error) error {
 	if jst.err == nil {
 		// Initialize the context if it wasn't done yet
 		if !jst.inited {
@@ -542,7 +451,6 @@ func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost 
 		jst.opWrapper.op = op
 		jst.stackWrapper.stack = stack
 		jst.memoryWrapper.memory = memory
-		jst.contractWrapper.contract = contract
 		jst.dbWrapper.db = env.StateDB
 
 		*jst.pcValue = uint(pc)
@@ -565,7 +473,7 @@ func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost 
 
 // CaptureFault implements the Tracer interface to trace an execution fault
 // while running an opcode.
-func (jst *Tracer) CaptureFault(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *vm.Contract, err error) error {
+func (jst *Tracer) CaptureFault(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, err error) error {
 	if jst.err == nil {
 		// Apart from the error, everything matches the previous invocation
 		jst.errorValue = new(string)
