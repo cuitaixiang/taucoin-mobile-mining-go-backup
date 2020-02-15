@@ -4,10 +4,8 @@ package vm
 
 import (
 	"encoding/json"
-	"math/big"
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/hexutil"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/math"
 )
 
@@ -19,9 +17,6 @@ func (s StructLog) MarshalJSON() ([]byte, error) {
 		Pc            uint64                      `json:"pc"`
 		Gas           math.HexOrDecimal64         `json:"gas"`
 		GasCost       math.HexOrDecimal64         `json:"gasCost"`
-		Memory        hexutil.Bytes               `json:"memory"`
-		MemorySize    int                         `json:"memSize"`
-		Stack         []*math.HexOrDecimal256     `json:"stack"`
 		Storage       map[common.Hash]common.Hash `json:"-"`
 		RefundCounter uint64                      `json:"refund"`
 		Err           error                       `json:"-"`
@@ -31,14 +26,6 @@ func (s StructLog) MarshalJSON() ([]byte, error) {
 	enc.Pc = s.Pc
 	enc.Gas = math.HexOrDecimal64(s.Gas)
 	enc.GasCost = math.HexOrDecimal64(s.GasCost)
-	enc.Memory = s.Memory
-	enc.MemorySize = s.MemorySize
-	if s.Stack != nil {
-		enc.Stack = make([]*math.HexOrDecimal256, len(s.Stack))
-		for k, v := range s.Stack {
-			enc.Stack[k] = (*math.HexOrDecimal256)(v)
-		}
-	}
 	enc.Storage = s.Storage
 	enc.RefundCounter = s.RefundCounter
 	enc.Err = s.Err
@@ -52,9 +39,6 @@ func (s *StructLog) UnmarshalJSON(input []byte) error {
 		Pc            *uint64                     `json:"pc"`
 		Gas           *math.HexOrDecimal64        `json:"gas"`
 		GasCost       *math.HexOrDecimal64        `json:"gasCost"`
-		Memory        *hexutil.Bytes              `json:"memory"`
-		MemorySize    *int                        `json:"memSize"`
-		Stack         []*math.HexOrDecimal256     `json:"stack"`
 		Storage       map[common.Hash]common.Hash `json:"-"`
 		RefundCounter *uint64                     `json:"refund"`
 		Err           error                       `json:"-"`
@@ -71,18 +55,6 @@ func (s *StructLog) UnmarshalJSON(input []byte) error {
 	}
 	if dec.GasCost != nil {
 		s.GasCost = uint64(*dec.GasCost)
-	}
-	if dec.Memory != nil {
-		s.Memory = *dec.Memory
-	}
-	if dec.MemorySize != nil {
-		s.MemorySize = *dec.MemorySize
-	}
-	if dec.Stack != nil {
-		s.Stack = make([]*big.Int, len(dec.Stack))
-		for k, v := range dec.Stack {
-			s.Stack[k] = (*big.Int)(v)
-		}
 	}
 	if dec.Storage != nil {
 		s.Storage = dec.Storage

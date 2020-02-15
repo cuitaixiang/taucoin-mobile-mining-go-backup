@@ -46,27 +46,20 @@ func (l *JSONLogger) CaptureStart(from common.Address, to common.Address, create
 }
 
 // CaptureState outputs state information on the logger.
-func (l *JSONLogger) CaptureState(env *EVM, pc uint64, gas, cost uint64, memory *Memory, stack *Stack, err error) error {
+func (l *JSONLogger) CaptureState(env *EVM, pc uint64, gas, cost uint64, err error) error {
 	log := StructLog{
 		Pc:            pc,
 		Gas:           gas,
 		GasCost:       cost,
-		MemorySize:    memory.Len(),
 		Storage:       nil,
 		RefundCounter: env.StateDB.GetRefund(),
 		Err:           err,
-	}
-	if !l.cfg.DisableMemory {
-		log.Memory = memory.Data()
-	}
-	if !l.cfg.DisableStack {
-		log.Stack = stack.Data()
 	}
 	return l.encoder.Encode(log)
 }
 
 // CaptureFault outputs state information on the logger.
-func (l *JSONLogger) CaptureFault(env *EVM, pc uint64, gas, cost uint64, memory *Memory, stack *Stack, err error) error {
+func (l *JSONLogger) CaptureFault(env *EVM, pc uint64, gas, cost uint64, err error) error {
 	return nil
 }
 

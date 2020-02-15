@@ -65,95 +65,6 @@ func pushBigInt(n *big.Int, ctx *duktape.Context) {
 	ctx.Call(1)
 }
 
-// memoryWrapper provides a JavaScript wrapper around vm.Memory.
-type memoryWrapper struct {
-	memory *vm.Memory
-}
-
-// slice returns the requested range of memory as a byte slice.
-func (mw *memoryWrapper) slice(begin, end int64) []byte {
-	if mw.memory.Len() < int(end) {
-		// TODO(karalabe): We can't js-throw from Go inside duktape inside Go. The Go
-		// runtime goes belly up https://github.com/golang/go/issues/15639.
-		log.Warn("Tracer accessed out of bound memory", "available", mw.memory.Len(), "offset", begin, "size", end-begin)
-		return nil
-	}
-	return mw.memory.Get(begin, end-begin)
-}
-
-// getUint returns the 32 bytes at the specified address interpreted as a uint.
-func (mw *memoryWrapper) getUint(addr int64) *big.Int {
-	if mw.memory.Len() < int(addr)+32 {
-		// TODO(karalabe): We can't js-throw from Go inside duktape inside Go. The Go
-		// runtime goes belly up https://github.com/golang/go/issues/15639.
-		log.Warn("Tracer accessed out of bound memory", "available", mw.memory.Len(), "offset", addr, "size", 32)
-		return new(big.Int)
-	}
-	return new(big.Int).SetBytes(mw.memory.GetPtr(addr, 32))
-}
-
-// pushObject assembles a JSVM object wrapping a swappable memory and pushes it
-// onto the VM stack.
-func (mw *memoryWrapper) pushObject(vm *duktape.Context) {
-	obj := vm.PushObject()
-
-	// Generate the `slice` method which takes two ints and returns a buffer
-	vm.PushGoFunction(func(ctx *duktape.Context) int {
-		blob := mw.slice(int64(ctx.GetInt(-2)), int64(ctx.GetInt(-1)))
-		ctx.Pop2()
-
-		ptr := ctx.PushFixedBuffer(len(blob))
-		copy(makeSlice(ptr, uint(len(blob))), blob)
-		return 1
-	})
-	vm.PutPropString(obj, "slice")
-
-	// Generate the `getUint` method which takes an int and returns a bigint
-	vm.PushGoFunction(func(ctx *duktape.Context) int {
-		offset := int64(ctx.GetInt(-1))
-		ctx.Pop()
-
-		pushBigInt(mw.getUint(offset), ctx)
-		return 1
-	})
-	vm.PutPropString(obj, "getUint")
-}
-
-// stackWrapper provides a JavaScript wrapper around vm.Stack.
-type stackWrapper struct {
-	stack *vm.Stack
-}
-
-// peek returns the nth-from-the-top element of the stack.
-func (sw *stackWrapper) peek(idx int) *big.Int {
-	if len(sw.stack.Data()) <= idx {
-		// TODO(karalabe): We can't js-throw from Go inside duktape inside Go. The Go
-		// runtime goes belly up https://github.com/golang/go/issues/15639.
-		log.Warn("Tracer accessed out of bound stack", "size", len(sw.stack.Data()), "index", idx)
-		return new(big.Int)
-	}
-	return sw.stack.Data()[len(sw.stack.Data())-idx-1]
-}
-
-// pushObject assembles a JSVM object wrapping a swappable stack and pushes it
-// onto the VM stack.
-func (sw *stackWrapper) pushObject(vm *duktape.Context) {
-	obj := vm.PushObject()
-
-	vm.PushGoFunction(func(ctx *duktape.Context) int { ctx.PushInt(len(sw.stack.Data())); return 1 })
-	vm.PutPropString(obj, "length")
-
-	// Generate the `peek` method which takes an int and returns a bigint
-	vm.PushGoFunction(func(ctx *duktape.Context) int {
-		offset := ctx.GetInt(-1)
-		ctx.Pop()
-
-		pushBigInt(sw.peek(offset), ctx)
-		return 1
-	})
-	vm.PutPropString(obj, "peek")
-}
-
 // dbWrapper provides a JavaScript wrapper around vm.Database.
 type dbWrapper struct {
 	db vm.StateDB
@@ -219,8 +130,6 @@ type Tracer struct {
 	tracerObject int // Stack index of the tracer JavaScript object
 	stateObject  int // Stack index of the global state to pull arguments from
 
-	stackWrapper    *stackWrapper    // Wrapper around the VM stack
-	memoryWrapper   *memoryWrapper   // Wrapper around the VM memory
 	dbWrapper       *dbWrapper       // Wrapper around the VM environment
 
 	pcValue     *uint   // Swappable pc value wrapped by a log accessor
@@ -247,8 +156,6 @@ func New(code string) (*Tracer, error) {
 	tracer := &Tracer{
 		vm:              duktape.New(),
 		ctx:             make(map[string]interface{}),
-		stackWrapper:    new(stackWrapper),
-		memoryWrapper:   new(memoryWrapper),
 		dbWrapper:       new(dbWrapper),
 		pcValue:         new(uint),
 		gasValue:        new(uint),
@@ -330,12 +237,6 @@ func New(code string) (*Tracer, error) {
 
 	logObject := tracer.vm.PushObject()
 
-	tracer.stackWrapper.pushObject(tracer.vm)
-	tracer.vm.PutPropString(logObject, "stack")
-
-	tracer.memoryWrapper.pushObject(tracer.vm)
-	tracer.vm.PutPropString(logObject, "memory")
-
 	tracer.vm.PushGoFunction(func(ctx *duktape.Context) int { ctx.PushUint(*tracer.pcValue); return 1 })
 	tracer.vm.PutPropString(logObject, "getPC")
 
@@ -411,7 +312,7 @@ func (jst *Tracer) CaptureStart(from common.Address, to common.Address, create b
 }
 
 // CaptureState implements the Tracer interface to trace a single step of VM execution.
-func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, err error) error {
+func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, gas, cost uint64, err error) error {
 	if jst.err == nil {
 		// Initialize the context if it wasn't done yet
 		if !jst.inited {
@@ -423,8 +324,6 @@ func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, gas, cost uint64, memory
 			jst.err = jst.reason
 			return nil
 		}
-		jst.stackWrapper.stack = stack
-		jst.memoryWrapper.memory = memory
 		jst.dbWrapper.db = env.StateDB
 
 		*jst.pcValue = uint(pc)
@@ -447,7 +346,7 @@ func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, gas, cost uint64, memory
 
 // CaptureFault implements the Tracer interface to trace an execution fault
 // while running an opcode.
-func (jst *Tracer) CaptureFault(env *vm.EVM, pc uint64, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, err error) error {
+func (jst *Tracer) CaptureFault(env *vm.EVM, pc uint64, gas, cost uint64, err error) error {
 	if jst.err == nil {
 		// Apart from the error, everything matches the previous invocation
 		jst.errorValue = new(string)

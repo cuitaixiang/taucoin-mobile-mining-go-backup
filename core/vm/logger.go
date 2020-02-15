@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/hexutil"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/math"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
 )
@@ -44,8 +43,6 @@ func (s Storage) Copy() Storage {
 
 // LogConfig are the configuration options for structured logger the EVM
 type LogConfig struct {
-	DisableMemory  bool // disable memory capture
-	DisableStack   bool // disable stack capture
 	DisableStorage bool // disable storage capture
 	Debug          bool // print output during capture end
 	Limit          int  // maximum length of output, but zero means unlimited
@@ -59,9 +56,6 @@ type StructLog struct {
 	Pc            uint64                      `json:"pc"`
 	Gas           uint64                      `json:"gas"`
 	GasCost       uint64                      `json:"gasCost"`
-	Memory        []byte                      `json:"memory"`
-	MemorySize    int                         `json:"memSize"`
-	Stack         []*big.Int                  `json:"stack"`
 	Storage       map[common.Hash]common.Hash `json:"-"`
 	RefundCounter uint64                      `json:"refund"`
 	Err           error                       `json:"-"`
@@ -69,11 +63,8 @@ type StructLog struct {
 
 // overrides for gencodec
 type structLogMarshaling struct {
-	Stack       []*math.HexOrDecimal256
 	Gas         math.HexOrDecimal64
 	GasCost     math.HexOrDecimal64
-	Memory      hexutil.Bytes
-	OpName      string `json:"opName"` // adds call to OpName() in MarshalJSON
 	ErrorString string `json:"error"`  // adds call to ErrorString() in MarshalJSON
 }
 
@@ -92,8 +83,8 @@ func (s *StructLog) ErrorString() string {
 // if you need to retain them beyond the current call.
 type Tracer interface {
 	CaptureStart(from common.Address, to common.Address, call bool, input []byte, gas uint64, value *big.Int) error
-	CaptureState(env *EVM, pc uint64, gas, cost uint64, memory *Memory, stack *Stack, err error) error
-	CaptureFault(env *EVM, pc uint64, gas, cost uint64, memory *Memory, stack *Stack, err error) error
+	CaptureState(env *EVM, pc uint64, gas, cost uint64, err error) error
+	CaptureFault(env *EVM, pc uint64, gas, cost uint64, err error) error
 	CaptureEnd(output []byte, gasUsed uint64, t time.Duration, err error) error
 }
 
@@ -130,30 +121,16 @@ func (l *StructLogger) CaptureStart(from common.Address, to common.Address, crea
 // CaptureState logs a new structured log message and pushes it out to the environment
 //
 // CaptureState also tracks SSTORE ops to track dirty values.
-func (l *StructLogger) CaptureState(env *EVM, pc uint64, gas, cost uint64, memory *Memory, stack *Stack, err error) error {
+func (l *StructLogger) CaptureState(env *EVM, pc uint64, gas, cost uint64, err error) error {
 	// check if already accumulated the specified number of logs
 	if l.cfg.Limit != 0 && l.cfg.Limit <= len(l.logs) {
 		return ErrTraceLimitReached
 	}
 
-	// Copy a snapshot of the current memory state to a new buffer
-	var mem []byte
-	if !l.cfg.DisableMemory {
-		mem = make([]byte, len(memory.Data()))
-		copy(mem, memory.Data())
-	}
-	// Copy a snapshot of the current stack state to a new buffer
-	var stck []*big.Int
-	if !l.cfg.DisableStack {
-		stck = make([]*big.Int, len(stack.Data()))
-		for i, item := range stack.Data() {
-			stck[i] = new(big.Int).Set(item)
-		}
-	}
 	var storage Storage
 
 	// create a new snapshot of the EVM.
-	log := StructLog{pc, gas, cost, mem, memory.Len(), stck, storage, env.StateDB.GetRefund(), err}
+	log := StructLog{pc, gas, cost, storage, env.StateDB.GetRefund(), err}
 
 	l.logs = append(l.logs, log)
 	return nil
@@ -161,7 +138,7 @@ func (l *StructLogger) CaptureState(env *EVM, pc uint64, gas, cost uint64, memor
 
 // CaptureFault implements the Tracer interface to trace an execution fault
 // while running an opcode.
-func (l *StructLogger) CaptureFault(env *EVM, pc uint64, gas, cost uint64, memory *Memory, stack *Stack, err error) error {
+func (l *StructLogger) CaptureFault(env *EVM, pc uint64, gas, cost uint64, err error) error {
 	return nil
 }
 
@@ -196,16 +173,6 @@ func WriteTrace(writer io.Writer, logs []StructLog) {
 		}
 		fmt.Fprintln(writer)
 
-		if len(log.Stack) > 0 {
-			fmt.Fprintln(writer, "Stack:")
-			for i := len(log.Stack) - 1; i >= 0; i-- {
-				fmt.Fprintf(writer, "%08d  %x\n", len(log.Stack)-i-1, math.PaddedBigBytes(log.Stack[i], 32))
-			}
-		}
-		if len(log.Memory) > 0 {
-			fmt.Fprintln(writer, "Memory:")
-			fmt.Fprint(writer, hex.Dump(log.Memory))
-		}
 		if len(log.Storage) > 0 {
 			fmt.Fprintln(writer, "Storage:")
 			for h, item := range log.Storage {
