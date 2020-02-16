@@ -67,11 +67,10 @@ type TransferTxDataMarshaling struct {
 
 	Amount hexutil.Bytes
 }
-
+/*
 func NewTransferTransaction(version OneByte, option OneByte, chainid OneByte, nounce uint64, timestamp uint32, fee OneByte, sender common.Address, receiver common.Address, amount Byte5s) {
 	return newTransferTransaction(version, option, chainid, nounce, timestamp, fee, &sender, &receiver, amount)
 }
-
 func newTransferTransaction(version OneByte, option OneByte, chainid OneByte, nounce uint64, timestamp uint32, fee OneByte, sender *common.Address, receiver *common.Address, amount Byte5s) *TransferTx {
 	d := TransferTxData{
 		Version:   version,
@@ -89,6 +88,7 @@ func newTransferTransaction(version OneByte, option OneByte, chainid OneByte, no
 	}
 	return TransferTx{tx: d}
 }
+*/
 
 func (ttx *TransferTx) ChainId() Byte32s {
 	return ttx.tx.ChainID
@@ -189,7 +189,7 @@ func (ttx *TransferTx) AsMessage(s Signer) (Message, error) {
 	return msg, err
 }
 
-func (ttx *TransferTx) WithSignature(singer Singer, sig []byte) (*TransferTx, error) {
+func (ttx *TransferTx) WithSignature(singer Signer, sig []byte) (*TransferTx, error) {
 	//todo splite and verify ttx
 	cpy := &TransferTx{tx: ttx.tx}
 	//fill field of signature in ttx

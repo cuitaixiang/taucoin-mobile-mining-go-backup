@@ -134,22 +134,7 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 		evm.StateDB.CreateAccount(addr)
 	}
 	evm.Transfer(evm.StateDB, caller.Address(), to.Address(), value)
-	/*
-	// Initialise a new contract and set the code that is to be used by the EVM.
-	// The contract is a scoped environment for this execution context only.
-	contract := NewContract(caller, to, value, gas)
-	contract.SetCallCode(&addr, evm.StateDB.GetCodeHash(addr), evm.StateDB.GetCode(addr))
 
-	// When an error was returned by the EVM or when setting the creation code
-	// above we revert to the snapshot and consume any gas remaining. Additionally
-	// when we're in homestead this also counts for code storage gas errors.
-	if err != nil {
-		evm.StateDB.RevertToSnapshot(snapshot)
-		if err != errExecutionReverted {
-			contract.UseGas(contract.Gas)
-		}
-	}
-	*/
 	var leftOverGasTemp uint64= 0
 
 	return ret, leftOverGasTemp, err
