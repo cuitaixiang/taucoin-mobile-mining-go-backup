@@ -26,7 +26,7 @@ func (t TransferTxData) MarshalJSON() ([]byte, error) {
 		R         *hexutil.Big    `json:"r"           gencodec:"required"`
 		S         *hexutil.Big    `json:"s"           gencodec:"required"`
 		Sender    *common.Address `json:"sender"        rlp:"required"`
-		Receiver  *common.Address `json:"sender"        rlp:"required"`
+		Receiver  *common.Address `json:"receiver"        rlp:"required"`
 		Amount    hexutil.Bytes   `json:"amount"       gencodec:"required"`
 	}
 	var enc TransferTxData
@@ -58,7 +58,7 @@ func (t *TransferTxData) UnmarshalJSON(input []byte) error {
 		R         *hexutil.Big    `json:"r"           gencodec:"required"`
 		S         *hexutil.Big    `json:"s"           gencodec:"required"`
 		Sender    *common.Address `json:"sender"        rlp:"required"`
-		Receiver  *common.Address `json:"sender"        rlp:"required"`
+		Receiver  *common.Address `json:"receiver"        rlp:"required"`
 		Amount    *hexutil.Bytes  `json:"amount"       gencodec:"required"`
 	}
 	var dec TransferTxData

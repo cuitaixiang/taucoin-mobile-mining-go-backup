@@ -17,6 +17,7 @@
 package types
 
 import (
+	"container/heap"
 	"io"
 	"math/big"
 	"sync/atomic"
@@ -50,7 +51,7 @@ type TransferTxData struct {
 	S         *big.Int        `json:"s"           gencodec:"required"`
 	Sender    *common.Address `json:"sender"        rlp:"required"`
 
-	Receiver *common.Address `json:"sender"        rlp:"required"`
+	Receiver *common.Address `json:"receiver"        rlp:"required"`
 	Amount   Byte5s          `json:"amount"       gencodec:"required"`
 }
 
@@ -67,11 +68,12 @@ type TransferTxDataMarshaling struct {
 
 	Amount hexutil.Bytes
 }
-/*
-func NewTransferTransaction(version OneByte, option OneByte, chainid OneByte, nounce uint64, timestamp uint32, fee OneByte, sender common.Address, receiver common.Address, amount Byte5s) {
+
+func NewTransferTransaction(version OneByte, option OneByte, chainid Byte32s, nounce uint64, timestamp uint32, fee OneByte, sender common.Address, receiver common.Address, amount Byte5s) *TransferTx {
 	return newTransferTransaction(version, option, chainid, nounce, timestamp, fee, &sender, &receiver, amount)
 }
-func newTransferTransaction(version OneByte, option OneByte, chainid OneByte, nounce uint64, timestamp uint32, fee OneByte, sender *common.Address, receiver *common.Address, amount Byte5s) *TransferTx {
+
+func newTransferTransaction(version OneByte, option OneByte, chainid Byte32s, nounce uint64, timestamp uint32, fee OneByte, sender *common.Address, receiver *common.Address, amount Byte5s) *TransferTx {
 	d := TransferTxData{
 		Version:   version,
 		Option:    option,
@@ -86,9 +88,8 @@ func newTransferTransaction(version OneByte, option OneByte, chainid OneByte, no
 		Receiver:  receiver,
 		Amount:    amount,
 	}
-	return TransferTx{tx: d}
+	return &TransferTx{tx: d}
 }
-*/
 
 func (ttx *TransferTx) ChainId() Byte32s {
 	return ttx.tx.ChainID
@@ -206,4 +207,130 @@ func (ttx *TransferTx) Cost() *big.Int {
 
 func (ttx *TransferTx) RawSignatureValues() (v, r, s *big.Int) {
 	return ttx.tx.V, ttx.tx.R, ttx.tx.S
+}
+
+type TransferTxs []*TransferTx
+
+func (s TransferTxs) Len() int { return len(s) }
+
+func (s TransferTxs) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
+func (s TransferTxs) GetRlp(i int) []byte {
+	enc, _ := rlp.EncodeToBytes(s[i])
+	return enc
+}
+
+func (s TransferTxs) TxDifference(a, b TransferTxs) TransferTxs {
+	keep := make(TransferTxs, 0, len(a))
+
+	remove := make(map[common.Hash]struct{})
+	for _, tx := range b {
+		remove[tx.Hash()] = struct{}{}
+	}
+
+	for _, tx := range a {
+		if _, ok := remove[tx.Hash()]; !ok {
+			keep = append(keep, tx)
+		}
+	}
+
+	return keep
+}
+
+type TransferTxByNounce TransferTxs
+
+func (s TransferTxByNounce) Len() int { return len(s) }
+func (s TransferTxByNounce) Less(i, j int) bool {
+	return s[i].tx.Nounce < s[j].tx.Nounce
+}
+func (s TransferTxByNounce) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
+func (s *TransferTxByNounce) Push(x interface{}) {
+	*s = append(*s, x.(*TransferTx))
+}
+
+func (s *TransferTxByNounce) Pop() interface{} {
+	old := *s
+	n := len(old)
+	x := old[n-1]
+	*s = old[0 : n-1]
+	return x
+}
+
+type TransferTxByFee TransferTxs
+
+func (s TransferTxByFee) Len() int { return len(s) }
+func (s TransferTxByFee) Less(i, j int) bool {
+	fee1 := new(big.Int).SetBytes(s[i].tx.Fee)
+	fee2 := new(big.Int).SetBytes(s[j].tx.Fee)
+	return fee1.Cmp(fee2) > 0
+}
+func (s TransferTxByFee) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
+func (s *TransferTxByFee) Push(x interface{}) {
+	*s = append(*s, x.(*TransferTx))
+}
+
+func (s *TransferTxByFee) Pop() interface{} {
+	old := *s
+	n := len(old)
+	x := old[n-1]
+	*s = old[0 : n-1]
+	return x
+}
+
+type TransferTxByFeeAndNounce struct {
+	txs    map[common.Address]TransferTxs
+	heads  TransferTxByFee
+	signer Signer
+}
+
+//watch out TransferTxs is sorted by Nounce first
+func NewTransferTxByFeeAndNounce(signer Signer, txs map[common.Address]TransferTxs) *TransferTxByFeeAndNounce {
+	heads := make(TransferTxByFee, 0, len(txs))
+	for _, accTxs := range txs {
+		heads = append(heads, accTxs[0])
+		//to make sure a list txs from txs is from same account
+		//to do to complete singer
+	}
+	heap.Init(&heads)
+	return &TransferTxByFeeAndNounce{
+		txs:   txs,
+		heads: heads,
+		//This singer need to make adaption mpdify abount unique tx
+		signer: signer,
+	}
+}
+
+func (t *TransferTxByFeeAndNounce) Peek() *TransferTx {
+	if len(t.heads) == 0 {
+		return nil
+	}
+
+	return t.heads[0]
+}
+
+func (t *TransferTxByFeeAndNounce) Shift() {
+	//if Account x contains other txs sorted by Nounce, the others should
+	//come up with new fee sorting because of some fee element changing.
+	acc := t.heads[0].tx.Sender
+	if txs, ok := t.txs[*acc]; ok && len(txs) > 0 {
+		t.heads[0], t.txs[*acc] = txs[0], txs[1:]
+		heap.Fix(&t.heads, 0)
+	} else {
+		heap.Pop(&t.heads)
+	}
+}
+
+func (t *TransferTxByFeeAndNounce) Pop() {
+	heap.Pop(&t.heads)
+}
+
+//todo
+//these messages need to define to adapt new ipfs system.
+type TauTxMessage struct {
+}
+
+func NewTauTxMessage() TauTxMessage {
+	return TauTxMessage{}
 }
