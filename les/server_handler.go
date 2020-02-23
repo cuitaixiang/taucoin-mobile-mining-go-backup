@@ -174,7 +174,6 @@ func (h *serverHandler) handleMsg(p *peer, wg *sync.WaitGroup) error {
 	if err != nil {
 		return err
 	}
-	p.Log().Trace("Light Tau message arrived", "code", msg.Code, "bytes", msg.Size)
 
 	// Discard large message which exceeds the limitation.
 	if msg.Size > ProtocolMaxMsgSize {
@@ -419,77 +418,6 @@ func (h *serverHandler) handleMsg(p *peer, wg *sync.WaitGroup) error {
 				if metrics.EnabledExpensive {
 					miscOutBodyPacketsMeter.Mark(1)
 					miscOutBodyTrafficMeter.Mark(int64(reply.size()))
-				}
-			}()
-		}
-
-	case GetCodeMsg:
-		p.Log().Trace("Received code request")
-		if metrics.EnabledExpensive {
-			miscInCodePacketsMeter.Mark(1)
-			miscInCodeTrafficMeter.Mark(int64(msg.Size))
-		}
-		var req struct {
-			ReqID uint64
-			Reqs  []CodeReq
-		}
-		if err := msg.Decode(&req); err != nil {
-			clientErrorMeter.Mark(1)
-			return errResp(ErrDecode, "msg %v: %v", msg, err)
-		}
-		var (
-			bytes int
-			data  [][]byte
-		)
-		reqCnt := len(req.Reqs)
-		if accept(req.ReqID, uint64(reqCnt), MaxCodeFetch) {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				for i, request := range req.Reqs {
-					if i != 0 && !task.waitOrStop() {
-						sendResponse(req.ReqID, 0, nil, task.servingTime)
-						return
-					}
-					// Look up the root hash belonging to the request
-					header := h.blockchain.GetHeaderByHash(request.BHash)
-					if header == nil {
-						p.Log().Warn("Failed to retrieve associate header for code", "hash", request.BHash)
-						atomic.AddUint32(&p.invalidCount, 1)
-						continue
-					}
-					// Refuse to search stale state data in the database since looking for
-					// a non-exist key is kind of expensive.
-					local := h.blockchain.CurrentHeader().Number.Uint64()
-					if !h.server.archiveMode && header.Number.Uint64()+core.TriesInMemory <= local {
-						p.Log().Debug("Reject stale code request", "number", header.Number.Uint64(), "head", local)
-						atomic.AddUint32(&p.invalidCount, 1)
-						continue
-					}
-					triedb := h.blockchain.StateCache().TrieDB()
-
-					account, err := h.getAccount(triedb, header.Root, common.BytesToHash(request.AccKey))
-					if err != nil {
-						p.Log().Warn("Failed to retrieve account for code", "block", header.Number, "hash", header.Hash(), "account", common.BytesToHash(request.AccKey), "err", err)
-						atomic.AddUint32(&p.invalidCount, 1)
-						continue
-					}
-					code, err := triedb.Node(common.BytesToHash(account.CodeHash))
-					if err != nil {
-						p.Log().Warn("Failed to retrieve account code", "block", header.Number, "hash", header.Hash(), "account", common.BytesToHash(request.AccKey), "codehash", common.BytesToHash(account.CodeHash), "err", err)
-						continue
-					}
-					// Accumulate the code and abort if enough data was retrieved
-					data = append(data, code)
-					if bytes += len(code); bytes >= softResponseLimit {
-						break
-					}
-				}
-				reply := p.ReplyCode(req.ReqID, data)
-				sendResponse(req.ReqID, uint64(reqCnt), reply, task.done())
-				if metrics.EnabledExpensive {
-					miscOutCodePacketsMeter.Mark(1)
-					miscOutCodeTrafficMeter.Mark(int64(reply.size()))
 				}
 			}()
 		}
@@ -811,7 +739,6 @@ func (h *serverHandler) handleMsg(p *peer, wg *sync.WaitGroup) error {
 		}
 
 	default:
-		p.Log().Trace("Received invalid message", "code", msg.Code)
 		clientErrorMeter.Mark(1)
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}

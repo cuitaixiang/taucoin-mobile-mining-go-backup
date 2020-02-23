@@ -32,8 +32,6 @@ type DumpAccount struct {
 	Balance   string                 `json:"balance"`
 	Nonce     uint64                 `json:"nonce"`
 	Root      string                 `json:"root"`
-	CodeHash  string                 `json:"codeHash"`
-	Code      string                 `json:"code,omitempty"`
 	Storage   map[common.Hash]string `json:"storage,omitempty"`
 	Address   *common.Address        `json:"address,omitempty"` // Address only present in iterative (line-by-line) mode
 	SecureKey hexutil.Bytes          `json:"key,omitempty"`     // If we don't have address, we can output the key
@@ -68,8 +66,6 @@ func (self iterativeDump) onAccount(addr common.Address, account DumpAccount) {
 		Balance:   account.Balance,
 		Nonce:     account.Nonce,
 		Root:      account.Root,
-		CodeHash:  account.CodeHash,
-		Code:      account.Code,
 		Storage:   account.Storage,
 		SecureKey: account.SecureKey,
 		Address:   nil,
@@ -101,7 +97,6 @@ func (self *StateDB) dump(c collector, excludeCode, excludeStorage, excludeMissi
 			Balance:  data.Balance.String(),
 			Nonce:    data.Nonce,
 			Root:     common.Bytes2Hex(data.Root[:]),
-			CodeHash: common.Bytes2Hex(data.CodeHash),
 		}
 		if emptyAddress == addr {
 			// Preimage missing
@@ -110,9 +105,6 @@ func (self *StateDB) dump(c collector, excludeCode, excludeStorage, excludeMissi
 				continue
 			}
 			account.SecureKey = it.Key
-		}
-		if !excludeCode {
-			account.Code = common.Bytes2Hex(obj.Code(self.db))
 		}
 		if !excludeStorage {
 			account.Storage = make(map[common.Hash]string)

@@ -197,7 +197,6 @@ func MakePreState(db taudb.Database, accounts core.GenesisAlloc) *state.StateDB 
 	sdb := state.NewDatabase(db)
 	statedb, _ := state.New(common.Hash{}, sdb)
 	for addr, a := range accounts {
-		statedb.SetCode(addr, a.Code)
 		statedb.SetNonce(addr, a.Nonce)
 		statedb.SetBalance(addr, a.Balance)
 		for k, v := range a.Storage {

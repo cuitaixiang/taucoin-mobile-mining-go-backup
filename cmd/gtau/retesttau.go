@@ -81,7 +81,6 @@ type RetesttauTauAPI interface {
 	BlockNumber(ctx context.Context) (uint64, error)
 	GetBlockByNumber(ctx context.Context, blockNr math.HexOrDecimal64, fullTx bool) (map[string]interface{}, error)
 	GetBalance(ctx context.Context, address common.Address, blockNr math.HexOrDecimal64) (*math.HexOrDecimal256, error)
-	GetCode(ctx context.Context, address common.Address, blockNr math.HexOrDecimal64) (hexutil.Bytes, error)
 	GetTransactionCount(ctx context.Context, address common.Address, blockNr math.HexOrDecimal64) (uint64, error)
 }
 
@@ -704,15 +703,6 @@ func (api *RetesttauAPI) GetBalance(ctx context.Context, address common.Address,
 		return nil, err
 	}
 	return (*math.HexOrDecimal256)(statedb.GetBalance(address)), nil
-}
-
-func (api *RetesttauAPI) GetCode(ctx context.Context, address common.Address, blockNr math.HexOrDecimal64) (hexutil.Bytes, error) {
-	header := api.blockchain.GetHeaderByNumber(uint64(blockNr))
-	statedb, err := api.blockchain.StateAt(header.Root)
-	if err != nil {
-		return nil, err
-	}
-	return statedb.GetCode(address), nil
 }
 
 func (api *RetesttauAPI) GetTransactionCount(ctx context.Context, address common.Address, blockNr math.HexOrDecimal64) (uint64, error) {

@@ -26,12 +26,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/accounts/abi/bind"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/accounts/abi/bind/backends"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/mclock"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus/tauhash"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/contracts/checkpointoracle/contract"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/rawdb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
@@ -106,13 +104,6 @@ func prepare(n int, backend *backends.SimulatedBackend) {
 	)
 	for i := 0; i < n; i++ {
 		switch i {
-		case 0:
-			// deploy checkpoint contract
-			registrarAddr, _, _, _ = contract.DeployCheckpointOracle(bind.NewKeyedTransactor(bankKey), backend, []common.Address{signerAddr}, sectionSize, processConfirms, big.NewInt(1))
-			// bankUser transfers some tauer to user1
-			nonce, _ := backend.PendingNonceAt(ctx, bankAddr)
-			tx, _ := types.SignTx(types.NewTransaction(nonce, userAddr1, big.NewInt(10000), params.TxGas, nil, nil), signer, bankKey)
-			backend.SendTransaction(ctx, tx)
 		case 1:
 			bankNonce, _ := backend.PendingNonceAt(ctx, bankAddr)
 			userNonce1, _ := backend.PendingNonceAt(ctx, userAddr1)
@@ -217,9 +208,6 @@ func newTestClientHandler(backend *backends.SimulatedBackend, odr *LesOdr, index
 	}
 	client.handler = newClientHandler(ulcServers, ulcFraction, nil, client)
 
-	if client.oracle != nil {
-		client.oracle.start(backend)
-	}
 	return client.handler
 }
 
@@ -283,9 +271,6 @@ func newTestServerHandler(blocks int, indexers []*core.ChainIndexer, db taudb.Da
 	server.clientPool = newClientPool(db, 1, 10000, clock, nil)
 	server.clientPool.setLimits(10000, 10000) // Assign enough capacity for clientpool
 	server.handler = newServerHandler(server, simulation.Blockchain(), db, txpool, func() bool { return true })
-	if server.oracle != nil {
-		server.oracle.start(simulation)
-	}
 	server.servingQueue.setThreads(4)
 	server.handler.start()
 	return server.handler, simulation

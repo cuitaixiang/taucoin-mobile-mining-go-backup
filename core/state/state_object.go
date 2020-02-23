@@ -31,12 +31,6 @@ import (
 
 var emptyCodeHash = crypto.Keccak256(nil)
 
-type Code []byte
-
-func (c Code) String() string {
-	return string(c) //strings.Join(Disassemble(c), " ")
-}
-
 type Storage map[common.Hash]common.Hash
 
 func (s Storage) String() (str string) {
@@ -77,7 +71,6 @@ type stateObject struct {
 
 	// Write caches.
 	trie Trie // storage trie, which becomes non-nil on first access
-	code Code // contract bytecode, which gets set when code is loaded
 
 	originStorage Storage // Storage cache of original entries to dedup rewrites
 	dirtyStorage  Storage // Storage entries that need to be flushed to disk
@@ -86,14 +79,13 @@ type stateObject struct {
 	// Cache flags.
 	// When an object is marked suicided it will be delete from the trie
 	// during the "update" phase of the state transition.
-	dirtyCode bool // true if the code was updated
 	suicided  bool
 	deleted   bool
 }
 
 // empty returns whtauer the account is considered empty.
 func (s *stateObject) empty() bool {
-	return s.data.Nonce == 0 && s.data.Balance.Sign() == 0 && bytes.Equal(s.data.CodeHash, emptyCodeHash)
+	return s.data.Nonce == 0 && s.data.Balance.Sign() == 0
 }
 
 // Account is the Tau consensus representation of accounts.
@@ -102,16 +94,12 @@ type Account struct {
 	Nonce    uint64
 	Balance  *big.Int
 	Root     common.Hash // merkle root of the storage trie
-	CodeHash []byte
 }
 
 // newObject creates a state object.
 func newObject(db *StateDB, address common.Address, data Account) *stateObject {
 	if data.Balance == nil {
 		data.Balance = new(big.Int)
-	}
-	if data.CodeHash == nil {
-		data.CodeHash = emptyCodeHash
 	}
 	return &stateObject{
 		db:            db,
@@ -353,11 +341,9 @@ func (s *stateObject) deepCopy(db *StateDB) *stateObject {
 	if s.trie != nil {
 		stateObject.trie = db.db.CopyTrie(s.trie)
 	}
-	stateObject.code = s.code
 	stateObject.dirtyStorage = s.dirtyStorage.Copy()
 	stateObject.originStorage = s.originStorage.Copy()
 	stateObject.suicided = s.suicided
-	stateObject.dirtyCode = s.dirtyCode
 	stateObject.deleted = s.deleted
 	return stateObject
 }
@@ -371,38 +357,6 @@ func (s *stateObject) Address() common.Address {
 	return s.address
 }
 
-// Code returns the contract code associated with this object, if any.
-func (s *stateObject) Code(db Database) []byte {
-	if s.code != nil {
-		return s.code
-	}
-	if bytes.Equal(s.CodeHash(), emptyCodeHash) {
-		return nil
-	}
-	code, err := db.ContractCode(s.addrHash, common.BytesToHash(s.CodeHash()))
-	if err != nil {
-		s.setError(fmt.Errorf("can't load code hash %x: %v", s.CodeHash(), err))
-	}
-	s.code = code
-	return code
-}
-
-func (s *stateObject) SetCode(codeHash common.Hash, code []byte) {
-	prevcode := s.Code(s.db.db)
-	s.db.journal.append(codeChange{
-		account:  &s.address,
-		prevhash: s.CodeHash(),
-		prevcode: prevcode,
-	})
-	s.setCode(codeHash, code)
-}
-
-func (s *stateObject) setCode(codeHash common.Hash, code []byte) {
-	s.code = code
-	s.data.CodeHash = codeHash[:]
-	s.dirtyCode = true
-}
-
 func (s *stateObject) SetNonce(nonce uint64) {
 	s.db.journal.append(nonceChange{
 		account: &s.address,
@@ -413,10 +367,6 @@ func (s *stateObject) SetNonce(nonce uint64) {
 
 func (s *stateObject) setNonce(nonce uint64) {
 	s.data.Nonce = nonce
-}
-
-func (s *stateObject) CodeHash() []byte {
-	return s.data.CodeHash
 }
 
 func (s *stateObject) Balance() *big.Int {

@@ -25,7 +25,6 @@ import (
 	"time"
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/accounts/abi/bind"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/math"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus/tauhash"
@@ -41,9 +40,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rpc"
 )
-
-// This nil assignment ensures compile time that SimulatedBackend implements bind.ContractBackend.
-var _ bind.ContractBackend = (*SimulatedBackend)(nil)
 
 var (
 	errBlockNumberUnsupported = errors.New("simulatedBackend cannot access blocks other than the latest block")
@@ -122,18 +118,6 @@ func (b *SimulatedBackend) rollback() {
 	b.pendingState, _ = state.New(b.pendingBlock.Root(), statedb.Database())
 }
 
-// CodeAt returns the code associated with a certain account in the blockchain.
-func (b *SimulatedBackend) CodeAt(ctx context.Context, contract common.Address, blockNumber *big.Int) ([]byte, error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
-	if blockNumber != nil && blockNumber.Cmp(b.blockchain.CurrentBlock().Number()) != 0 {
-		return nil, errBlockNumberUnsupported
-	}
-	statedb, _ := b.blockchain.State()
-	return statedb.GetCode(contract), nil
-}
-
 // BalanceAt returns the wei balance of a certain account in the blockchain.
 func (b *SimulatedBackend) BalanceAt(ctx context.Context, contract common.Address, blockNumber *big.Int) (*big.Int, error) {
 	b.mu.Lock()
@@ -194,14 +178,6 @@ func (b *SimulatedBackend) TransactionByHash(ctx context.Context, txHash common.
 		return tx, false, nil
 	}
 	return nil, false, tau.NotFound
-}
-
-// PendingCodeAt returns the code associated with an account in the pending state.
-func (b *SimulatedBackend) PendingCodeAt(ctx context.Context, contract common.Address) ([]byte, error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
-	return b.pendingState.GetCode(contract), nil
 }
 
 // CallContract executes a contract call.

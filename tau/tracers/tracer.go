@@ -89,16 +89,6 @@ func (dw *dbWrapper) pushObject(vm *duktape.Context) {
 	})
 	vm.PutPropString(obj, "getNonce")
 
-	// Push the wrapper for statedb.GetCode
-	vm.PushGoFunction(func(ctx *duktape.Context) int {
-		code := dw.db.GetCode(common.BytesToAddress(popSlice(ctx)))
-
-		ptr := ctx.PushFixedBuffer(len(code))
-		copy(makeSlice(ptr, uint(len(code))), code)
-		return 1
-	})
-	vm.PutPropString(obj, "getCode")
-
 	// Push the wrapper for statedb.GetState
 	vm.PushGoFunction(func(ctx *duktape.Context) int {
 		hash := popSlice(ctx)
