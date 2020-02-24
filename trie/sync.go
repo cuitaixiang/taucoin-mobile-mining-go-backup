@@ -76,17 +76,15 @@ type Sync struct {
 	membatch *syncMemBatch            // Memory buffer to avoid frequent database writes
 	requests map[common.Hash]*request // Pending requests pertaining to a key hash
 	queue    *prque.Prque             // Priority queue with the pending requests
-	bloom    *SyncBloom               // Bloom filter for fast node existence checks
 }
 
 // NewSync creates a new trie data download scheduler.
-func NewSync(root common.Hash, database taudb.KeyValueReader, callback LeafCallback, bloom *SyncBloom) *Sync {
+func NewSync(root common.Hash, database taudb.KeyValueReader, callback LeafCallback) *Sync {
 	ts := &Sync{
 		database: database,
 		membatch: newSyncMemBatch(),
 		requests: make(map[common.Hash]*request),
 		queue:    prque.New(nil),
-		bloom:    bloom,
 	}
 	ts.AddSubTrie(root, 0, common.Hash{}, callback)
 	return ts
@@ -100,15 +98,6 @@ func (s *Sync) AddSubTrie(root common.Hash, depth int, parent common.Hash, callb
 	}
 	if _, ok := s.membatch.batch[root]; ok {
 		return
-	}
-	if s.bloom.Contains(root[:]) {
-		// Bloom filter says this might be a duplicate, double check
-		blob, _ := s.database.Get(root[:])
-		if local, err := decodeNode(root[:], blob); local != nil && err == nil {
-			return
-		}
-		// False positive, bump fault meter
-		bloomFaultMeter.Mark(1)
 	}
 	// Assemble the new sub-trie sync request
 	req := &request{
@@ -139,14 +128,6 @@ func (s *Sync) AddRawEntry(hash common.Hash, depth int, parent common.Hash) {
 	}
 	if _, ok := s.membatch.batch[hash]; ok {
 		return
-	}
-	if s.bloom.Contains(hash[:]) {
-		// Bloom filter says this might be a duplicate, double check
-		if ok, _ := s.database.Has(hash[:]); ok {
-			return
-		}
-		// False positive, bump fault meter
-		bloomFaultMeter.Mark(1)
 	}
 	// Assemble the new sub-trie sync request
 	req := &request{
@@ -230,7 +211,6 @@ func (s *Sync) Commit(dbw taudb.KeyValueWriter) (int, error) {
 		if err := dbw.Put(key[:], s.membatch.batch[key]); err != nil {
 			return i, err
 		}
-		s.bloom.Add(key[:])
 	}
 	written := len(s.membatch.order) // TODO(karalabe): could an order change improve write performance?
 
@@ -303,14 +283,6 @@ func (s *Sync) children(req *request, object node) ([]*request, error) {
 			hash := common.BytesToHash(node)
 			if _, ok := s.membatch.batch[hash]; ok {
 				continue
-			}
-			if s.bloom.Contains(node) {
-				// Bloom filter says this might be a duplicate, double check
-				if ok, _ := s.database.Has(node); ok {
-					continue
-				}
-				// False positive, bump fault meter
-				bloomFaultMeter.Mark(1)
 			}
 			// Locally unknown node, schedule for retrieval
 			requests = append(requests, &request{

@@ -39,7 +39,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/p2p/enode"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rlp"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/trie"
 )
 
 const (
@@ -142,14 +141,7 @@ func NewProtocolManager(config *params.ChainConfig, checkpoint *params.TrustedCh
 		manager.checkpointHash = checkpoint.SectionHead
 	}
 
-	// Construct the downloader (long sync) and its backing state bloom if fast
-	// sync is requested. The downloader is responsible for deallocating the state
-	// bloom when it's done.
-	var stateBloom *trie.SyncBloom
-	if atomic.LoadUint32(&manager.fastSync) == 1 {
-		stateBloom = trie.NewSyncBloom(uint64(cacheLimit), chaindb)
-	}
-	manager.downloader = downloader.New(manager.checkpointNumber, chaindb, stateBloom, manager.eventMux, blockchain, nil, manager.removePeer)
+	manager.downloader = downloader.New(manager.checkpointNumber, chaindb, manager.eventMux, blockchain, nil, manager.removePeer)
 
 	// Construct the fetcher (short sync)
 	validator := func(header *types.Header) error {
