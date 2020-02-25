@@ -90,7 +90,7 @@ type TransactionReader interface {
 // In many cases, using CallContract can be preferable to reading raw contract storage.
 type ChainStateReader interface {
 	BalanceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (*big.Int, error)
-	StorageAt(ctx context.Context, account common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error)
+	MessageAt(ctx context.Context, account common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error)
 	CodeAt(ctx context.Context, account common.Address, blockNumber *big.Int) ([]byte, error)
 	NonceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (uint64, error)
 }
@@ -185,7 +185,7 @@ type GasPricer interface {
 // retrieve the next available transaction nonce for a specific account.
 type PendingStateReader interface {
 	PendingBalanceAt(ctx context.Context, account common.Address) (*big.Int, error)
-	PendingStorageAt(ctx context.Context, account common.Address, key common.Hash) ([]byte, error)
+	PendingMessageAt(ctx context.Context, account common.Address, key common.Hash) ([]byte, error)
 	PendingCodeAt(ctx context.Context, account common.Address) ([]byte, error)
 	PendingNonceAt(ctx context.Context, account common.Address) (uint64, error)
 	PendingTransactionCount(ctx context.Context) (uint, error)

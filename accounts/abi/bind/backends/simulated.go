@@ -24,7 +24,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Tau-Coin/taucoin-mobile-mining-go"
+	tau "github.com/Tau-Coin/taucoin-mobile-mining-go"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/math"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus/tauhash"
@@ -34,11 +34,11 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/state"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/vm"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/filters"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/event"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rpc"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/filters"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 )
 
 var (
@@ -143,7 +143,7 @@ func (b *SimulatedBackend) NonceAt(ctx context.Context, contract common.Address,
 }
 
 // StorageAt returns the value of key in the storage of an account in the blockchain.
-func (b *SimulatedBackend) StorageAt(ctx context.Context, contract common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error) {
+func (b *SimulatedBackend) MessageAt(ctx context.Context, contract common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
