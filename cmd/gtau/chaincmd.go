@@ -36,7 +36,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/event"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/trie"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -402,11 +401,7 @@ func copyDb(ctx *cli.Context) error {
 	chain, chainDb := utils.MakeChain(ctx, stack)
 	syncMode := *utils.GlobalTextMarshaler(ctx, utils.SyncModeFlag.Name).(*downloader.SyncMode)
 
-	var syncBloom *trie.SyncBloom
-	if syncMode == downloader.FastSync {
-		syncBloom = trie.NewSyncBloom(uint64(ctx.GlobalInt(utils.CacheFlag.Name)/2), chainDb)
-	}
-	dl := downloader.New(0, chainDb, syncBloom, new(event.TypeMux), chain, nil, nil)
+	dl := downloader.New(0, chainDb, new(event.TypeMux), chain, nil, nil)
 
 	// Create a source peer to satisfy downloader requests from
 	db, err := rawdb.NewLevelDBDatabaseWithFreezer(ctx.Args().First(), ctx.GlobalInt(utils.CacheFlag.Name)/2, 256, ctx.Args().Get(1), "")

@@ -163,11 +163,11 @@ func (ec *TauClient) GetBalanceAt(ctx *Context, account *Address, number int64) 
 
 // GetStorageAt returns the value of key in the contract storage of the given account.
 // The block number can be <0, in which case the value is taken from the latest known block.
-func (ec *TauClient) GetStorageAt(ctx *Context, account *Address, key *Hash, number int64) (storage []byte, _ error) {
+func (ec *TauClient) GetMessageAt(ctx *Context, account *Address, key *Hash, number int64) (storage []byte, _ error) {
 	if number < 0 {
-		return ec.client.StorageAt(ctx.context, account.address, key.hash, nil)
+		return ec.client.MessageAt(ctx.context, account.address, key.hash, nil)
 	}
-	return ec.client.StorageAt(ctx.context, account.address, key.hash, big.NewInt(number))
+	return ec.client.MessageAt(ctx.context, account.address, key.hash, big.NewInt(number))
 }
 
 // GetCodeAt returns the contract code of the given account.
@@ -248,8 +248,8 @@ func (ec *TauClient) GetPendingBalanceAt(ctx *Context, account *Address) (balanc
 }
 
 // GetPendingStorageAt returns the value of key in the contract storage of the given account in the pending state.
-func (ec *TauClient) GetPendingStorageAt(ctx *Context, account *Address, key *Hash) (storage []byte, _ error) {
-	return ec.client.PendingStorageAt(ctx.context, account.address, key.hash)
+func (ec *TauClient) GetPendingMessageAt(ctx *Context, account *Address, key *Hash) (storage []byte, _ error) {
+	return ec.client.PendingMessageAt(ctx.context, account.address, key.hash)
 }
 
 // GetPendingCodeAt returns the contract code of the given account in the pending state.

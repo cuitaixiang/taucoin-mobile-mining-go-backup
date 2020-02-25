@@ -34,7 +34,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/metrics"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/trie"
 )
 
 var (
@@ -109,7 +108,6 @@ type Downloader struct {
 	peers      *peerSet // Set of active peers from which download can proceed
 
 	stateDB    taudb.Database  // Database to state sync into (and deduplicate via)
-	stateBloom *trie.SyncBloom // Bloom filter for fast trie node existence checks
 
 	// Statistics
 	syncStatsChainOrigin uint64 // Origin block number where syncing started at
@@ -210,13 +208,12 @@ type BlockChain interface {
 }
 
 // New creates a new downloader to fetch hashes and blocks from remote peers.
-func New(checkpoint uint64, stateDb taudb.Database, stateBloom *trie.SyncBloom, mux *event.TypeMux, chain BlockChain, lightchain LightChain, dropPeer peerDropFn) *Downloader {
+func New(checkpoint uint64, stateDb taudb.Database, mux *event.TypeMux, chain BlockChain, lightchain LightChain, dropPeer peerDropFn) *Downloader {
 	if lightchain == nil {
 		lightchain = chain
 	}
 	dl := &Downloader{
 		stateDB:        stateDb,
-		stateBloom:     stateBloom,
 		mux:            mux,
 		checkpoint:     checkpoint,
 		queue:          newQueue(),
@@ -359,12 +356,6 @@ func (d *Downloader) synchronise(id string, hash common.Hash, td *big.Int, mode 
 	// Post a user notification of the sync (only once per session)
 	if atomic.CompareAndSwapInt32(&d.notified, 0, 1) {
 		log.Info("Block synchronisation started")
-	}
-	// If we are already full syncing, but have a fast-sync bloom filter laying
-	// around, make sure it does't use memory any more. This is a special case
-	// when the user attempts to fast sync a new empty network.
-	if mode == FullSync && d.stateBloom != nil {
-		d.stateBloom.Close()
 	}
 	// Reset the queue, peer set and wake channels to clean any internal leftover state
 	d.queue.Reset()
@@ -1726,14 +1717,6 @@ func (d *Downloader) commitPivotBlock(result *fetchResult) error {
 	}
 	atomic.StoreInt32(&d.committed, 1)
 
-	// If we had a bloom filter for the state sync, deallocate it now. Note, we only
-	// deallocate internally, but keep the empty wrapper. This ensures that if we do
-	// a rollback after committing the pivot and restarting fast sync, we don't end
-	// up using a nil bloom. Empty bloom is fine, it just returns that it does not
-	// have the info we need, so reach down to the database instead.
-	if d.stateBloom != nil {
-		d.stateBloom.Close()
-	}
 	return nil
 }
 
