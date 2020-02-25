@@ -24,7 +24,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/Tau-Coin/taucoin-mobile-mining-go"
+	tau "github.com/Tau-Coin/taucoin-mobile-mining-go"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/hexutil"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
@@ -349,7 +349,7 @@ func (ec *Client) BalanceAt(ctx context.Context, account common.Address, blockNu
 
 // StorageAt returns the value of key in the contract storage of the given account.
 // The block number can be nil, in which case the value is taken from the latest known block.
-func (ec *Client) StorageAt(ctx context.Context, account common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error) {
+func (ec *Client) MessageAt(ctx context.Context, account common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error) {
 	var result hexutil.Bytes
 	err := ec.c.CallContext(ctx, &result, "tau_getStorageAt", account, key, toBlockNumArg(blockNumber))
 	return result, err
@@ -424,7 +424,7 @@ func (ec *Client) PendingBalanceAt(ctx context.Context, account common.Address) 
 }
 
 // PendingStorageAt returns the value of key in the contract storage of the given account in the pending state.
-func (ec *Client) PendingStorageAt(ctx context.Context, account common.Address, key common.Hash) ([]byte, error) {
+func (ec *Client) PendingMessageAt(ctx context.Context, account common.Address, key common.Hash) ([]byte, error) {
 	var result hexutil.Bytes
 	err := ec.c.CallContext(ctx, &result, "tau_getStorageAt", account, key, "pending")
 	return result, err
