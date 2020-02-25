@@ -26,6 +26,7 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb/leveldb"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb/ipfsdb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb/memorydb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"github.com/olekukonko/tablewriter"
@@ -208,6 +209,21 @@ func NewLevelDBDatabase(file string, cache int, handles int, namespace string) (
 // freezer moving immutable chain segments into cold storage.
 func NewLevelDBDatabaseWithFreezer(file string, cache int, handles int, freezer string, namespace string) (taudb.Database, error) {
 	kvdb, err := leveldb.New(file, cache, handles, namespace)
+	if err != nil {
+		return nil, err
+	}
+	frdb, err := NewDatabaseWithFreezer(kvdb, freezer, namespace)
+	if err != nil {
+		kvdb.Close()
+		return nil, err
+	}
+	return frdb, nil
+}
+
+// NewIpfsDBDatabaseWithFreezer creates a persistent key-value database with a
+// freezer moving immutable chain segments into cold storage.
+func NewIpfsDBDatabaseWithFreezer(file string, cache int, handles int, freezer string, namespace string) (taudb.Database, error) {
+	kvdb, err := ipfsdb.New(file, cache, handles, namespace)
 	if err != nil {
 		return nil, err
 	}
