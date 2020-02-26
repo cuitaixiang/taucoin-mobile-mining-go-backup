@@ -45,7 +45,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/gasprice"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/taustats"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/les"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/metrics"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/metrics/influxdb"
@@ -1431,20 +1430,11 @@ func SetTauConfig(ctx *cli.Context, stack *node.Node, cfg *tau.Config) {
 // RegisterTauService adds an Tau client to the stack.
 func RegisterTauService(stack *node.Node, cfg *tau.Config) {
 	var err error
-	if cfg.SyncMode == downloader.LightSync {
-		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-			return les.New(ctx, cfg)
-		})
-	} else {
-		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-			fullNode, err := tau.New(ctx, cfg)
-			if fullNode != nil && cfg.LightServ > 0 {
-				ls, _ := les.NewLesServer(fullNode, cfg)
-				fullNode.AddLesServer(ls)
-			}
-			return fullNode, err
-		})
-	}
+	err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
+		fullNode, err := tau.New(ctx, cfg)
+		return fullNode, err
+	})
+
 	if err != nil {
 		Fatalf("Failed to register the Tau service: %v", err)
 	}
@@ -1454,15 +1444,12 @@ func RegisterTauService(stack *node.Node, cfg *tau.Config) {
 // the given node.
 func RegisterTauStatsService(stack *node.Node, url string) {
 	if err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-		// Retrieve both tau and les services
+		// Retrieve tau  services
 		var tauServ *tau.Tau
 		ctx.Service(&tauServ)
 
-		var lesServ *les.LightTau
-		ctx.Service(&lesServ)
-
 		// Let taustats use whichever is not nil
-		return taustats.New(url, tauServ, lesServ)
+		return taustats.New(url, tauServ)
 	}); err != nil {
 		Fatalf("Failed to register the Tau Stats service: %v", err)
 	}

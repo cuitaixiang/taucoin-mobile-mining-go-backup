@@ -98,11 +98,6 @@ type Tau struct {
 	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and tauerbase)
 }
 
-func (s *Tau) AddLesServer(ls LesServer) {
-	s.lesServer = ls
-	ls.SetBloomBitsIndexer(s.bloomIndexer)
-}
-
 // SetClient sets a rpc client which connecting to our local node.
 func (s *Tau) SetContractBackend(backend bind.ContractBackend) {
 	// Pass the rpc client to les server if it is enabled.

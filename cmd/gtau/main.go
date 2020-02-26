@@ -38,7 +38,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/tauclient"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/internal/debug"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/les"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/metrics"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/node"
@@ -335,15 +334,6 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 			utils.Fatalf("Failed to retrieve tau service: %v", err)
 		}
 		tauService.SetContractBackend(tauClient)
-	}
-	// Set contract backend for les service if local node is
-	// running as a light client.
-	if ctx.GlobalString(utils.SyncModeFlag.Name) == "light" {
-		var lesService *les.LightTau
-		if err := stack.Service(&lesService); err != nil {
-			utils.Fatalf("Failed to retrieve light tau service: %v", err)
-		}
-		lesService.SetContractBackend(tauClient)
 	}
 
 	go func() {
