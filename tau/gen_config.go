@@ -10,7 +10,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus/tauhash"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/gasprice"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/miner"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
 )
@@ -41,7 +40,6 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		Miner                   miner.Config
 		Tauash                  tauhash.Config
 		TxPool                  core.TxPoolConfig
-		GPO                     gasprice.Config
 		EnablePreimageRecording bool
 		DocRoot                 string `toml:"-"`
 		EWASMInterpreter        string
@@ -74,7 +72,6 @@ func (c Config) MarshalTOML() (interface{}, error) {
 	enc.Miner = c.Miner
 	enc.Tauash = c.Tauash
 	enc.TxPool = c.TxPool
-	enc.GPO = c.GPO
 	enc.EnablePreimageRecording = c.EnablePreimageRecording
 	enc.DocRoot = c.DocRoot
 	enc.EWASMInterpreter = c.EWASMInterpreter
@@ -111,7 +108,6 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 		Miner                   *miner.Config
 		Tauash                  *tauhash.Config
 		TxPool                  *core.TxPoolConfig
-		GPO                     *gasprice.Config
 		EnablePreimageRecording *bool
 		DocRoot                 *string `toml:"-"`
 		EWASMInterpreter        *string
@@ -192,9 +188,6 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	}
 	if dec.TxPool != nil {
 		c.TxPool = *dec.TxPool
-	}
-	if dec.GPO != nil {
-		c.GPO = *dec.GPO
 	}
 	if dec.EnablePreimageRecording != nil {
 		c.EnablePreimageRecording = *dec.EnablePreimageRecording

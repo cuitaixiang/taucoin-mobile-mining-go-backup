@@ -17,7 +17,6 @@
 package tests
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -94,11 +93,9 @@ type stEnvMarshaling struct {
 //go:generate gencodec -type stTransaction -field-override stTransactionMarshaling -out gen_sttransaction.go
 
 type stTransaction struct {
-	GasPrice   *big.Int `json:"gasPrice"`
+	Fee       *big.Int `json:"gasPrice"`
 	Nonce      uint64   `json:"nonce"`
 	To         string   `json:"to"`
-	Data       []string `json:"data"`
-	GasLimit   []uint64 `json:"gasLimit"`
 	Value      []string `json:"value"`
 	PrivateKey []byte   `json:"secretKey"`
 }
@@ -165,7 +162,7 @@ func (t *StateTest) Run(subtest StateSubtest, vmconfig vm.Config) (*state.StateD
 	gaspool := new(core.GasPool)
 	gaspool.AddGas(block.GasLimit())
 	snapshot := statedb.Snapshot()
-	if _, _, _, err := core.ApplyMessage(evm, msg, gaspool); err != nil {
+	if _, _, _, err := core.ApplyMessage(evm, msg); err != nil {
 		statedb.RevertToSnapshot(snapshot)
 	}
 	// Commit block
@@ -187,10 +184,6 @@ func (t *StateTest) Run(subtest StateSubtest, vmconfig vm.Config) (*state.StateD
 		return statedb, fmt.Errorf("post state logs hash mismatch: got %x, want %x", logs, post.Logs)
 	}
 	return statedb, nil
-}
-
-func (t *StateTest) gasLimit(subtest StateSubtest) uint64 {
-	return t.json.Tx.GasLimit[t.json.Post[subtest.Fork][subtest.Index].Indexes.Gas]
 }
 
 func MakePreState(db taudb.Database, accounts core.GenesisAlloc) *state.StateDB {
@@ -241,18 +234,10 @@ func (tx *stTransaction) toMessage(ps stPostState) (core.Message, error) {
 	}
 
 	// Get values specific to this post state.
-	if ps.Indexes.Data > len(tx.Data) {
-		return nil, fmt.Errorf("tx data index %d out of bounds", ps.Indexes.Data)
-	}
 	if ps.Indexes.Value > len(tx.Value) {
 		return nil, fmt.Errorf("tx value index %d out of bounds", ps.Indexes.Value)
 	}
-	if ps.Indexes.Gas > len(tx.GasLimit) {
-		return nil, fmt.Errorf("tx gas limit index %d out of bounds", ps.Indexes.Gas)
-	}
-	dataHex := tx.Data[ps.Indexes.Data]
 	valueHex := tx.Value[ps.Indexes.Value]
-	gasLimit := tx.GasLimit[ps.Indexes.Gas]
 	// Value, Data hex encoding is messy: https://github.com/tau/tests/issues/203
 	value := new(big.Int)
 	if valueHex != "0x" {
@@ -262,12 +247,8 @@ func (tx *stTransaction) toMessage(ps stPostState) (core.Message, error) {
 		}
 		value = v
 	}
-	data, err := hex.DecodeString(strings.TrimPrefix(dataHex, "0x"))
-	if err != nil {
-		return nil, fmt.Errorf("invalid tx data %q", dataHex)
-	}
 
-	msg := types.NewMessage(from, to, tx.Nonce, value, gasLimit, tx.GasPrice, data, true)
+	msg := types.NewMessage(from, to, tx.Nonce, value, tx.Fee, true)
 	return msg, nil
 }
 

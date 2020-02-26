@@ -215,6 +215,7 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.MinerNoVerfiyFlag,
 		},
 	},
+	/* tx-ctc
 	{
 		Name: "GAS PRICE ORACLE",
 		Flags: []cli.Flag{
@@ -222,6 +223,7 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.GpoPercentileFlag,
 		},
 	},
+	*/
 	{
 		Name: "VIRTUAL MACHINE",
 		Flags: []cli.Flag{

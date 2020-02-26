@@ -31,7 +31,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/vm"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/gasprice"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/event"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
@@ -42,7 +41,6 @@ import (
 type TauAPIBackend struct {
 	extRPCEnabled bool
 	tau           *Tau
-	gpo           *gasprice.Oracle
 }
 
 // ChainConfig returns the active chain configuration.
@@ -209,7 +207,7 @@ func (b *TauAPIBackend) ProtocolVersion() int {
 }
 
 func (b *TauAPIBackend) SuggestPrice(ctx context.Context) (*big.Int, error) {
-	return b.gpo.SuggestPrice(ctx)
+	return big.NewInt(1), nil
 }
 
 func (b *TauAPIBackend) ChainDb() taudb.Database {

@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/accounts/scwallet"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/accounts/usbwallet"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rpc"
 	"github.com/robertkrimen/otto"
@@ -108,16 +107,6 @@ func (b *bridge) OpenWallet(call otto.FunctionCall) (response otto.Value) {
 
 	// Wallet open failed, report error unless it's a PIN or PUK entry
 	switch {
-	case strings.HasSuffix(err.Error(), usbwallet.ErrTrezorPINNeeded.Error()):
-		val, err = b.readPinAndReopenWallet(call)
-		if err == nil {
-			return val
-		}
-		val, err = b.readPassphraseAndReopenWallet(call)
-		if err != nil {
-			throwJSException(err.Error())
-		}
-
 	case strings.HasSuffix(err.Error(), scwallet.ErrPairingPasswordNeeded.Error()):
 		// PUK input requested, fetch from the user and call open again
 		if input, err := b.prompter.PromptPassword("Please enter the pairing password: "); err != nil {

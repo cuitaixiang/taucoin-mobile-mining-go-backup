@@ -60,43 +60,25 @@ type vmExec struct {
 	Address  common.Address `json:"address"  gencodec:"required"`
 	Caller   common.Address `json:"caller"   gencodec:"required"`
 	Origin   common.Address `json:"origin"   gencodec:"required"`
-	Code     []byte         `json:"code"     gencodec:"required"`
-	Data     []byte         `json:"data"     gencodec:"required"`
 	Value    *big.Int       `json:"value"    gencodec:"required"`
-	GasLimit uint64         `json:"gas"      gencodec:"required"`
-	GasPrice *big.Int       `json:"gasPrice" gencodec:"required"`
+	Fee      *big.Int       `json:"gasPrice" gencodec:"required"`
 }
 
 type vmExecMarshaling struct {
 	Address  common.UnprefixedAddress
 	Caller   common.UnprefixedAddress
 	Origin   common.UnprefixedAddress
-	Code     hexutil.Bytes
-	Data     hexutil.Bytes
 	Value    *math.HexOrDecimal256
-	GasLimit math.HexOrDecimal64
-	GasPrice *math.HexOrDecimal256
+	Fee *math.HexOrDecimal256
 }
 
 func (t *VMTest) Run(vmconfig vm.Config) error {
 	statedb := MakePreState(rawdb.NewMemoryDatabase(), t.json.Pre)
-	ret, gasRemaining, err := t.exec(statedb, vmconfig)
+	ret, _ := t.exec(statedb, vmconfig)
 
-	if t.json.GasRemaining == nil {
-		if err == nil {
-			return fmt.Errorf("gas unspecified (indicating an error), but VM returned no error")
-		}
-		if gasRemaining > 0 {
-			return fmt.Errorf("gas unspecified (indicating an error), but VM returned gas remaining > 0")
-		}
-		return nil
-	}
 	// Test declares gas, expecting outputs to match.
 	if !bytes.Equal(ret, t.json.Out) {
 		return fmt.Errorf("return data mismatch: got %x, want %x", ret, t.json.Out)
-	}
-	if gasRemaining != uint64(*t.json.GasRemaining) {
-		return fmt.Errorf("remaining gas %v, want %v", gasRemaining, *t.json.GasRemaining)
 	}
 	for addr, account := range t.json.Post {
 		for k, wantV := range account.Storage {
@@ -114,10 +96,10 @@ func (t *VMTest) Run(vmconfig vm.Config) error {
 	return nil
 }
 
-func (t *VMTest) exec(statedb *state.StateDB, vmconfig vm.Config) ([]byte, uint64, error) {
+func (t *VMTest) exec(statedb *state.StateDB, vmconfig vm.Config) ([]byte, error) {
 	evm := t.newEVM(statedb, vmconfig)
 	e := t.json.Exec
-	return evm.Call(vm.AccountRef(e.Caller), e.Address, e.Data, e.GasLimit, e.Value)
+	return evm.Call(vm.AccountRef(e.Caller), e.Address, e.Fee.Uint64(), e.Value)
 }
 
 func (t *VMTest) newEVM(statedb *state.StateDB, vmconfig vm.Config) *vm.EVM {
@@ -138,9 +120,8 @@ func (t *VMTest) newEVM(statedb *state.StateDB, vmconfig vm.Config) *vm.EVM {
 		Coinbase:    t.json.Env.Coinbase,
 		BlockNumber: new(big.Int).SetUint64(t.json.Env.Number),
 		Time:        new(big.Int).SetUint64(t.json.Env.Timestamp),
-		GasLimit:    t.json.Env.GasLimit,
 		Difficulty:  t.json.Env.Difficulty,
-		GasPrice:    t.json.Exec.GasPrice,
+		Fee:         t.json.Exec.Fee,
 	}
 	vmconfig.NoRecursion = true
 	return vm.NewEVM(context, statedb, params.MainnetChainConfig)

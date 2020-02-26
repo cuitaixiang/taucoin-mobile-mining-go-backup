@@ -28,7 +28,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus/tauhash"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/gasprice"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/miner"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
 )
@@ -57,10 +56,6 @@ var DefaultConfig = Config{
 		Recommit: 3 * time.Second,
 	},
 	TxPool: core.DefaultTxPoolConfig,
-	GPO: gasprice.Config{
-		Blocks:     20,
-		Percentile: 60,
-	},
 }
 
 func init() {
@@ -130,9 +125,6 @@ type Config struct {
 
 	// Transaction pool options
 	TxPool core.TxPoolConfig
-
-	// Gas Price Oracle options
-	GPO gasprice.Config
 
 	// Enables tracking of SHA3 preimages in the VM
 	EnablePreimageRecording bool

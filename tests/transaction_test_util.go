@@ -21,7 +21,6 @@ import (
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/hexutil"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/core"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rlp"
@@ -54,14 +53,6 @@ func (tt *TransactionTest) Run(config *params.ChainConfig) error {
 		sender, err := types.Sender(signer, tx)
 		if err != nil {
 			return nil, nil, err
-		}
-		// Intrinsic gas
-		requiredGas, err := core.IntrinsicGas(tx.Data(), tx.To() == nil, isHomestead, isIstanbul)
-		if err != nil {
-			return nil, nil, err
-		}
-		if requiredGas > tx.Gas() {
-			return nil, nil, fmt.Errorf("insufficient gas ( %d < %d )", tx.Gas(), requiredGas)
 		}
 		h := tx.Hash()
 		return &sender, &h, nil

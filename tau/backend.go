@@ -38,7 +38,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/filters"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/gasprice"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/event"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/internal/tauapi"
@@ -204,12 +203,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 	tau.miner = miner.New(tau, &config.Miner, chainConfig, tau.EventMux(), tau.engine, tau.isLocalBlock)
 	tau.miner.SetExtra(makeExtraData(config.Miner.ExtraData))
 
-	tau.APIBackend = &TauAPIBackend{ctx.ExtRPCEnabled(), tau, nil}
-	gpoParams := config.GPO
-	if gpoParams.Default == nil {
-		gpoParams.Default = config.Miner.GasPrice
-	}
-	tau.APIBackend.gpo = gasprice.NewOracle(tau.APIBackend, gpoParams)
+	tau.APIBackend = &TauAPIBackend{ctx.ExtRPCEnabled(), tau}
 
 	return tau, nil
 }

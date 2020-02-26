@@ -16,7 +16,7 @@
 
 // +build !js
 
-// Package leveldb implements the key-value database layer based on LevelDB.
+// Package leveldb implements the key-value database layer based on IpfsDB.
 package ipfsdb
 
 import (
@@ -30,11 +30,12 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/metrics"
+
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/syndtr/goleveldb/leveldb/filter"
-	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/syndtr/goleveldb/leveldb/util"
+	"github.com/syndtr/goleveldb/leveldb/opt"
 )
 
 const (
@@ -138,7 +139,7 @@ func (db *Database) Close() error {
 		}
 		db.quitChan = nil
 	}
-	return db.db.Close()
+	return  nil
 }
 
 // Has retrieves if a key is present in the key-value store.

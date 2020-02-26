@@ -16,72 +16,86 @@ var _ = (*txdataMarshaling)(nil)
 // MarshalJSON marshals as JSON.
 func (t txdata) MarshalJSON() ([]byte, error) {
 	type txdata struct {
-		AccountNonce hexutil.Uint64  `json:"nonce"    gencodec:"required"`
-		Price        *hexutil.Big    `json:"gasPrice" gencodec:"required"`
-		GasLimit     hexutil.Uint64  `json:"gas"      gencodec:"required"`
-		Recipient    *common.Address `json:"to"       rlp:"nil"`
-		Amount       *hexutil.Big    `json:"value"    gencodec:"required"`
-		Payload      hexutil.Bytes   `json:"input"    gencodec:"required"`
-		V            *hexutil.Big    `json:"v" gencodec:"required"`
-		R            *hexutil.Big    `json:"r" gencodec:"required"`
-		S            *hexutil.Big    `json:"s" gencodec:"required"`
-		Hash         *common.Hash    `json:"hash" rlp:"-"`
+		Version   hexutil.Bytes   `json:"version"     gencodec:"required"`
+		Option    hexutil.Bytes   `json:"option"      gencodec:"required"`
+		ChainID   hexutil.Bytes   `json:"chainid"     gencodec:"required"`
+		Nonce    hexutil.Uint64  `json:"nounce"      gencodec:"required"`
+		TimeStamp hexutil.Uint32  `json:"timestamp"   gencodec:"required"`
+		//Fee       hexutil.Bytes   `json:"fee"         gencodec:"required"`
+		Fee       *hexutil.Big    `json:"fee"         gencodec:"required"`
+		V         *hexutil.Big    `json:"v"           gencodec:"required"`
+		R         *hexutil.Big    `json:"r"           gencodec:"required"`
+		S         *hexutil.Big    `json:"s"           gencodec:"required"`
+		Sender    *common.Address `json:"sender"        rlp:"required"`
+		Receiver  *common.Address `json:"receiver"        rlp:"required"`
+		//Amount    hexutil.Bytes   `json:"amount"       gencodec:"required"`
+		Amount    *hexutil.Big   `json:"amount"       gencodec:"required"`
 	}
 	var enc txdata
-	enc.AccountNonce = hexutil.Uint64(t.AccountNonce)
-	enc.Price = (*hexutil.Big)(t.Price)
-	enc.GasLimit = hexutil.Uint64(t.GasLimit)
-	enc.Recipient = t.Recipient
-	enc.Amount = (*hexutil.Big)(t.Amount)
-	enc.Payload = t.Payload
+	enc.Version = hexutil.Bytes(t.Version)
+	enc.Option = hexutil.Bytes(t.Option)
+	enc.ChainID = hexutil.Bytes(t.ChainID)
+	enc.Nonce = hexutil.Uint64(t.Nonce)
+	enc.TimeStamp = hexutil.Uint32(t.TimeStamp)
+	//enc.Fee = hexutil.Bytes(t.Fee)
+	enc.Fee = (*hexutil.Big)(t.Fee)
 	enc.V = (*hexutil.Big)(t.V)
 	enc.R = (*hexutil.Big)(t.R)
 	enc.S = (*hexutil.Big)(t.S)
-	enc.Hash = t.Hash
+	enc.Sender = t.Sender
+	enc.Receiver = t.Receiver
+	//enc.Amount = hexutil.Bytes(t.Amount)
+	enc.Amount = (*hexutil.Big)(t.Amount)
 	return json.Marshal(&enc)
 }
 
 // UnmarshalJSON unmarshals from JSON.
 func (t *txdata) UnmarshalJSON(input []byte) error {
 	type txdata struct {
-		AccountNonce *hexutil.Uint64 `json:"nonce"    gencodec:"required"`
-		Price        *hexutil.Big    `json:"gasPrice" gencodec:"required"`
-		GasLimit     *hexutil.Uint64 `json:"gas"      gencodec:"required"`
-		Recipient    *common.Address `json:"to"       rlp:"nil"`
-		Amount       *hexutil.Big    `json:"value"    gencodec:"required"`
-		Payload      *hexutil.Bytes  `json:"input"    gencodec:"required"`
-		V            *hexutil.Big    `json:"v" gencodec:"required"`
-		R            *hexutil.Big    `json:"r" gencodec:"required"`
-		S            *hexutil.Big    `json:"s" gencodec:"required"`
-		Hash         *common.Hash    `json:"hash" rlp:"-"`
+		Version   *hexutil.Bytes  `json:"version"     gencodec:"required"`
+		Option    *hexutil.Bytes  `json:"option"      gencodec:"required"`
+		ChainID   *hexutil.Bytes  `json:"chainid"     gencodec:"required"`
+		Nonce    *hexutil.Uint64 `json:"nounce"      gencodec:"required"`
+		TimeStamp *hexutil.Uint32 `json:"timestamp"   gencodec:"required"`
+		//Fee       *hexutil.Bytes  `json:"fee"         gencodec:"required"`
+		Fee       *hexutil.Big    `json:"fee"         gencodec:"required"`
+		V         *hexutil.Big    `json:"v"           gencodec:"required"`
+		R         *hexutil.Big    `json:"r"           gencodec:"required"`
+		S         *hexutil.Big    `json:"s"           gencodec:"required"`
+		Sender    *common.Address `json:"sender"        rlp:"required"`
+		Receiver  *common.Address `json:"receiver"        rlp:"required"`
+		//Amount    *hexutil.Bytes  `json:"amount"       gencodec:"required"`
+		Amount    *hexutil.Big  `json:"amount"       gencodec:"required"`
 	}
 	var dec txdata
 	if err := json.Unmarshal(input, &dec); err != nil {
 		return err
 	}
-	if dec.AccountNonce == nil {
-		return errors.New("missing required field 'nonce' for txdata")
+	if dec.Version == nil {
+		return errors.New("missing required field 'version' for txdata")
 	}
-	t.AccountNonce = uint64(*dec.AccountNonce)
-	if dec.Price == nil {
-		return errors.New("missing required field 'gasPrice' for txdata")
+	t.Version = OneByte(*dec.Version)
+	if dec.Option == nil {
+		return errors.New("missing required field 'option' for txdata")
 	}
-	t.Price = (*big.Int)(dec.Price)
-	if dec.GasLimit == nil {
-		return errors.New("missing required field 'gas' for txdata")
+	t.Option = OneByte(*dec.Option)
+	if dec.ChainID == nil {
+		return errors.New("missing required field 'chainid' for txdata")
 	}
-	t.GasLimit = uint64(*dec.GasLimit)
-	if dec.Recipient != nil {
-		t.Recipient = dec.Recipient
+	t.ChainID = Byte32s(*dec.ChainID)
+	if dec.Nonce == nil {
+		return errors.New("missing required field 'nounce' for txdata")
 	}
-	if dec.Amount == nil {
-		return errors.New("missing required field 'value' for txdata")
+	t.Nonce = uint64(*dec.Nonce)
+	if dec.TimeStamp == nil {
+		return errors.New("missing required field 'timestamp' for txdata")
 	}
-	t.Amount = (*big.Int)(dec.Amount)
-	if dec.Payload == nil {
-		return errors.New("missing required field 'input' for txdata")
+	t.TimeStamp = uint32(*dec.TimeStamp)
+	if dec.Fee == nil {
+		return errors.New("missing required field 'fee' for txdata")
 	}
-	t.Payload = *dec.Payload
+	//t.Fee = OneByte(*dec.Fee)
+	t.Fee = (*big.Int)(dec.Fee)
 	if dec.V == nil {
 		return errors.New("missing required field 'v' for txdata")
 	}
@@ -94,8 +108,16 @@ func (t *txdata) UnmarshalJSON(input []byte) error {
 		return errors.New("missing required field 's' for txdata")
 	}
 	t.S = (*big.Int)(dec.S)
-	if dec.Hash != nil {
-		t.Hash = dec.Hash
+	if dec.Sender != nil {
+		t.Sender = dec.Sender
 	}
+	if dec.Receiver != nil {
+		t.Receiver = dec.Receiver
+	}
+	if dec.Amount == nil {
+		return errors.New("missing required field 'amount' for txdata")
+	}
+	//t.Amount = Byte5s(*dec.Amount)
+	t.Amount = (*big.Int)(dec.Amount)
 	return nil
 }

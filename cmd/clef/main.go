@@ -797,17 +797,13 @@ func testExternalUI(api *core.SignerAPI) {
 
 		api.UI.ShowInfo("Please reject next transaction")
 		time.Sleep(delay)
-		data := hexutil.Bytes([]byte{})
 		to := common.NewMixedcaseAddress(a)
 		tx := core.SendTxArgs{
-			Data:     &data,
 			Nonce:    0x1,
 			Value:    hexutil.Big(*big.NewInt(6)),
 			From:     common.NewMixedcaseAddress(a),
 			To:       &to,
-			GasPrice: hexutil.Big(*big.NewInt(5)),
-			Gas:      1000,
-			Input:    nil,
+			Fee:      hexutil.Big(*big.NewInt(5)),
 		}
 		_, err := api.SignTransaction(ctx, tx, nil)
 		expectDeny("signtransaction [1]", err)
@@ -949,7 +945,6 @@ func GenDoc(ctx *cli.Context) {
 			"they must be identical, otherwise an error is generated. " +
 			"However, Clef will always use `data` when passing this struct on (if Clef does otherwise, please file a ticket)"
 
-		data := hexutil.Bytes([]byte{0x01, 0x02, 0x03, 0x04})
 		add("SignTxRequest", desc, &core.SignTxRequest{
 			Meta: meta,
 			Callinfo: []core.ValidationInfo{
@@ -957,30 +952,23 @@ func GenDoc(ctx *cli.Context) {
 				{"Info", "User should see this aswell"},
 			},
 			Transaction: core.SendTxArgs{
-				Data:     &data,
 				Nonce:    0x1,
 				Value:    hexutil.Big(*big.NewInt(6)),
 				From:     common.NewMixedcaseAddress(a),
 				To:       nil,
-				GasPrice: hexutil.Big(*big.NewInt(5)),
-				Gas:      1000,
-				Input:    nil,
+				Fee:      hexutil.Big(*big.NewInt(5)),
 			}})
 	}
 	{ // Sign tx response
-		data := hexutil.Bytes([]byte{0x04, 0x03, 0x02, 0x01})
 		add("SignTxResponse - approve", "Response to request to sign a transaction. This response needs to contain the `transaction`"+
 			", because the UI is free to make modifications to the transaction.",
 			&core.SignTxResponse{Approved: true,
 				Transaction: core.SendTxArgs{
-					Data:     &data,
 					Nonce:    0x4,
 					Value:    hexutil.Big(*big.NewInt(6)),
 					From:     common.NewMixedcaseAddress(a),
 					To:       nil,
-					GasPrice: hexutil.Big(*big.NewInt(5)),
-					Gas:      1000,
-					Input:    nil,
+					Fee:      hexutil.Big(*big.NewInt(5)),
 				}})
 		add("SignTxResponse - deny", "Response to SignTxRequest. When denying a request, there's no need to "+
 			"provide the transaction in return",

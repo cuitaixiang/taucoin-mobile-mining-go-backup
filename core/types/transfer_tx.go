@@ -43,42 +43,46 @@ type TransferTxData struct {
 	Version   OneByte         `json:"version"     gencodec:"required"`
 	Option    OneByte         `json:"option"      gencodec:"required"`
 	ChainID   Byte32s         `json:"chainid"     gencodec:"required"`
-	Nounce    uint64          `json:"nounce"      gencodec:"required"`
+	Nonce    uint64          `json:"nounce"      gencodec:"required"`
 	TimeStamp uint32          `json:"timestamp"   gencodec:"required"`
-	Fee       OneByte         `json:"fee"         gencodec:"required"`
+	//Fee       OneByte         `json:"fee"         gencodec:"required"`
+	Fee       uint64         `json:"fee"         gencodec:"required"`
 	V         *big.Int        `json:"v"           gencodec:"required"`
 	R         *big.Int        `json:"r"           gencodec:"required"`
 	S         *big.Int        `json:"s"           gencodec:"required"`
 	Sender    *common.Address `json:"sender"        rlp:"required"`
 
 	Receiver *common.Address `json:"receiver"        rlp:"required"`
-	Amount   Byte5s          `json:"amount"       gencodec:"required"`
+	//Amount   Byte5s          `json:"amount"       gencodec:"required"`
+	Amount     *big.Int        `json:"value"    gencodec:"required"`
 }
 
 type TransferTxDataMarshaling struct {
 	Version   hexutil.Bytes
 	Option    hexutil.Bytes
 	ChainID   hexutil.Bytes
-	Nounce    hexutil.Uint64
+	Nonce    hexutil.Uint64
 	TimeStamp hexutil.Uint32
-	Fee       hexutil.Bytes
+	//Fee       hexutil.Bytes
+	Fee    hexutil.Uint64
 	V         *hexutil.Big
 	R         *hexutil.Big
 	S         *hexutil.Big
 
-	Amount hexutil.Bytes
+	//Amount hexutil.Bytes
+	Amount       *hexutil.Big
 }
 
-func NewTransferTransaction(version OneByte, option OneByte, chainid Byte32s, nounce uint64, timestamp uint32, fee OneByte, sender common.Address, receiver common.Address, amount Byte5s) *TransferTx {
+func NewTransferTransaction(version OneByte, option OneByte, chainid Byte32s, nounce uint64, timestamp uint32, fee uint64, sender common.Address, receiver common.Address, amount *big.Int) *TransferTx {
 	return newTransferTransaction(version, option, chainid, nounce, timestamp, fee, &sender, &receiver, amount)
 }
 
-func newTransferTransaction(version OneByte, option OneByte, chainid Byte32s, nounce uint64, timestamp uint32, fee OneByte, sender *common.Address, receiver *common.Address, amount Byte5s) *TransferTx {
+func newTransferTransaction(version OneByte, option OneByte, chainid Byte32s, nounce uint64, timestamp uint32, fee uint64, sender *common.Address, receiver *common.Address, amount *big.Int) *TransferTx {
 	d := TransferTxData{
 		Version:   version,
 		Option:    option,
 		ChainID:   chainid,
-		Nounce:    nounce,
+		Nonce:    nounce,
 		TimeStamp: timestamp,
 		Fee:       fee,
 		V:         new(big.Int),
@@ -86,7 +90,11 @@ func newTransferTransaction(version OneByte, option OneByte, chainid Byte32s, no
 		S:         new(big.Int),
 		Sender:    sender,
 		Receiver:  receiver,
-		Amount:    amount,
+		//Amount:    amount,
+		Amount:    new(big.Int),
+	}
+	if amount != nil {
+		d.Amount.Set(amount)
 	}
 	return &TransferTx{tx: d}
 }
@@ -151,9 +159,10 @@ func (ttx *TransferTx) UnmarshalJSON(input []byte) error {
 	return nil
 }
 
-func (ttx *TransferTx) Fee() OneByte     { return ttx.tx.Fee }
-func (ttx *TransferTx) Value() Byte5s    { return ttx.tx.Amount }
-func (ttx *TransferTx) Nonce() uint64    { return ttx.tx.Nounce }
+func (ttx *TransferTx) Fee() uint64     { return ttx.tx.Fee }
+//func (ttx *TransferTx) Value() Byte5s  { return ttx.tx.Amount }
+func (ttx *TransferTx) Value() *big.Int  { return new(big.Int).Set(ttx.tx.Amount) }
+func (ttx *TransferTx) Nonce() uint64    { return ttx.tx.Nonce }
 func (ttx *TransferTx) CheckNonce() bool { return true }
 
 func (ttx *TransferTx) Hash() (h common.Hash) {
@@ -180,13 +189,17 @@ func (ttx *TransferTx) Size() common.StorageSize {
 	return common.StorageSize(c)
 }
 
-func (ttx *TransferTx) AsMessage(s Signer) (Message, error) {
-	msg := Message{
+func (ttx *TransferTx) AsMessage(s Signer) (TauTxMessage, error) {
+	msg := TauTxMessage{
 		//todo
+		nonce:      ttx.tx.Nonce,
+		fee:        ttx.tx.Fee,
+		to:         ttx.tx.Receiver,
+		amount:     ttx.tx.Amount,
 	}
 
 	var err error
-	// todo should compare derive sender with contained sender
+	//msg.from, err = Sender(s, ttx)
 	return msg, err
 }
 
@@ -198,10 +211,9 @@ func (ttx *TransferTx) WithSignature(singer Signer, sig []byte) (*TransferTx, er
 }
 
 func (ttx *TransferTx) Cost() *big.Int {
-	cost := new(big.Int)
-	cost.SetBytes(ttx.tx.Amount)
+	cost := ttx.tx.Amount
 	fee := new(big.Int)
-	fee.SetBytes(ttx.tx.Fee)
+	fee.SetUint64(ttx.tx.Fee)
 	return cost.Add(cost, fee)
 }
 
@@ -237,19 +249,19 @@ func (s TransferTxs) TxDifference(a, b TransferTxs) TransferTxs {
 	return keep
 }
 
-type TransferTxByNounce TransferTxs
+type TransferTxByNonce TransferTxs
 
-func (s TransferTxByNounce) Len() int { return len(s) }
-func (s TransferTxByNounce) Less(i, j int) bool {
-	return s[i].tx.Nounce < s[j].tx.Nounce
+func (s TransferTxByNonce) Len() int { return len(s) }
+func (s TransferTxByNonce) Less(i, j int) bool {
+	return s[i].tx.Nonce < s[j].tx.Nonce
 }
-func (s TransferTxByNounce) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s TransferTxByNonce) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
-func (s *TransferTxByNounce) Push(x interface{}) {
+func (s *TransferTxByNonce) Push(x interface{}) {
 	*s = append(*s, x.(*TransferTx))
 }
 
-func (s *TransferTxByNounce) Pop() interface{} {
+func (s *TransferTxByNonce) Pop() interface{} {
 	old := *s
 	n := len(old)
 	x := old[n-1]
@@ -261,8 +273,8 @@ type TransferTxByFee TransferTxs
 
 func (s TransferTxByFee) Len() int { return len(s) }
 func (s TransferTxByFee) Less(i, j int) bool {
-	fee1 := new(big.Int).SetBytes(s[i].tx.Fee)
-	fee2 := new(big.Int).SetBytes(s[j].tx.Fee)
+	fee1 := new(big.Int).SetUint64(s[i].tx.Fee)
+	fee2 := new(big.Int).SetUint64(s[j].tx.Fee)
 	return fee1.Cmp(fee2) > 0
 }
 func (s TransferTxByFee) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
@@ -279,14 +291,14 @@ func (s *TransferTxByFee) Pop() interface{} {
 	return x
 }
 
-type TransferTxByFeeAndNounce struct {
+type TransferTxByFeeAndNonce struct {
 	txs    map[common.Address]TransferTxs
 	heads  TransferTxByFee
 	signer Signer
 }
 
-//watch out TransferTxs is sorted by Nounce first
-func NewTransferTxByFeeAndNounce(signer Signer, txs map[common.Address]TransferTxs) *TransferTxByFeeAndNounce {
+//watch out TransferTxs is sorted by Nonce first
+func NewTransferTxByFeeAndNonce(signer Signer, txs map[common.Address]TransferTxs) *TransferTxByFeeAndNonce {
 	heads := make(TransferTxByFee, 0, len(txs))
 	for _, accTxs := range txs {
 		heads = append(heads, accTxs[0])
@@ -294,7 +306,7 @@ func NewTransferTxByFeeAndNounce(signer Signer, txs map[common.Address]TransferT
 		//to do to complete singer
 	}
 	heap.Init(&heads)
-	return &TransferTxByFeeAndNounce{
+	return &TransferTxByFeeAndNonce{
 		txs:   txs,
 		heads: heads,
 		//This singer need to make adaption mpdify abount unique tx
@@ -302,7 +314,7 @@ func NewTransferTxByFeeAndNounce(signer Signer, txs map[common.Address]TransferT
 	}
 }
 
-func (t *TransferTxByFeeAndNounce) Peek() *TransferTx {
+func (t *TransferTxByFeeAndNonce) Peek() *TransferTx {
 	if len(t.heads) == 0 {
 		return nil
 	}
@@ -310,8 +322,8 @@ func (t *TransferTxByFeeAndNounce) Peek() *TransferTx {
 	return t.heads[0]
 }
 
-func (t *TransferTxByFeeAndNounce) Shift() {
-	//if Account x contains other txs sorted by Nounce, the others should
+func (t *TransferTxByFeeAndNonce) Shift() {
+	//if Account x contains other txs sorted by Nonce, the others should
 	//come up with new fee sorting because of some fee element changing.
 	acc := t.heads[0].tx.Sender
 	if txs, ok := t.txs[*acc]; ok && len(txs) > 0 {
@@ -322,15 +334,32 @@ func (t *TransferTxByFeeAndNounce) Shift() {
 	}
 }
 
-func (t *TransferTxByFeeAndNounce) Pop() {
+func (t *TransferTxByFeeAndNonce) Pop() {
 	heap.Pop(&t.heads)
 }
 
 //todo
 //these messages need to define to adapt new ipfs system.
 type TauTxMessage struct {
+	from       common.Address
+	to         *common.Address
+	nonce      uint64
+	amount     *big.Int
+	fee        uint64
 }
 
-func NewTauTxMessage() TauTxMessage {
-	return TauTxMessage{}
+func NewTauTxMessage(from common.Address, to *common.Address, nonce uint64, amount *big.Int, fee uint64) TauTxMessage {
+	return TauTxMessage{
+		from:       from,
+		to:         to,
+		nonce:      nonce,
+		amount:     amount,
+		fee:        fee,
+	}
 }
+
+func (m TauTxMessage) From() common.Address { return m.from }
+func (m TauTxMessage) To() *common.Address  { return m.to }
+func (m TauTxMessage) Nonce() uint64        { return m.nonce }
+func (m TauTxMessage) Value() *big.Int      { return m.amount }
+func (m TauTxMessage) Fee() uint64          { return m.fee }

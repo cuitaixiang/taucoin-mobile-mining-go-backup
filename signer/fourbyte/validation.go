@@ -18,9 +18,7 @@ package fourbyte
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
-	"math/big"
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/signer/core"
@@ -32,40 +30,6 @@ import (
 func (db *Database) ValidateTransaction(selector *string, tx *core.SendTxArgs) (*core.ValidationMessages, error) {
 	messages := new(core.ValidationMessages)
 
-	// Prevent accidental erroneous usage of both 'input' and 'data' (show stopper)
-	if tx.Data != nil && tx.Input != nil && !bytes.Equal(*tx.Data, *tx.Input) {
-		return nil, errors.New(`ambiguous request: both "data" and "input" are set and are not identical`)
-	}
-	// Place data on 'data', and nil 'input'
-	var data []byte
-	if tx.Input != nil {
-		tx.Data = tx.Input
-		tx.Input = nil
-	}
-	if tx.Data != nil {
-		data = *tx.Data
-	}
-	// Contract creation doesn't validate call data, handle first
-	if tx.To == nil {
-		// Contract creation should contain sufficient data to deploy a contract. A
-		// typical error is omitting sender due to some quirk in the javascript call
-		// e.g. https://github.com/Tau-Coin/taucoin-mobile-mining-go/issues/16106.
-		if len(data) == 0 {
-			// Prevent sending tauer into black hole (show stopper)
-			if tx.Value.ToInt().Cmp(big.NewInt(0)) > 0 {
-				return nil, errors.New("transaction will create a contract with value but empty code")
-			}
-			// No value submitted at least, critically Warn, but don't blow up
-			messages.Crit("Transaction will create a contract with empty code")
-		} else if len(data) < 40 { // arbitrary heuristic limit
-			messages.Warn(fmt.Sprintf("Transaction will create a contract, but the payload is suspiciously small (%d bytes)", len(data)))
-		}
-		// Method selector should be nil for contract creation
-		if selector != nil {
-			messages.Warn("Transaction will create a contract, but method selector supplied, indicating an intent to call a method")
-		}
-		return messages, nil
-	}
 	// Not a contract creation, validate as a plain transaction
 	if !tx.To.ValidChecksum() {
 		messages.Warn("Invalid checksum on recipient address")
@@ -74,6 +38,8 @@ func (db *Database) ValidateTransaction(selector *string, tx *core.SendTxArgs) (
 		messages.Crit("Transaction recipient is the zero address")
 	}
 	// Semantic fields validated, try to make heads or tails of the call data
+	//tx-ctc
+	var data []byte
 	db.validateCallData(selector, data, messages)
 	return messages, nil
 }

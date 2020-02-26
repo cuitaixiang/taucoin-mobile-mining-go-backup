@@ -42,7 +42,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/crypto"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/gasprice"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/taustats"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
@@ -622,6 +621,7 @@ var (
 	}
 
 	// Gas price oracle settings
+    /*
 	GpoBlocksFlag = cli.IntFlag{
 		Name:  "gpoblocks",
 		Usage: "Number of recent blocks to check for gas prices",
@@ -632,6 +632,7 @@ var (
 		Usage: "Suggested gas price is the given percentile of a set of recent transaction gas prices",
 		Value: tau.DefaultConfig.GPO.Percentile,
 	}
+	*/
 
 	// Metrics flags
 	MetricsEnabledFlag = cli.BoolFlag{
@@ -1147,15 +1148,6 @@ func setDataDir(ctx *cli.Context, cfg *node.Config) {
 	}
 }
 
-func setGPO(ctx *cli.Context, cfg *gasprice.Config) {
-	if ctx.GlobalIsSet(GpoBlocksFlag.Name) {
-		cfg.Blocks = ctx.GlobalInt(GpoBlocksFlag.Name)
-	}
-	if ctx.GlobalIsSet(GpoPercentileFlag.Name) {
-		cfg.Percentile = ctx.GlobalInt(GpoPercentileFlag.Name)
-	}
-}
-
 func setTxPool(ctx *cli.Context, cfg *core.TxPoolConfig) {
 	if ctx.GlobalIsSet(TxPoolLocalsFlag.Name) {
 		locals := strings.Split(ctx.GlobalString(TxPoolLocalsFlag.Name), ",")
@@ -1329,7 +1321,6 @@ func SetTauConfig(ctx *cli.Context, stack *node.Node, cfg *tau.Config) {
 		ks = keystores[0].(*keystore.KeyStore)
 	}
 	setTauerbase(ctx, ks, cfg)
-	setGPO(ctx, &cfg.GPO)
 	setTxPool(ctx, &cfg.TxPool)
 	setTauash(ctx, cfg)
 	setMiner(ctx, &cfg.Miner)

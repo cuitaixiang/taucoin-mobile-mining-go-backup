@@ -24,7 +24,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/hexutil"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/internal/tauapi"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"golang.org/x/crypto/ssh/terminal"
@@ -135,16 +134,8 @@ func (ui *CommandlineUI) ApproveTx(request *SignTxRequest) (SignTxResponse, erro
 	}
 	fmt.Printf("from:     %v\n", request.Transaction.From.String())
 	fmt.Printf("value:    %v wei\n", weival)
-	fmt.Printf("gas:      %v (%v)\n", request.Transaction.Gas, uint64(request.Transaction.Gas))
-	fmt.Printf("gasprice: %v wei\n", request.Transaction.GasPrice.ToInt())
+	fmt.Printf("fee:      %v wei\n", request.Transaction.Fee.ToInt())
 	fmt.Printf("nonce:    %v (%v)\n", request.Transaction.Nonce, uint64(request.Transaction.Nonce))
-	if request.Transaction.Data != nil {
-		d := *request.Transaction.Data
-		if len(d) > 0 {
-
-			fmt.Printf("data:     %v\n", hexutil.Encode(d))
-		}
-	}
 	if request.Callinfo != nil {
 		fmt.Printf("\nTransaction validation:\n")
 		for _, m := range request.Callinfo {

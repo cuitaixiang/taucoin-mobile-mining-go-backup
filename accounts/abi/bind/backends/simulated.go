@@ -294,9 +294,8 @@ func (b *SimulatedBackend) callContract(ctx context.Context, call tau.CallMsg, b
 	// Create a new environment which holds all relevant information
 	// about the transaction and calling mechanisms.
 	vmenv := vm.NewEVM(evmContext, statedb, b.config)
-	gaspool := new(core.GasPool).AddGas(math.MaxUint64)
 
-	return core.NewStateTransition(vmenv, msg, gaspool).TransitionDb()
+	return core.NewStateTransition(vmenv, msg).TransitionDb()
 }
 
 // SendTransaction updates the pending block to include the given transaction.
@@ -427,10 +426,8 @@ func (m callmsg) From() common.Address { return m.CallMsg.From }
 func (m callmsg) Nonce() uint64        { return 0 }
 func (m callmsg) CheckNonce() bool     { return false }
 func (m callmsg) To() *common.Address  { return m.CallMsg.To }
-func (m callmsg) GasPrice() *big.Int   { return m.CallMsg.GasPrice }
-func (m callmsg) Gas() uint64          { return m.CallMsg.Gas }
+func (m callmsg) Fee() *big.Int   { return m.CallMsg.GasPrice }
 func (m callmsg) Value() *big.Int      { return m.CallMsg.Value }
-func (m callmsg) Data() []byte         { return m.CallMsg.Data }
 
 // filterBackend implements filters.Backend to support filtering for logs without
 // taking bloom-bits acceleration structures into account.
