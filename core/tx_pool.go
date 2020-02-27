@@ -64,10 +64,6 @@ var (
 	// than required to start the invocation.
 	ErrIntrinsicGas = errors.New("intrinsic gas too low")
 
-	// ErrGasLimit is returned if a transaction's requested gas limit exceeds the
-	// maximum allowance of the current block.
-	ErrGasLimit = errors.New("exceeds block gas limit")
-
 	// ErrNegativeValue is a sanity error to ensure noone is able to specify a
 	// transaction with a negative value.
 	ErrNegativeValue = errors.New("negative value")
