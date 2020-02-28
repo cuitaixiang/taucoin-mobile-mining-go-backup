@@ -8,6 +8,7 @@ require (
 	github.com/allegro/bigcache v1.2.1
 	github.com/apilayer/freegeoip v3.5.0+incompatible
 	github.com/aristanetworks/goarista v0.0.0-20200206021550-59c4040ef2d3
+	github.com/btcsuite/btcutil v1.0.1
 	github.com/davecgh/go-spew v1.1.1
 	github.com/deckarep/golang-set v1.7.1
 	github.com/docker/docker v1.13.1
@@ -29,6 +30,8 @@ require (
 	github.com/karalabe/usb v0.0.0-20191104083709-911d15fe12a9
 	github.com/mattn/go-colorable v0.1.4
 	github.com/mattn/go-isatty v0.0.12
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/naoina/toml v0.1.2-0.20170918210437-9fafd6967416
 	github.com/olekukonko/tablewriter v0.0.4
@@ -49,6 +52,7 @@ require (
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
 	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5
 	golang.org/x/text v0.3.2
+	google.golang.org/appengine v1.4.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce
 	gopkg.in/olebedev/go-duktape.v3 v3.0.0-20190709231704-1e4459ed25ff
 	gopkg.in/urfave/cli.v1 v1.20.0
