@@ -209,11 +209,6 @@ func (db *Database) Compact(start []byte, limit []byte) error {
 	return db.db.CompactRange(util.Range{Start: start, Limit: limit})
 }
 
-// Path returns the path to the database directory.
-func (db *Database) Path() string {
-	return db.fn
-}
-
 // meter periodically retrieves internal leveldb counters and reports them to
 // the metrics subsystem.
 //
