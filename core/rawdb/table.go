@@ -109,13 +109,6 @@ func (t *table) NewIterator() taudb.Iterator {
 	return t.NewIteratorWithPrefix(nil)
 }
 
-// NewIteratorWithStart creates a binary-alphabetical iterator over a subset of
-// database content starting at a particular initial key (or after, if it does
-// not exist).
-func (t *table) NewIteratorWithStart(start []byte) taudb.Iterator {
-	return t.db.NewIteratorWithStart(start)
-}
-
 // NewIteratorWithPrefix creates a binary-alphabetical iterator over a subset
 // of database content with a particular key prefix.
 func (t *table) NewIteratorWithPrefix(prefix []byte) taudb.Iterator {

@@ -158,30 +158,6 @@ func TestDatabaseSuite(t *testing.T, New func() taudb.KeyValueStore) {
 				t.Errorf("IteratorWithPrefix(1): got: %s; want: %s", got, want)
 			}
 		}
-
-		{
-			it := db.NewIteratorWithStart([]byte("2"))
-			got, want := iterateKeys(it), []string{"2", "20", "21", "22", "3", "4", "6"}
-			if err := it.Error(); err != nil {
-				t.Fatal(err)
-			}
-			it.Release()
-			if !reflect.DeepEqual(got, want) {
-				t.Errorf("IteratorWithStart(2): got: %s; want: %s", got, want)
-			}
-		}
-
-		{
-			it := db.NewIteratorWithStart([]byte("5"))
-			got, want := iterateKeys(it), []string{"6"}
-			if err := it.Error(); err != nil {
-				t.Fatal(err)
-			}
-			it.Release()
-			if !reflect.DeepEqual(got, want) {
-				t.Errorf("IteratorWithStart(2): got: %s; want: %s", got, want)
-			}
-		}
 	})
 
 	t.Run("KeyValueOperations", func(t *testing.T) {
