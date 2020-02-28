@@ -27,6 +27,8 @@ import (
 	"strings"
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/hexutil"
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcutil"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -165,6 +167,13 @@ func BytesToAddress(b []byte) Address {
 	var a Address
 	a.SetBytes(b)
 	return a
+}
+
+func ToBase58(a Address) string {
+	chaincfg.MainNetParams.PubKeyHashAddrID = 65
+	addr, _ := btcutil.NewAddressPubKeyHash(a.Bytes(),
+		&chaincfg.MainNetParams)
+	return addr.EncodeAddress()
 }
 
 // BigToAddress returns Address with byte values of b.
