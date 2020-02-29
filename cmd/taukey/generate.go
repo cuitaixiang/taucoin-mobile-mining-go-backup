@@ -85,7 +85,7 @@ If you want to encrypt an existing private key, it can be specified by setting
 		id := uuid.NewRandom()
 		key := &keystore.Key{
 			Id:         id,
-			Address:    crypto.PubkeyToAddress(privateKey.PublicKey),
+			Address:    crypto.PubkeyToAddress(crypto.PublicKey(privateKey.PublicKey)),
 			PrivateKey: privateKey,
 		}
 
