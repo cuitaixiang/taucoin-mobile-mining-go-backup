@@ -8,6 +8,7 @@ require (
 	github.com/allegro/bigcache v1.2.1
 	github.com/apilayer/freegeoip v3.5.0+incompatible
 	github.com/aristanetworks/goarista v0.0.0-20200206021550-59c4040ef2d3
+	github.com/btcsuite/btcd v0.20.1-beta
 	github.com/btcsuite/btcutil v1.0.1
 	github.com/davecgh/go-spew v1.1.1
 	github.com/deckarep/golang-set v1.7.1

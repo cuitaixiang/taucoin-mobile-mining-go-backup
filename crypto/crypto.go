@@ -31,6 +31,8 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/math"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rlp"
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcutil"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -209,9 +211,12 @@ func ValidateSignatureValues(v byte, r, s *big.Int, homestead bool) bool {
 	return r.Cmp(secp256k1N) < 0 && s.Cmp(secp256k1N) < 0 && (v == 0 || v == 1)
 }
 
-func PubkeyToAddress(p ecdsa.PublicKey) common.Address {
-	pubBytes := FromECDSAPub(&p)
-	return common.BytesToAddress(Keccak256(pubBytes[1:])[12:])
+func PubkeyToAddress(p PublicKey) common.Address {
+	pubKeyHash := btcutil.Hash160(p.SerializeCompressed())
+	chaincfg.MainNetParams.PubKeyHashAddrID = 65
+	addr, _ := btcutil.NewAddressPubKeyHash(pubKeyHash,
+		&chaincfg.MainNetParams)
+	return common.BytesToAddress(addr.ScriptAddress())
 }
 
 func zeroBytes(bytes []byte) {

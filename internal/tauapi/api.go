@@ -447,7 +447,7 @@ func (s *PrivateAccountAPI) EcRecover(ctx context.Context, data, sig hexutil.Byt
 	if err != nil {
 		return common.Address{}, err
 	}
-	return crypto.PubkeyToAddress(*rpk), nil
+	return crypto.PubkeyToAddress(crypto.PublicKey(*rpk)), nil
 }
 
 // SignAndSendTransaction was renamed to SendTransaction. This method is deprecated

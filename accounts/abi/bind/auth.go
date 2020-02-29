@@ -65,7 +65,7 @@ func NewKeyStoreTransactor(keystore *keystore.KeyStore, account accounts.Account
 // NewKeyedTransactor is a utility method to easily create a transaction signer
 // from a single private key.
 func NewKeyedTransactor(key *ecdsa.PrivateKey) *TransactOpts {
-	keyAddr := crypto.PubkeyToAddress(key.PublicKey)
+	keyAddr := crypto.PubkeyToAddress(crypto.PublicKey(key.PublicKey))
 	return &TransactOpts{
 		From: keyAddr,
 		Signer: func(signer types.Signer, address common.Address, tx *types.Transaction) (*types.Transaction, error) {
