@@ -18,7 +18,6 @@
 package tau
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
 	"runtime"
@@ -109,9 +108,6 @@ func (s *Tau) SetContractBackend(backend bind.ContractBackend) {
 // initialisation of the common Tau object)
 func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 	// Ensure configuration values are compatible and sane
-	if config.SyncMode == downloader.LightSync {
-		return nil, errors.New("can't run tau.Tau in light sync mode, use les.LightTau")
-	}
 	if !config.SyncMode.IsValid() {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
