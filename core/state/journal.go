@@ -107,10 +107,6 @@ type (
 		account *common.Address
 		prev    uint64
 	}
-	storageChange struct {
-		account       *common.Address
-		key, prevalue common.Hash
-	}
 
 	// Changes to other state values.
 	refundChange struct {
@@ -180,10 +176,6 @@ func (ch nonceChange) revert(s *StateDB) {
 }
 
 func (ch nonceChange) dirtied() *common.Address {
-	return ch.account
-}
-
-func (ch storageChange) dirtied() *common.Address {
 	return ch.account
 }
 
