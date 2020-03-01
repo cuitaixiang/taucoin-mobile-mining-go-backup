@@ -92,7 +92,6 @@ func (self *StateDB) dump(c collector, excludeCode, excludeStorage, excludeMissi
 			panic(err)
 		}
 		addr := common.BytesToAddress(self.trie.GetKey(it.Key))
-		obj := newObject(nil, addr, data)
 		account := DumpAccount{
 			Balance:  data.Balance.String(),
 			Nonce:    data.Nonce,
@@ -105,18 +104,6 @@ func (self *StateDB) dump(c collector, excludeCode, excludeStorage, excludeMissi
 				continue
 			}
 			account.SecureKey = it.Key
-		}
-		if !excludeStorage {
-			account.Storage = make(map[common.Hash]string)
-			storageIt := trie.NewIterator(obj.getTrie(self.db).NodeIterator(nil))
-			for storageIt.Next() {
-				_, content, _, err := rlp.Split(storageIt.Value)
-				if err != nil {
-					log.Error("Failed to decode the value returned by iterator", "error", err)
-					continue
-				}
-				account.Storage[common.BytesToHash(self.trie.GetKey(storageIt.Key))] = common.Bytes2Hex(content)
-			}
 		}
 		c.onAccount(addr, account)
 	}

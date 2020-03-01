@@ -89,11 +89,6 @@ type RetesttauDebugAPI interface {
 		blockHashOrNumber *math.HexOrDecimal256, txIndex uint64,
 		addressHash *math.HexOrDecimal256, maxResults uint64,
 	) (AccountRangeResult, error)
-	StorageRangeAt(ctx context.Context,
-		blockHashOrNumber *math.HexOrDecimal256, txIndex uint64,
-		address common.Address,
-		begin *math.HexOrDecimal256, maxResults uint64,
-	) (StorageRangeResult, error)
 }
 
 type RetestWeb3API interface {
@@ -712,103 +707,6 @@ func (api *RetesttauAPI) GetTransactionCount(ctx context.Context, address common
 		return 0, err
 	}
 	return statedb.GetNonce(address), nil
-}
-
-func (api *RetesttauAPI) StorageRangeAt(ctx context.Context,
-	blockHashOrNumber *math.HexOrDecimal256, txIndex uint64,
-	address common.Address,
-	begin *math.HexOrDecimal256, maxResults uint64,
-) (StorageRangeResult, error) {
-	var (
-		header *types.Header
-		block  *types.Block
-	)
-	if (*big.Int)(blockHashOrNumber).Cmp(big.NewInt(math.MaxInt64)) > 0 {
-		blockHash := common.BigToHash((*big.Int)(blockHashOrNumber))
-		header = api.blockchain.GetHeaderByHash(blockHash)
-		block = api.blockchain.GetBlockByHash(blockHash)
-		//fmt.Printf("Storage range: %x, txIndex %d, addr: %x, start: %x, maxResults: %d\n",
-		//	blockHash, txIndex, address, common.BigToHash((*big.Int)(begin)), maxResults)
-	} else {
-		blockNumber := (*big.Int)(blockHashOrNumber).Uint64()
-		header = api.blockchain.GetHeaderByNumber(blockNumber)
-		block = api.blockchain.GetBlockByNumber(blockNumber)
-		//fmt.Printf("Storage range: %d, txIndex %d, addr: %x, start: %x, maxResults: %d\n",
-		//	blockNumber, txIndex, address, common.BigToHash((*big.Int)(begin)), maxResults)
-	}
-	parentHeader := api.blockchain.GetHeaderByHash(header.ParentHash)
-	var root common.Hash
-	var statedb *state.StateDB
-	var err error
-	if parentHeader == nil || int(txIndex) >= len(block.Transactions()) {
-		root = header.Root
-		statedb, err = api.blockchain.StateAt(root)
-		if err != nil {
-			return StorageRangeResult{}, err
-		}
-	} else {
-		root = parentHeader.Root
-		statedb, err = api.blockchain.StateAt(root)
-		if err != nil {
-			return StorageRangeResult{}, err
-		}
-		// Recompute transactions up to the target index.
-		signer := types.MakeSigner(api.blockchain.Config(), block.Number())
-		for idx, tx := range block.Transactions() {
-			// Assemble the transaction call message and return if the requested offset
-			msg, _ := tx.AsMessage(signer)
-			context := core.NewEVMContext(msg, block.Header(), api.blockchain, nil)
-			// Not yet the searched for transaction, execute on top of the current state
-			vmenv := vm.NewEVM(context, statedb, api.blockchain.Config())
-			if _, _, _, err := core.ApplyMessage(vmenv, msg); err != nil {
-				return StorageRangeResult{}, fmt.Errorf("transaction %#x failed: %v", tx.Hash(), err)
-			}
-			// Ensure any modifications are committed to the state
-			// Only delete empty objects if EIP158/161 (a.k.a Spurious Dragon) is in effect
-			_ = statedb.IntermediateRoot(vmenv.ChainConfig().IsEIP158(block.Number()))
-			if idx == int(txIndex) {
-				// This is to make sure root can be opened by OpenTrie
-				_, err = statedb.Commit(vmenv.ChainConfig().IsEIP158(block.Number()))
-				if err != nil {
-					return StorageRangeResult{}, err
-				}
-			}
-		}
-	}
-	storageTrie := statedb.StorageTrie(address)
-	it := trie.NewIterator(storageTrie.NodeIterator(common.BigToHash((*big.Int)(begin)).Bytes()))
-	result := StorageRangeResult{Storage: make(map[common.Hash]SRItem)}
-	for i := 0; /*i < int(maxResults) && */ it.Next(); i++ {
-		if preimage := storageTrie.GetKey(it.Key); preimage != nil {
-			key := (*math.HexOrDecimal256)(big.NewInt(0).SetBytes(preimage))
-			v, _, err := rlp.SplitString(it.Value)
-			if err != nil {
-				return StorageRangeResult{}, err
-			}
-			value := (*math.HexOrDecimal256)(big.NewInt(0).SetBytes(v))
-			ks, _ := key.MarshalText()
-			vs, _ := value.MarshalText()
-			if len(ks)%2 != 0 {
-				ks = append(append(append([]byte{}, ks[:2]...), byte('0')), ks[2:]...)
-			}
-			if len(vs)%2 != 0 {
-				vs = append(append(append([]byte{}, vs[:2]...), byte('0')), vs[2:]...)
-			}
-			result.Storage[common.BytesToHash(it.Key)] = SRItem{
-				Key:   string(ks),
-				Value: string(vs),
-			}
-			//fmt.Printf("Key: %s, Value: %s\n", ks, vs)
-		} else {
-			//fmt.Printf("Did not find preimage for %x\n", it.Key)
-		}
-	}
-	if it.Next() {
-		result.Complete = false
-	} else {
-		result.Complete = true
-	}
-	return result, nil
 }
 
 func (api *RetesttauAPI) ClientVersion(ctx context.Context) (string, error) {
