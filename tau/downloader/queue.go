@@ -464,19 +464,6 @@ func (q *queue) ReserveBodies(p *peerConnection, count int) (*fetchRequest, bool
 	return q.reserveHeaders(p, count, q.blockTaskPool, q.blockTaskQueue, q.blockPendPool, q.blockDonePool, isNoop)
 }
 
-// ReserveReceipts reserves a set of receipt fetches for the given peer, skipping
-// any previously failed downloads. Beside the next batch of needed fetches, it
-// also returns a flag whtauer empty receipts were queued requiring importing.
-func (q *queue) ReserveReceipts(p *peerConnection, count int) (*fetchRequest, bool, error) {
-	isNoop := func(header *types.Header) bool {
-		return header.ReceiptHash == types.EmptyRootHash
-	}
-	q.lock.Lock()
-	defer q.lock.Unlock()
-
-	return q.reserveHeaders(p, count, q.receiptTaskPool, q.receiptTaskQueue, q.receiptPendPool, q.receiptDonePool, isNoop)
-}
-
 // reserveHeaders reserves a set of data download operations for a given peer,
 // skipping any previously failed ones. This method is a generic version used
 // by the individual special reservation functions.
@@ -776,23 +763,6 @@ func (q *queue) DeliverBodies(id string, txLists [][]*types.Transaction, uncleLi
 		return nil
 	}
 	return q.deliver(id, q.blockTaskPool, q.blockTaskQueue, q.blockPendPool, q.blockDonePool, bodyReqTimer, len(txLists), reconstruct)
-}
-
-// DeliverReceipts injects a receipt retrieval response into the results queue.
-// The method returns the number of transaction receipts accepted from the delivery
-// and also wakes any threads waiting for data delivery.
-func (q *queue) DeliverReceipts(id string, receiptList [][]*types.Receipt) (int, error) {
-	q.lock.Lock()
-	defer q.lock.Unlock()
-
-	reconstruct := func(header *types.Header, index int, result *fetchResult) error {
-		if types.DeriveSha(types.Receipts(receiptList[index])) != header.ReceiptHash {
-			return errInvalidReceipt
-		}
-		result.Receipts = receiptList[index]
-		return nil
-	}
-	return q.deliver(id, q.receiptTaskPool, q.receiptTaskQueue, q.receiptPendPool, q.receiptDonePool, receiptReqTimer, len(receiptList), reconstruct)
 }
 
 // deliver injects a data retrieval response into the results queue.

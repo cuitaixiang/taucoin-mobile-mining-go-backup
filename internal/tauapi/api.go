@@ -655,10 +655,10 @@ func (s *PublicBlockChainAPI) GetUncleCountByBlockHash(ctx context.Context, bloc
 
 // CallArgs represents the arguments for a call.
 type CallArgs struct {
-	From     *common.Address `json:"from"`
-	To       *common.Address `json:"to"`
-	Fee      *hexutil.Big    `json:"fee"`
-	Value    *hexutil.Big    `json:"value"`
+	From  *common.Address `json:"from"`
+	To    *common.Address `json:"to"`
+	Fee   *hexutil.Big    `json:"fee"`
+	Value *hexutil.Big    `json:"value"`
 }
 
 // account indicates the overriding fields of account during the execution of
@@ -874,7 +874,6 @@ func RPCMarshalHeader(head *types.Header) map[string]interface{} {
 		"gasUsed":          hexutil.Uint64(head.GasUsed),
 		"timestamp":        hexutil.Uint64(head.Time),
 		"transactionsRoot": head.TxHash,
-		"receiptsRoot":     head.ReceiptHash,
 	}
 }
 
@@ -962,15 +961,15 @@ func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber
 	v, r, s := tx.RawSignatureValues()
 
 	result := &RPCTransaction{
-		From:     from,
-		Fee:      (*hexutil.Big)(tx.Fee()),
-		Hash:     tx.Hash(),
-		Nonce:    hexutil.Uint64(tx.Nonce()),
-		To:       tx.To(),
-		Value:    (*hexutil.Big)(tx.Value()),
-		V:        (*hexutil.Big)(v),
-		R:        (*hexutil.Big)(r),
-		S:        (*hexutil.Big)(s),
+		From:  from,
+		Fee:   (*hexutil.Big)(tx.Fee()),
+		Hash:  tx.Hash(),
+		Nonce: hexutil.Uint64(tx.Nonce()),
+		To:    tx.To(),
+		Value: (*hexutil.Big)(tx.Value()),
+		V:     (*hexutil.Big)(v),
+		R:     (*hexutil.Big)(r),
+		S:     (*hexutil.Big)(s),
 	}
 	if blockHash != (common.Hash{}) {
 		result.BlockHash = &blockHash
@@ -1198,11 +1197,11 @@ func (s *PublicTransactionPoolAPI) sign(addr common.Address, tx *types.Transacti
 
 // SendTxArgs represents the arguments to sumbit a new transaction into the transaction pool.
 type SendTxArgs struct {
-	From     common.Address  `json:"from"`
-	To       *common.Address `json:"to"`
-	Fee      *hexutil.Big    `json:"fee"`
-	Value    *hexutil.Big    `json:"value"`
-	Nonce    *hexutil.Uint64 `json:"nonce"`
+	From  common.Address  `json:"from"`
+	To    *common.Address `json:"to"`
+	Fee   *hexutil.Big    `json:"fee"`
+	Value *hexutil.Big    `json:"value"`
+	Nonce *hexutil.Uint64 `json:"nonce"`
 }
 
 // setDefaults is a helper function that fills in default values for unspecified tx fields.
@@ -1377,7 +1376,7 @@ func (s *PublicTransactionPoolAPI) PendingTransactions() ([]*RPCTransaction, err
 		}
 	}
 	transactions := make([]*RPCTransaction, 0, len(pending))
-    /*tx-ctc
+	/*tx-ctc
 	for _, tx := range pending {
 		var signer types.Signer = types.HomesteadSigner{}
 		if tx.Protected() {
@@ -1388,7 +1387,7 @@ func (s *PublicTransactionPoolAPI) PendingTransactions() ([]*RPCTransaction, err
 			transactions = append(transactions, newRPCPendingTransaction(tx))
 		}
 	}
-    */
+	*/
 	return transactions, nil
 }
 

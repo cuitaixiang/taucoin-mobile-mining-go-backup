@@ -183,28 +183,6 @@ func (p *peerConnection) FetchBodies(request *fetchRequest) error {
 	return nil
 }
 
-// FetchReceipts sends a receipt retrieval request to the remote peer.
-func (p *peerConnection) FetchReceipts(request *fetchRequest) error {
-	// Sanity check the protocol version
-	if p.version < 63 {
-		panic(fmt.Sprintf("body fetch [tau/63+] requested on tau/%d", p.version))
-	}
-	// Short circuit if the peer is already fetching
-	if !atomic.CompareAndSwapInt32(&p.receiptIdle, 0, 1) {
-		return errAlreadyFetching
-	}
-	p.receiptStarted = time.Now()
-
-	// Convert the header set to a retrievable slice
-	hashes := make([]common.Hash, 0, len(request.Headers))
-	for _, header := range request.Headers {
-		hashes = append(hashes, header.Hash())
-	}
-	go p.peer.RequestReceipts(hashes)
-
-	return nil
-}
-
 // FetchNodeData sends a node state data retrieval request to the remote peer.
 func (p *peerConnection) FetchNodeData(hashes []common.Hash) error {
 	// Sanity check the protocol version

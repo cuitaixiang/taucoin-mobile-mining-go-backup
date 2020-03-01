@@ -712,7 +712,6 @@ func encodeSigHeader(w io.Writer, header *types.Header) {
 		header.Coinbase,
 		header.Root,
 		header.TxHash,
-		header.ReceiptHash,
 		header.Bloom,
 		header.Difficulty,
 		header.Number,

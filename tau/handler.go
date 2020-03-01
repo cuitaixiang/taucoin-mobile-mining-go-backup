@@ -30,15 +30,15 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/fetcher"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/event"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/p2p"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/p2p/enode"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rlp"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/fetcher"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 )
 
 const (
@@ -601,53 +601,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Deliver all to the downloader
 		if err := pm.downloader.DeliverNodeData(p.id, data); err != nil {
 			log.Debug("Failed to deliver node state data", "err", err)
-		}
-
-	case p.version >= tau63 && msg.Code == GetReceiptsMsg:
-		// Decode the retrieval message
-		msgStream := rlp.NewStream(msg.Payload, uint64(msg.Size))
-		if _, err := msgStream.List(); err != nil {
-			return err
-		}
-		// Gather state data until the fetch or network limits is reached
-		var (
-			hash     common.Hash
-			bytes    int
-			receipts []rlp.RawValue
-		)
-		for bytes < softResponseLimit && len(receipts) < downloader.MaxReceiptFetch {
-			// Retrieve the hash of the next block
-			if err := msgStream.Decode(&hash); err == rlp.EOL {
-				break
-			} else if err != nil {
-				return errResp(ErrDecode, "msg %v: %v", msg, err)
-			}
-			// Retrieve the requested block's receipts, skipping if unknown to us
-			results := pm.blockchain.GetReceiptsByHash(hash)
-			if results == nil {
-				if header := pm.blockchain.GetHeaderByHash(hash); header == nil || header.ReceiptHash != types.EmptyRootHash {
-					continue
-				}
-			}
-			// If known, encode and queue for response packet
-			if encoded, err := rlp.EncodeToBytes(results); err != nil {
-				log.Error("Failed to encode receipt", "err", err)
-			} else {
-				receipts = append(receipts, encoded)
-				bytes += len(encoded)
-			}
-		}
-		return p.SendReceiptsRLP(receipts)
-
-	case p.version >= tau63 && msg.Code == ReceiptsMsg:
-		// A batch of receipts arrived to one of our previous requests
-		var receipts [][]*types.Receipt
-		if err := msg.Decode(&receipts); err != nil {
-			return errResp(ErrDecode, "msg %v: %v", msg, err)
-		}
-		// Deliver all to the downloader
-		if err := pm.downloader.DeliverReceipts(p.id, receipts); err != nil {
-			log.Debug("Failed to deliver receipts", "err", err)
 		}
 
 	case msg.Code == NewBlockHashesMsg:

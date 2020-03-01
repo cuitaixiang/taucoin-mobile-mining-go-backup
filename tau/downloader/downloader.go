@@ -29,11 +29,11 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/rawdb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/event"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/metrics"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 )
 
 var (
@@ -107,7 +107,7 @@ type Downloader struct {
 	queue      *queue   // Scheduler for selecting the hashes to download
 	peers      *peerSet // Set of active peers from which download can proceed
 
-	stateDB    taudb.Database  // Database to state sync into (and deduplicate via)
+	stateDB taudb.Database // Database to state sync into (and deduplicate via)
 
 	// Statistics
 	syncStatsChainOrigin uint64 // Origin block number where syncing started at
@@ -504,7 +504,6 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, td *big.I
 	fetchers := []func() error{
 		func() error { return d.fetchHeaders(p, origin+1, pivot) }, // Headers are always retrieved
 		func() error { return d.fetchBodies(origin + 1) },          // Bodies are retrieved during normal and fast sync
-		func() error { return d.fetchReceipts(origin + 1) },        // Receipts are retrieved during fast sync
 		func() error { return d.processHeaders(origin+1, pivot, td) },
 	}
 	if d.mode == FastSync {
@@ -1098,30 +1097,6 @@ func (d *Downloader) fetchBodies(from uint64) error {
 		d.bodyFetchHook, fetch, d.queue.CancelBodies, capacity, d.peers.BodyIdlePeers, setIdle, "bodies")
 
 	log.Debug("Block body download terminated", "err", err)
-	return err
-}
-
-// fetchReceipts iteratively downloads the scheduled block receipts, taking any
-// available peers, reserving a chunk of receipts for each, waiting for delivery
-// and also periodically checking for timeouts.
-func (d *Downloader) fetchReceipts(from uint64) error {
-	log.Debug("Downloading transaction receipts", "origin", from)
-
-	var (
-		deliver = func(packet dataPack) (int, error) {
-			pack := packet.(*receiptPack)
-			return d.queue.DeliverReceipts(pack.peerID, pack.receipts)
-		}
-		expire   = func() map[string]int { return d.queue.ExpireReceipts(d.requestTTL()) }
-		fetch    = func(p *peerConnection, req *fetchRequest) error { return p.FetchReceipts(req) }
-		capacity = func(p *peerConnection) int { return p.ReceiptCapacity(d.requestRTT()) }
-		setIdle  = func(p *peerConnection, accepted int) { p.SetReceiptsIdle(accepted) }
-	)
-	err := d.fetchParts(d.receiptCh, deliver, d.receiptWakeCh, expire,
-		d.queue.PendingReceipts, d.queue.InFlightReceipts, d.queue.ShouldThrottleReceipts, d.queue.ReserveReceipts,
-		d.receiptFetchHook, fetch, d.queue.CancelReceipts, capacity, d.peers.ReceiptIdlePeers, setIdle, "receipts")
-
-	log.Debug("Transaction receipt download terminated", "err", err)
 	return err
 }
 
