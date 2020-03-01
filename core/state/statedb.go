@@ -245,22 +245,6 @@ func (self *StateDB) BlockHash() common.Hash {
 	return self.bhash
 }
 
-// GetState retrieves a value from the given account's storage trie.
-func (self *StateDB) GetState(addr common.Address, hash common.Hash) common.Hash {
-	stateObject := self.getStateObject(addr)
-	if stateObject != nil {
-		return stateObject.GetState(self.db, hash)
-	}
-	return common.Hash{}
-}
-
-// GetProof returns the MerkleProof for a given Account
-func (self *StateDB) GetProof(a common.Address) ([][]byte, error) {
-	var proof proofList
-	err := self.trie.Prove(crypto.Keccak256(a.Bytes()), 0, &proof)
-	return [][]byte(proof), err
-}
-
 // GetProof returns the StorageProof for given key
 func (self *StateDB) GetStorageProof(a common.Address, key common.Hash) ([][]byte, error) {
 	var proof proofList

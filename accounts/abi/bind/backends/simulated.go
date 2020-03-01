@@ -142,19 +142,6 @@ func (b *SimulatedBackend) NonceAt(ctx context.Context, contract common.Address,
 	return statedb.GetNonce(contract), nil
 }
 
-// StorageAt returns the value of key in the storage of an account in the blockchain.
-func (b *SimulatedBackend) MessageAt(ctx context.Context, contract common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
-	if blockNumber != nil && blockNumber.Cmp(b.blockchain.CurrentBlock().Number()) != 0 {
-		return nil, errBlockNumberUnsupported
-	}
-	statedb, _ := b.blockchain.State()
-	val := statedb.GetState(contract, key)
-	return val[:], nil
-}
-
 // TransactionReceipt returns the receipt of a transaction.
 func (b *SimulatedBackend) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
 	receipt, _, _, _ := rawdb.ReadReceipt(b.database, txHash, b.config)

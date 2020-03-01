@@ -150,21 +150,6 @@ func (s *stateObject) getTrie(db Database) Trie {
 	return s.trie
 }
 
-// GetState retrieves a value from the account storage trie.
-func (s *stateObject) GetState(db Database, key common.Hash) common.Hash {
-	// If the fake storage is set, only lookup the state here(in the debugging mode)
-	if s.fakeStorage != nil {
-		return s.fakeStorage[key]
-	}
-	// If we have a dirty value for this state entry, return it
-	value, dirty := s.dirtyStorage[key]
-	if dirty {
-		return value
-	}
-	// Otherwise return the entry's original value
-	return s.GetCommittedState(db, key)
-}
-
 // GetCommittedState retrieves a value from the committed account storage trie.
 func (s *stateObject) GetCommittedState(db Database, key common.Hash) common.Hash {
 	// If the fake storage is set, only lookup the state here(in the debugging mode)

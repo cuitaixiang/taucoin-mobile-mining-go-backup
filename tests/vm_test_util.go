@@ -80,13 +80,7 @@ func (t *VMTest) Run(vmconfig vm.Config) error {
 	if !bytes.Equal(ret, t.json.Out) {
 		return fmt.Errorf("return data mismatch: got %x, want %x", ret, t.json.Out)
 	}
-	for addr, account := range t.json.Post {
-		for k, wantV := range account.Storage {
-			if haveV := statedb.GetState(addr, k); haveV != wantV {
-				return fmt.Errorf("wrong storage value at %x:\n  got  %x\n  want %x", k, haveV, wantV)
-			}
-		}
-	}
+
 	// if root := statedb.IntermediateRoot(false); root != t.json.PostStateRoot {
 	// 	return fmt.Errorf("post state root mismatch, got %x, want %x", root, t.json.PostStateRoot)
 	// }

@@ -357,21 +357,6 @@ func (test *snapshotTest) checkEqual(state, checkstate *StateDB) error {
 		checkeq("HasSuicided", state.HasSuicided(addr), checkstate.HasSuicided(addr))
 		checkeq("GetBalance", state.GetBalance(addr), checkstate.GetBalance(addr))
 		checkeq("GetNonce", state.GetNonce(addr), checkstate.GetNonce(addr))
-		checkeq("GetCode", state.GetCode(addr), checkstate.GetCode(addr))
-		checkeq("GetCodeHash", state.GetCodeHash(addr), checkstate.GetCodeHash(addr))
-		checkeq("GetCodeSize", state.GetCodeSize(addr), checkstate.GetCodeSize(addr))
-		// Check storage.
-		if obj := state.getStateObject(addr); obj != nil {
-			state.ForEachStorage(addr, func(key, value common.Hash) bool {
-				return checkeq("GetState("+key.Hex()+")", checkstate.GetState(addr, key), value)
-			})
-			checkstate.ForEachStorage(addr, func(key, value common.Hash) bool {
-				return checkeq("GetState("+key.Hex()+")", checkstate.GetState(addr, key), value)
-			})
-		}
-		if err != nil {
-			return err
-		}
 	}
 
 	if state.GetRefund() != checkstate.GetRefund() {

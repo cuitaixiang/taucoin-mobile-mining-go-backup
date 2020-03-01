@@ -96,13 +96,6 @@ func (s *StateSuite) TestSnapshot(c *checker.C) {
 	// snapshot the genesis state
 	genesis := s.state.Snapshot()
 
-	c.Assert(s.state.GetState(stateobjaddr, storageaddr), checker.DeepEquals, data1)
-	c.Assert(s.state.GetCommittedState(stateobjaddr, storageaddr), checker.DeepEquals, common.Hash{})
-
-	// revert up to the genesis state and ensure correct content
-	s.state.RevertToSnapshot(genesis)
-	c.Assert(s.state.GetState(stateobjaddr, storageaddr), checker.DeepEquals, common.Hash{})
-	c.Assert(s.state.GetCommittedState(stateobjaddr, storageaddr), checker.DeepEquals, common.Hash{})
 }
 
 func (s *StateSuite) TestSnapshotEmpty(c *checker.C) {
@@ -151,11 +144,6 @@ func TestSnapshot2(t *testing.T) {
 	state.RevertToSnapshot(snapshot)
 
 	so0Restored := state.getStateObject(stateobjaddr0)
-	// Update lazily-loaded values before comparing.
-	so0Restored.GetState(state.db, storageaddr)
-	so0Restored.Code(state.db)
-	// non-deleted is equal (restored)
-	compareStateObjects(so0Restored, so0, t)
 
 	// deleted should be nil, both before and after restore of state copy
 	so1Restored := state.getStateObject(stateobjaddr1)

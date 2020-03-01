@@ -546,51 +546,6 @@ type StorageResult struct {
 	Proof []string     `json:"proof"`
 }
 
-// GetProof returns the Merkle-proof for a given account and optionally some storage keys.
-func (s *PublicBlockChainAPI) GetProof(ctx context.Context, address common.Address, storageKeys []string, blockNr rpc.BlockNumber) (*AccountResult, error) {
-	state, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
-	if state == nil || err != nil {
-		return nil, err
-	}
-
-	storageTrie := state.StorageTrie(address)
-	storageHash := types.EmptyRootHash
-	storageProof := make([]StorageResult, len(storageKeys))
-
-	// if we have a storageTrie, (which means the account exists), we can update the storagehash
-	if storageTrie != nil {
-		storageHash = storageTrie.Hash()
-	}
-
-	// create the proof for the storageKeys
-	for i, key := range storageKeys {
-		if storageTrie != nil {
-			proof, storageError := state.GetStorageProof(address, common.HexToHash(key))
-			if storageError != nil {
-				return nil, storageError
-			}
-			storageProof[i] = StorageResult{key, (*hexutil.Big)(state.GetState(address, common.HexToHash(key)).Big()), common.ToHexArray(proof)}
-		} else {
-			storageProof[i] = StorageResult{key, &hexutil.Big{}, []string{}}
-		}
-	}
-
-	// create the accountProof
-	accountProof, proofErr := state.GetProof(address)
-	if proofErr != nil {
-		return nil, proofErr
-	}
-
-	return &AccountResult{
-		Address:      address,
-		AccountProof: common.ToHexArray(accountProof),
-		Balance:      (*hexutil.Big)(state.GetBalance(address)),
-		Nonce:        hexutil.Uint64(state.GetNonce(address)),
-		StorageHash:  storageHash,
-		StorageProof: storageProof,
-	}, state.Error()
-}
-
 // GetHeaderByNumber returns the requested canonical block header.
 // * When blockNr is -1 the chain head is returned.
 // * When blockNr is -2 the pending chain head is returned.
@@ -696,18 +651,6 @@ func (s *PublicBlockChainAPI) GetUncleCountByBlockHash(ctx context.Context, bloc
 		return &n
 	}
 	return nil
-}
-
-// GetStorageAt returns the storage from the state at the given address, key and
-// block number. The rpc.LatestBlockNumber and rpc.PendingBlockNumber meta block
-// numbers are also allowed.
-func (s *PublicBlockChainAPI) GetMessageAt(ctx context.Context, address common.Address, key string, blockNr rpc.BlockNumber) (hexutil.Bytes, error) {
-	state, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
-	if state == nil || err != nil {
-		return nil, err
-	}
-	res := state.GetState(address, common.HexToHash(key))
-	return res[:], state.Error()
 }
 
 // CallArgs represents the arguments for a call.
