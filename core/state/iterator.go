@@ -100,14 +100,6 @@ func (it *NodeIterator) step() error {
 	if err := rlp.Decode(bytes.NewReader(it.stateIt.LeafBlob()), &account); err != nil {
 		return err
 	}
-	dataTrie, err := it.state.db.OpenStorageTrie(common.BytesToHash(it.stateIt.LeafKey()), account.Root)
-	if err != nil {
-		return err
-	}
-	it.dataIt = dataTrie.NodeIterator(nil)
-	if !it.dataIt.Next(true) {
-		it.dataIt = nil
-	}
 	it.accountHash = it.stateIt.Parent()
 	return nil
 }

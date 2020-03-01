@@ -183,10 +183,6 @@ func (ch nonceChange) dirtied() *common.Address {
 	return ch.account
 }
 
-func (ch storageChange) revert(s *StateDB) {
-	s.getStateObject(*ch.account).setState(ch.key, ch.prevalue)
-}
-
 func (ch storageChange) dirtied() *common.Address {
 	return ch.account
 }
