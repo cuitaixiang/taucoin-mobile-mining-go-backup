@@ -576,9 +576,6 @@ func (s *StateDB) Commit(deleteEmptyObjects bool) (root common.Hash, err error) 
 		if err := rlp.DecodeBytes(leaf, &account); err != nil {
 			return nil
 		}
-		if account.Root != emptyRoot {
-			s.db.TrieDB().Reference(account.Root, parent)
-		}
 		return nil
 	})
 	return root, err

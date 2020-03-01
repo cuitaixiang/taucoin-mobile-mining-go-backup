@@ -17,7 +17,6 @@
 package state
 
 import (
-	"fmt"
 	"io"
 	"math/big"
 
@@ -25,25 +24,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/crypto"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rlp"
 )
-
-type Storage map[common.Hash]common.Hash
-
-func (s Storage) String() (str string) {
-	for key, value := range s {
-		str += fmt.Sprintf("%X : %X\n", key, value)
-	}
-
-	return
-}
-
-func (s Storage) Copy() Storage {
-	cpy := make(Storage)
-	for key, value := range s {
-		cpy[key] = value
-	}
-
-	return cpy
-}
 
 // stateObject represents an Tau account which is being modified.
 //
@@ -80,7 +60,6 @@ func (s *stateObject) empty() bool {
 type Account struct {
 	Nonce    uint64
 	Balance  *big.Int
-	Root     common.Hash // merkle root of the storage trie
 }
 
 // newObject creates a state object.
