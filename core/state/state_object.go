@@ -55,7 +55,6 @@ func (s Storage) Copy() Storage {
 // The usage pattern is as follows:
 // First you need to obtain a state object.
 // Account values can be accessed and modified through the object.
-// Finally, call CommitTrie to write the modified storage trie into a database.
 type stateObject struct {
 	address  common.Address
 	addrHash common.Hash // hash of tau address of the account
@@ -150,38 +149,6 @@ func (s *stateObject) getTrie(db Database) Trie {
 	return s.trie
 }
 
-// GetCommittedState retrieves a value from the committed account storage trie.
-func (s *stateObject) GetCommittedState(db Database, key common.Hash) common.Hash {
-	// If the fake storage is set, only lookup the state here(in the debugging mode)
-	if s.fakeStorage != nil {
-		return s.fakeStorage[key]
-	}
-	// If we have the original value cached, return that
-	value, cached := s.originStorage[key]
-	if cached {
-		return value
-	}
-	// Track the amount of time wasted on reading the storage trie
-	if metrics.EnabledExpensive {
-		defer func(start time.Time) { s.db.StorageReads += time.Since(start) }(time.Now())
-	}
-	// Otherwise load the value from the database
-	enc, err := s.getTrie(db).TryGet(key[:])
-	if err != nil {
-		s.setError(err)
-		return common.Hash{}
-	}
-	if len(enc) > 0 {
-		_, content, _, err := rlp.Split(enc)
-		if err != nil {
-			s.setError(err)
-		}
-		value.SetBytes(content)
-	}
-	s.originStorage[key] = value
-	return value
-}
-
 // SetStorage replaces the entire state storage with the given one.
 //
 // After this function is called, all original state will be ignored and state
@@ -237,24 +204,6 @@ func (s *stateObject) updateRoot(db Database) {
 		defer func(start time.Time) { s.db.StorageHashes += time.Since(start) }(time.Now())
 	}
 	s.data.Root = s.trie.Hash()
-}
-
-// CommitTrie the storage trie of the object to db.
-// This updates the trie root.
-func (s *stateObject) CommitTrie(db Database) error {
-	s.updateTrie(db)
-	if s.dbErr != nil {
-		return s.dbErr
-	}
-	// Track the amount of time wasted on committing the storge trie
-	if metrics.EnabledExpensive {
-		defer func(start time.Time) { s.db.StorageCommits += time.Since(start) }(time.Now())
-	}
-	root, err := s.trie.Commit(nil)
-	if err == nil {
-		s.data.Root = root
-	}
-	return err
 }
 
 // AddBalance removes amount from c's balance.

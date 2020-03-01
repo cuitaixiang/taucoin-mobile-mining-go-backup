@@ -256,15 +256,6 @@ func (self *StateDB) GetStorageProof(a common.Address, key common.Hash) ([][]byt
 	return [][]byte(proof), err
 }
 
-// GetCommittedState retrieves a value from the given account's committed storage trie.
-func (self *StateDB) GetCommittedState(addr common.Address, hash common.Hash) common.Hash {
-	stateObject := self.getStateObject(addr)
-	if stateObject != nil {
-		return stateObject.GetCommittedState(self.db, hash)
-	}
-	return common.Hash{}
-}
-
 // Database retrieves the low level database supporting the lower level trie ops.
 func (self *StateDB) Database() Database {
 	return self.db
@@ -637,13 +628,6 @@ func (s *StateDB) Commit(deleteEmptyObjects bool) (root common.Hash, err error) 
 			// If the object has been removed, don't bother syncing it
 			// and just mark it for deletion in the trie.
 			s.deleteStateObject(stateObject)
-		case isDirty:
-			// Write any storage changes in the state object to its storage trie.
-			if err := stateObject.CommitTrie(s.db); err != nil {
-				return common.Hash{}, err
-			}
-			// Update the object in the main account trie.
-			s.updateStateObject(stateObject)
 		}
 		delete(s.stateObjectsDirty, addr)
 	}
