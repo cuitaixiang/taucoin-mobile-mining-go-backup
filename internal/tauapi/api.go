@@ -759,19 +759,6 @@ func DoCall(ctx context.Context, b Backend, args CallArgs, blockNr rpc.BlockNumb
 		if account.Balance != nil {
 			state.SetBalance(addr, (*big.Int)(*account.Balance))
 		}
-		if account.State != nil && account.StateDiff != nil {
-			return nil, false, fmt.Errorf("account %s has both 'state' and 'stateDiff'", addr.Hex())
-		}
-		// Replace entire state if caller requires.
-		if account.State != nil {
-			state.SetStorage(addr, *account.State)
-		}
-		// Apply state diff into specified accounts.
-		if account.StateDiff != nil {
-			for key, value := range *account.StateDiff {
-				state.SetState(addr, key, value)
-			}
-		}
 	}
 	gasPrice := new(big.Int).SetUint64(defaultGasPrice)
 	if args.Fee != nil {

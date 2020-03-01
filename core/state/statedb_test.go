@@ -47,12 +47,6 @@ func TestUpdateLeaks(t *testing.T) {
 		addr := common.BytesToAddress([]byte{i})
 		state.AddBalance(addr, big.NewInt(int64(11*i)))
 		state.SetNonce(addr, uint64(42*i))
-		if i%2 == 0 {
-			state.SetState(addr, common.BytesToHash([]byte{i, i, i}), common.BytesToHash([]byte{i, i, i, i}))
-		}
-		if i%3 == 0 {
-			state.SetCode(addr, []byte{i, i, i, i, i})
-		}
 		state.IntermediateRoot(false)
 	}
 	// Ensure that no data was leaked into the database
@@ -75,13 +69,6 @@ func TestIntermediateLeaks(t *testing.T) {
 	modify := func(state *StateDB, addr common.Address, i, tweak byte) {
 		state.SetBalance(addr, big.NewInt(int64(11*i)+int64(tweak)))
 		state.SetNonce(addr, uint64(42*i+tweak))
-		if i%2 == 0 {
-			state.SetState(addr, common.Hash{i, i, i, 0}, common.Hash{})
-			state.SetState(addr, common.Hash{i, i, i, tweak}, common.Hash{i, i, i, i, tweak})
-		}
-		if i%3 == 0 {
-			state.SetCode(addr, []byte{i, i, i, i, i, tweak})
-		}
 	}
 
 	// Modify the transient state.
@@ -231,26 +218,6 @@ func newTestAction(addr common.Address, r *rand.Rand) testAction {
 				s.SetNonce(addr, uint64(a.args[0]))
 			},
 			args: make([]int64, 1),
-		},
-		{
-			name: "SetState",
-			fn: func(a testAction, s *StateDB) {
-				var key, val common.Hash
-				binary.BigEndian.PutUint16(key[:], uint16(a.args[0]))
-				binary.BigEndian.PutUint16(val[:], uint16(a.args[1]))
-				s.SetState(addr, key, val)
-			},
-			args: make([]int64, 2),
-		},
-		{
-			name: "SetCode",
-			fn: func(a testAction, s *StateDB) {
-				code := make([]byte, 16)
-				binary.BigEndian.PutUint64(code, uint64(a.args[0]))
-				binary.BigEndian.PutUint64(code[8:], uint64(a.args[1]))
-				s.SetCode(addr, code)
-			},
-			args: make([]int64, 2),
 		},
 		{
 			name: "CreateAccount",

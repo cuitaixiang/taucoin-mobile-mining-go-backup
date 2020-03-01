@@ -192,9 +192,6 @@ func MakePreState(db taudb.Database, accounts core.GenesisAlloc) *state.StateDB 
 	for addr, a := range accounts {
 		statedb.SetNonce(addr, a.Nonce)
 		statedb.SetBalance(addr, a.Balance)
-		for k, v := range a.Storage {
-			statedb.SetState(addr, k, v)
-		}
 	}
 	// Commit and re-open to start with a clean state.
 	root, _ := statedb.Commit(false)

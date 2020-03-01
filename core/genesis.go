@@ -257,9 +257,6 @@ func (g *Genesis) ToBlock(db taudb.Database) *types.Block {
 	for addr, account := range g.Alloc {
 		statedb.AddBalance(addr, account.Balance)
 		statedb.SetNonce(addr, account.Nonce)
-		for key, value := range account.Storage {
-			statedb.SetState(addr, key, value)
-		}
 	}
 	root := statedb.IntermediateRoot(false)
 	head := &types.Header{

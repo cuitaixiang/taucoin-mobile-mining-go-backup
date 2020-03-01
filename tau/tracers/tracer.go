@@ -89,19 +89,6 @@ func (dw *dbWrapper) pushObject(vm *duktape.Context) {
 	})
 	vm.PutPropString(obj, "getNonce")
 
-	// Push the wrapper for statedb.GetState
-	vm.PushGoFunction(func(ctx *duktape.Context) int {
-		hash := popSlice(ctx)
-		addr := popSlice(ctx)
-
-		state := dw.db.GetState(common.BytesToAddress(addr), common.BytesToHash(hash))
-
-		ptr := ctx.PushFixedBuffer(len(state))
-		copy(makeSlice(ptr, uint(len(state))), state[:])
-		return 1
-	})
-	vm.PutPropString(obj, "getState")
-
 	// Push the wrapper for statedb.Exists
 	vm.PushGoFunction(func(ctx *duktape.Context) int {
 		ctx.PushBoolean(dw.db.Exist(common.BytesToAddress(popSlice(ctx))))

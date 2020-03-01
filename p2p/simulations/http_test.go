@@ -251,14 +251,6 @@ func (t *TestAPI) Add(delta int64) {
 	t.feed.Send(delta)
 }
 
-func (t *TestAPI) GetState() []byte {
-	return t.state.Load().([]byte)
-}
-
-func (t *TestAPI) SetState(state []byte) {
-	t.state.Store(state)
-}
-
 func (t *TestAPI) Events(ctx context.Context) (*rpc.Subscription, error) {
 	notifier, supported := rpc.NotifierFromContext(ctx)
 	if !supported {

@@ -87,23 +87,6 @@ func (s *StateSuite) SetUpTest(c *checker.C) {
 	s.state, _ = New(common.Hash{}, NewDatabase(s.db))
 }
 
-func (s *StateSuite) TestNull(c *checker.C) {
-	address := common.HexToAddress("0x823140710bf13990e4500136726d8b55")
-	s.state.CreateAccount(address)
-	//value := common.FromHex("0x823140710bf13990e4500136726d8b55")
-	var value common.Hash
-
-	s.state.SetState(address, common.Hash{}, value)
-	s.state.Commit(false)
-
-	if value := s.state.GetState(address, common.Hash{}); value != (common.Hash{}) {
-		c.Errorf("expected empty current value, got %x", value)
-	}
-	if value := s.state.GetCommittedState(address, common.Hash{}); value != (common.Hash{}) {
-		c.Errorf("expected empty committed value, got %x", value)
-	}
-}
-
 func (s *StateSuite) TestSnapshot(c *checker.C) {
 	stateobjaddr := toAddr([]byte("aa"))
 	var storageaddr common.Hash
@@ -112,14 +95,6 @@ func (s *StateSuite) TestSnapshot(c *checker.C) {
 
 	// snapshot the genesis state
 	genesis := s.state.Snapshot()
-
-	// set initial state object value
-	s.state.SetState(stateobjaddr, storageaddr, data1)
-	snapshot := s.state.Snapshot()
-
-	// set a new state object value, revert it and ensure correct content
-	s.state.SetState(stateobjaddr, storageaddr, data2)
-	s.state.RevertToSnapshot(snapshot)
 
 	c.Assert(s.state.GetState(stateobjaddr, storageaddr), checker.DeepEquals, data1)
 	c.Assert(s.state.GetCommittedState(stateobjaddr, storageaddr), checker.DeepEquals, common.Hash{})
@@ -145,9 +120,6 @@ func TestSnapshot2(t *testing.T) {
 
 	data0 := common.BytesToHash([]byte{17})
 	data1 := common.BytesToHash([]byte{18})
-
-	state.SetState(stateobjaddr0, storageaddr, data0)
-	state.SetState(stateobjaddr1, storageaddr, data1)
 
 	// db, trie are already non-empty values
 	so0 := state.getStateObject(stateobjaddr0)
