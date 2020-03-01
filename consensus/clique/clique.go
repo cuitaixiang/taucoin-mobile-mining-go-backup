@@ -34,11 +34,11 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/state"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/crypto"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rlp"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rpc"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	lru "github.com/hashicorp/golang-lru"
 	"golang.org/x/crypto/sha3"
 )
@@ -423,15 +423,6 @@ func (c *Clique) snapshot(chain consensus.ChainReader, number uint64, hash commo
 		log.Trace("Stored voting snapshot to disk", "number", snap.Number, "hash", snap.Hash)
 	}
 	return snap, err
-}
-
-// VerifyUncles implements consensus.Engine, always returning an error for any
-// uncles as this consensus mechanism doesn't permit uncles.
-func (c *Clique) VerifyUncles(chain consensus.ChainReader, block *types.Block) error {
-	if len(block.Uncles()) > 0 {
-		return errors.New("uncles not allowed")
-	}
-	return nil
 }
 
 // VerifySeal implements consensus.Engine, checking whtauer the signature contained

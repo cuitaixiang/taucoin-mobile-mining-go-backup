@@ -34,12 +34,12 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/rawdb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/state"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/event"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/metrics"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rlp"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/trie"
 	"github.com/hashicorp/golang-lru"
 )
@@ -1568,8 +1568,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 				logger = log.Warn
 			}
 			logger("Inserted known block", "number", block.Number(), "hash", block.Hash(),
-				"uncles", len(block.Uncles()), "txs", len(block.Transactions()), "gas", block.GasUsed(),
-				"root", block.Root())
+				"uncles", len(block.Uncles()), "txs", len(block.Transactions()), "root", block.Root())
 
 			if err := bc.writeKnownBlock(block); err != nil {
 				return it.index, nil, nil, err
@@ -1665,8 +1664,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 		switch status {
 		case CanonStatTy:
 			log.Debug("Inserted new block", "number", block.Number(), "hash", block.Hash(),
-				"uncles", len(block.Uncles()), "txs", len(block.Transactions()), "gas", block.GasUsed(),
-				"elapsed", common.PrettyDuration(time.Since(start)),
+				"uncles", len(block.Uncles()), "txs", len(block.Transactions()), "elapsed", common.PrettyDuration(time.Since(start)),
 				"root", block.Root())
 
 			coalescedLogs = append(coalescedLogs, logs...)
@@ -1679,8 +1677,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 		case SideStatTy:
 			log.Debug("Inserted forked block", "number", block.Number(), "hash", block.Hash(),
 				"diff", block.Difficulty(), "elapsed", common.PrettyDuration(time.Since(start)),
-				"txs", len(block.Transactions()), "gas", block.GasUsed(), "uncles", len(block.Uncles()),
-				"root", block.Root())
+				"txs", len(block.Transactions()), "uncles", len(block.Uncles()), "root", block.Root())
 			events = append(events, ChainSideEvent{block})
 
 		default:
@@ -1688,8 +1685,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 			// a log, instead of trying to track down blocks imports that don't emit logs.
 			log.Warn("Inserted block with unknown status", "number", block.Number(), "hash", block.Hash(),
 				"diff", block.Difficulty(), "elapsed", common.PrettyDuration(time.Since(start)),
-				"txs", len(block.Transactions()), "gas", block.GasUsed(), "uncles", len(block.Uncles()),
-				"root", block.Root())
+				"txs", len(block.Transactions()), "uncles", len(block.Uncles()), "root", block.Root())
 		}
 		stats.processed++
 		stats.usedGas += usedGas
@@ -1777,8 +1773,7 @@ func (bc *BlockChain) insertSideChain(block *types.Block, it *insertIterator) (i
 			}
 			log.Debug("Injected sidechain block", "number", block.Number(), "hash", block.Hash(),
 				"diff", block.Difficulty(), "elapsed", common.PrettyDuration(time.Since(start)),
-				"txs", len(block.Transactions()), "gas", block.GasUsed(), "uncles", len(block.Uncles()),
-				"root", block.Root())
+				"txs", len(block.Transactions()), "uncles", len(block.Uncles()), "root", block.Root())
 		}
 	}
 	// At this point, we've written all sidechain blocks to database. Loop ended

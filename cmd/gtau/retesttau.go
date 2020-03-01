@@ -31,20 +31,20 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/hexutil"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/math"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus/tauhash"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus/misc"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus/tauhash"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/rawdb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/state"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/vm"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/crypto"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/node"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rlp"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rpc"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/trie"
 
 	cli "gopkg.in/urfave/cli.v1"
@@ -200,10 +200,6 @@ func (e *NoRewardEngine) VerifyHeader(chain consensus.ChainReader, header *types
 
 func (e *NoRewardEngine) VerifyHeaders(chain consensus.ChainReader, headers []*types.Header, seals []bool) (chan<- struct{}, <-chan error) {
 	return e.inner.VerifyHeaders(chain, headers, seals)
-}
-
-func (e *NoRewardEngine) VerifyUncles(chain consensus.ChainReader, block *types.Block) error {
-	return e.inner.VerifyUncles(chain, block)
 }
 
 func (e *NoRewardEngine) VerifySeal(chain consensus.ChainReader, header *types.Header) error {
