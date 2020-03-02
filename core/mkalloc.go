@@ -80,6 +80,7 @@ func main() {
 		panic(err)
 	}
 	if err := json.NewDecoder(file).Decode(g); err != nil {
+	    fmt.Println(err)
 		panic(err)
 	}
 	fmt.Println("const allocData =", makealloc(g))

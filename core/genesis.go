@@ -259,6 +259,7 @@ func (g *Genesis) ToBlock(db taudb.Database) *types.Block {
 		statedb.SetNonce(addr, account.Nonce)
 	}
 	root := statedb.IntermediateRoot(false)
+    fmt.Println("state root is :", root.Hex())
 	head := &types.Header{
 		Number:     new(big.Int).SetUint64(g.Number),
 		Nonce:      types.EncodeNonce(g.Nonce),
