@@ -25,8 +25,8 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus/misc"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/state"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 )
 
 // BlockGen creates blocks for testing.
@@ -255,7 +255,6 @@ func makeHeader(chain consensus.ChainReader, parent *types.Block, state *state.S
 			Number:     parent.Number(),
 			Time:       time - 10,
 			Difficulty: parent.Difficulty(),
-			UncleHash:  parent.UncleHash(),
 		}),
 		GasLimit: CalcGasLimit(parent, parent.GasLimit(), parent.GasLimit()),
 		Number:   new(big.Int).Add(parent.Number(), common.Big1),
