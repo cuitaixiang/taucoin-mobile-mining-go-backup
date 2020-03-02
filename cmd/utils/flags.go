@@ -36,14 +36,9 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/fdlimit"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus/clique"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus/tauhash"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/crypto"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/taustats"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/metrics"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/metrics/influxdb"
@@ -55,8 +50,12 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/p2p/nat"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/p2p/netutil"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/taustats"
 	pcsclite "github.com/gballet/go-libpcsclite"
-	cli "gopkg.in/urfave/cli.v1"
+	"gopkg.in/urfave/cli.v1"
 )
 
 var (
@@ -621,17 +620,17 @@ var (
 	}
 
 	// Gas price oracle settings
-    /*
-	GpoBlocksFlag = cli.IntFlag{
-		Name:  "gpoblocks",
-		Usage: "Number of recent blocks to check for gas prices",
-		Value: tau.DefaultConfig.GPO.Blocks,
-	}
-	GpoPercentileFlag = cli.IntFlag{
-		Name:  "gpopercentile",
-		Usage: "Suggested gas price is the given percentile of a set of recent transaction gas prices",
-		Value: tau.DefaultConfig.GPO.Percentile,
-	}
+	/*
+		GpoBlocksFlag = cli.IntFlag{
+			Name:  "gpoblocks",
+			Usage: "Number of recent blocks to check for gas prices",
+			Value: tau.DefaultConfig.GPO.Blocks,
+		}
+		GpoPercentileFlag = cli.IntFlag{
+			Name:  "gpopercentile",
+			Usage: "Suggested gas price is the given percentile of a set of recent transaction gas prices",
+			Value: tau.DefaultConfig.GPO.Percentile,
+		}
 	*/
 
 	// Metrics flags
@@ -859,7 +858,6 @@ func setHTTP(ctx *cli.Context, cfg *node.Config) {
 		cfg.HTTPVirtualHosts = splitAndTrim(ctx.GlobalString(RPCVirtualHostsFlag.Name))
 	}
 }
-
 
 // setWS creates the WebSocket RPC listener interface string from the set
 // command line flags, returning empty if the HTTP endpoint is disabled.
@@ -1411,7 +1409,7 @@ func SetTauConfig(ctx *cli.Context, stack *node.Node, cfg *tau.Config) {
 		}
 		log.Info("Using developer account", "address", developer.Address)
 
-		cfg.Genesis = core.DeveloperGenesisBlock(uint64(ctx.GlobalInt(DeveloperPeriodFlag.Name)), developer.Address)
+		cfg.Genesis = core.DeveloperGenesisBlock(developer.Address)
 		if !ctx.GlobalIsSet(MinerGasPriceFlag.Name) && !ctx.GlobalIsSet(MinerLegacyGasPriceFlag.Name) {
 			cfg.Miner.GasPrice = big.NewInt(1)
 		}
@@ -1525,20 +1523,16 @@ func MakeChain(ctx *cli.Context, stack *node.Node) (chain *core.BlockChain, chai
 		Fatalf("%v", err)
 	}
 	var engine consensus.Engine
-	if config.Clique != nil {
-		engine = clique.New(config.Clique, chainDb)
-	} else {
-		engine = tauhash.NewFaker()
-		if !ctx.GlobalBool(FakePoWFlag.Name) {
-			engine = tauhash.New(tauhash.Config{
-				CacheDir:       stack.ResolvePath(tau.DefaultConfig.Tauash.CacheDir),
-				CachesInMem:    tau.DefaultConfig.Tauash.CachesInMem,
-				CachesOnDisk:   tau.DefaultConfig.Tauash.CachesOnDisk,
-				DatasetDir:     stack.ResolvePath(tau.DefaultConfig.Tauash.DatasetDir),
-				DatasetsInMem:  tau.DefaultConfig.Tauash.DatasetsInMem,
-				DatasetsOnDisk: tau.DefaultConfig.Tauash.DatasetsOnDisk,
-			}, nil, false)
-		}
+	engine = tauhash.NewFaker()
+	if !ctx.GlobalBool(FakePoWFlag.Name) {
+		engine = tauhash.New(tauhash.Config{
+			CacheDir:       stack.ResolvePath(tau.DefaultConfig.Tauash.CacheDir),
+			CachesInMem:    tau.DefaultConfig.Tauash.CachesInMem,
+			CachesOnDisk:   tau.DefaultConfig.Tauash.CachesOnDisk,
+			DatasetDir:     stack.ResolvePath(tau.DefaultConfig.Tauash.DatasetDir),
+			DatasetsInMem:  tau.DefaultConfig.Tauash.DatasetsInMem,
+			DatasetsOnDisk: tau.DefaultConfig.Tauash.DatasetsOnDisk,
+		}, nil, false)
 	}
 	if gcmode := ctx.GlobalString(GCModeFlag.Name); gcmode != "full" && gcmode != "archive" {
 		Fatalf("--%s must be either 'full' or 'archive'", GCModeFlag.Name)

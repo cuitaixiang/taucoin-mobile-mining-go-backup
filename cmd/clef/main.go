@@ -740,34 +740,6 @@ func testExternalUI(api *core.SignerAPI) {
 		time.Sleep(delay)
 		expectResponse("showerror", "Did you see the message? [yes/no]", "yes")
 	}
-	{ // Sign data test - clique header
-		api.UI.ShowInfo("Please approve the next request for signing a clique header")
-		time.Sleep(delay)
-		cliqueHeader := types.Header{
-			common.HexToHash("0000H45H"),
-			common.HexToHash("0000H45H"),
-			common.HexToAddress("0000H45H"),
-			common.HexToHash("0000H00H"),
-			common.HexToHash("0000H45H"),
-			common.HexToHash("0000H45H"),
-			types.Bloom{},
-			big.NewInt(1337),
-			big.NewInt(1337),
-			1338,
-			1338,
-			1338,
-			[]byte("Extra data Extra data Extra data  Extra data  Extra data  Extra data  Extra data Extra data"),
-			common.HexToHash("0x0000H45H"),
-			types.BlockNonce{},
-		}
-		cliqueRlp, err := rlp.EncodeToBytes(cliqueHeader)
-		if err != nil {
-			utils.Fatalf("Should not error: %v", err)
-		}
-		addr, _ := common.NewMixedcaseAddressFromString("0x0011223344556677889900112233445566778899")
-		_, err = api.SignData(ctx, accounts.MimetypeClique, *addr, hexutil.Encode(cliqueRlp))
-		expectApprove("signdata - clique header", err)
-	}
 	{ // Sign data test - typed data
 		api.UI.ShowInfo("Please approve the next request for signing EIP-712 typed data")
 		time.Sleep(delay)
@@ -799,11 +771,11 @@ func testExternalUI(api *core.SignerAPI) {
 		time.Sleep(delay)
 		to := common.NewMixedcaseAddress(a)
 		tx := core.SendTxArgs{
-			Nonce:    0x1,
-			Value:    hexutil.Big(*big.NewInt(6)),
-			From:     common.NewMixedcaseAddress(a),
-			To:       &to,
-			Fee:      hexutil.Big(*big.NewInt(5)),
+			Nonce: 0x1,
+			Value: hexutil.Big(*big.NewInt(6)),
+			From:  common.NewMixedcaseAddress(a),
+			To:    &to,
+			Fee:   hexutil.Big(*big.NewInt(5)),
 		}
 		_, err := api.SignTransaction(ctx, tx, nil)
 		expectDeny("signtransaction [1]", err)
@@ -952,11 +924,11 @@ func GenDoc(ctx *cli.Context) {
 				{"Info", "User should see this aswell"},
 			},
 			Transaction: core.SendTxArgs{
-				Nonce:    0x1,
-				Value:    hexutil.Big(*big.NewInt(6)),
-				From:     common.NewMixedcaseAddress(a),
-				To:       nil,
-				Fee:      hexutil.Big(*big.NewInt(5)),
+				Nonce: 0x1,
+				Value: hexutil.Big(*big.NewInt(6)),
+				From:  common.NewMixedcaseAddress(a),
+				To:    nil,
+				Fee:   hexutil.Big(*big.NewInt(5)),
 			}})
 	}
 	{ // Sign tx response
@@ -964,11 +936,11 @@ func GenDoc(ctx *cli.Context) {
 			", because the UI is free to make modifications to the transaction.",
 			&core.SignTxResponse{Approved: true,
 				Transaction: core.SendTxArgs{
-					Nonce:    0x4,
-					Value:    hexutil.Big(*big.NewInt(6)),
-					From:     common.NewMixedcaseAddress(a),
-					To:       nil,
-					Fee:      hexutil.Big(*big.NewInt(5)),
+					Nonce: 0x4,
+					Value: hexutil.Big(*big.NewInt(6)),
+					From:  common.NewMixedcaseAddress(a),
+					To:    nil,
+					Fee:   hexutil.Big(*big.NewInt(5)),
 				}})
 		add("SignTxResponse - deny", "Response to SignTxRequest. When denying a request, there's no need to "+
 			"provide the transaction in return",
