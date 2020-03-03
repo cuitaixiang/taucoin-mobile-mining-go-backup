@@ -118,7 +118,6 @@ type ChainParams struct {
 type CParamsParams struct {
 	AccountStartNonce          math.HexOrDecimal64   `json:"accountStartNonce"`
 	HomesteadForkBlock         *math.HexOrDecimal64  `json:"homesteadForkBlock"`
-	EIP150ForkBlock            *math.HexOrDecimal64  `json:"EIP150ForkBlock"`
 	EIP158ForkBlock            *math.HexOrDecimal64  `json:"EIP158ForkBlock"`
 	ByzantiumForkBlock         *math.HexOrDecimal64  `json:"byzantiumForkBlock"`
 	ConstantinopleForkBlock    *math.HexOrDecimal64  `json:"constantinopleForkBlock"`
@@ -300,7 +299,6 @@ func (api *RetesttauAPI) SetChainParams(ctx context.Context, chainParams ChainPa
 	}
 	var (
 		homesteadBlock      *big.Int
-		eip150Block         *big.Int
 		eip155Block         *big.Int
 		eip158Block         *big.Int
 		byzantiumBlock      *big.Int
@@ -310,9 +308,6 @@ func (api *RetesttauAPI) SetChainParams(ctx context.Context, chainParams ChainPa
 	)
 	if chainParams.Params.HomesteadForkBlock != nil {
 		homesteadBlock = big.NewInt(int64(*chainParams.Params.HomesteadForkBlock))
-	}
-	if chainParams.Params.EIP150ForkBlock != nil {
-		eip150Block = big.NewInt(int64(*chainParams.Params.EIP150ForkBlock))
 	}
 	if chainParams.Params.EIP158ForkBlock != nil {
 		eip158Block = big.NewInt(int64(*chainParams.Params.EIP158ForkBlock))
@@ -338,7 +333,6 @@ func (api *RetesttauAPI) SetChainParams(ctx context.Context, chainParams ChainPa
 		Config: &params.ChainConfig{
 			ChainID:             chainId,
 			HomesteadBlock:      homesteadBlock,
-			EIP150Block:         eip150Block,
 			EIP155Block:         eip155Block,
 			EIP158Block:         eip158Block,
 			ByzantiumBlock:      byzantiumBlock,

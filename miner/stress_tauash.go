@@ -29,19 +29,18 @@ import (
 	"time"
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/accounts/keystore"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/fdlimit"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus/tauhash"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/crypto"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/node"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/p2p"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/p2p/enode"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
 )
 
 func main() {
@@ -137,7 +136,6 @@ func makeGenesis(faucets []*ecdsa.PrivateKey) *core.Genesis {
 	genesis.GasLimit = 25000000
 
 	genesis.Config.ChainID = big.NewInt(18)
-	genesis.Config.EIP150Hash = common.Hash{}
 
 	genesis.Alloc = core.GenesisAlloc{}
 	for _, faucet := range faucets {
