@@ -116,24 +116,23 @@ type ChainParams struct {
 }
 
 type CParamsParams struct {
-	AccountStartNonce          math.HexOrDecimal64   `json:"accountStartNonce"`
-	HomesteadForkBlock         *math.HexOrDecimal64  `json:"homesteadForkBlock"`
-	EIP158ForkBlock            *math.HexOrDecimal64  `json:"EIP158ForkBlock"`
-	ByzantiumForkBlock         *math.HexOrDecimal64  `json:"byzantiumForkBlock"`
-	ConstantinopleForkBlock    *math.HexOrDecimal64  `json:"constantinopleForkBlock"`
-	ConstantinopleFixForkBlock *math.HexOrDecimal64  `json:"constantinopleFixForkBlock"`
-	IstanbulBlock              *math.HexOrDecimal64  `json:"istanbulForkBlock"`
-	ChainID                    *math.HexOrDecimal256 `json:"chainID"`
-	MaximumExtraDataSize       math.HexOrDecimal64   `json:"maximumExtraDataSize"`
-	TieBreakingGas             bool                  `json:"tieBreakingGas"`
-	MinGasLimit                math.HexOrDecimal64   `json:"minGasLimit"`
-	MaxGasLimit                math.HexOrDecimal64   `json:"maxGasLimit"`
-	GasLimitBoundDivisor       math.HexOrDecimal64   `json:"gasLimitBoundDivisor"`
-	MinimumDifficulty          math.HexOrDecimal256  `json:"minimumDifficulty"`
-	DifficultyBoundDivisor     math.HexOrDecimal256  `json:"difficultyBoundDivisor"`
-	DurationLimit              math.HexOrDecimal256  `json:"durationLimit"`
-	BlockReward                math.HexOrDecimal256  `json:"blockReward"`
-	NetworkID                  math.HexOrDecimal256  `json:"networkID"`
+	AccountStartNonce       math.HexOrDecimal64   `json:"accountStartNonce"`
+	HomesteadForkBlock      *math.HexOrDecimal64  `json:"homesteadForkBlock"`
+	EIP158ForkBlock         *math.HexOrDecimal64  `json:"EIP158ForkBlock"`
+	ByzantiumForkBlock      *math.HexOrDecimal64  `json:"byzantiumForkBlock"`
+	ConstantinopleForkBlock *math.HexOrDecimal64  `json:"constantinopleForkBlock"`
+	IstanbulBlock           *math.HexOrDecimal64  `json:"istanbulForkBlock"`
+	ChainID                 *math.HexOrDecimal256 `json:"chainID"`
+	MaximumExtraDataSize    math.HexOrDecimal64   `json:"maximumExtraDataSize"`
+	TieBreakingGas          bool                  `json:"tieBreakingGas"`
+	MinGasLimit             math.HexOrDecimal64   `json:"minGasLimit"`
+	MaxGasLimit             math.HexOrDecimal64   `json:"maxGasLimit"`
+	GasLimitBoundDivisor    math.HexOrDecimal64   `json:"gasLimitBoundDivisor"`
+	MinimumDifficulty       math.HexOrDecimal256  `json:"minimumDifficulty"`
+	DifficultyBoundDivisor  math.HexOrDecimal256  `json:"difficultyBoundDivisor"`
+	DurationLimit           math.HexOrDecimal256  `json:"durationLimit"`
+	BlockReward             math.HexOrDecimal256  `json:"blockReward"`
+	NetworkID               math.HexOrDecimal256  `json:"networkID"`
 }
 
 type CParamsGenesis struct {
@@ -303,7 +302,6 @@ func (api *RetesttauAPI) SetChainParams(ctx context.Context, chainParams ChainPa
 		eip158Block         *big.Int
 		byzantiumBlock      *big.Int
 		constantinopleBlock *big.Int
-		petersburgBlock     *big.Int
 		istanbulBlock       *big.Int
 	)
 	if chainParams.Params.HomesteadForkBlock != nil {
@@ -319,12 +317,6 @@ func (api *RetesttauAPI) SetChainParams(ctx context.Context, chainParams ChainPa
 	if chainParams.Params.ConstantinopleForkBlock != nil {
 		constantinopleBlock = big.NewInt(int64(*chainParams.Params.ConstantinopleForkBlock))
 	}
-	if chainParams.Params.ConstantinopleFixForkBlock != nil {
-		petersburgBlock = big.NewInt(int64(*chainParams.Params.ConstantinopleFixForkBlock))
-	}
-	if constantinopleBlock != nil && petersburgBlock == nil {
-		petersburgBlock = big.NewInt(100000000000)
-	}
 	if chainParams.Params.IstanbulBlock != nil {
 		istanbulBlock = big.NewInt(int64(*chainParams.Params.IstanbulBlock))
 	}
@@ -337,7 +329,6 @@ func (api *RetesttauAPI) SetChainParams(ctx context.Context, chainParams ChainPa
 			EIP158Block:         eip158Block,
 			ByzantiumBlock:      byzantiumBlock,
 			ConstantinopleBlock: constantinopleBlock,
-			PetersburgBlock:     petersburgBlock,
 			IstanbulBlock:       istanbulBlock,
 		},
 		Nonce:      uint64(chainParams.Genesis.Nonce),
