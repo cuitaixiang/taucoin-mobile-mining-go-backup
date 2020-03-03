@@ -27,7 +27,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/math"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus/misc"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/state"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
@@ -231,13 +230,6 @@ func (tauhash *Tauash) verifyHeader(chain consensus.ChainReader, header, parent 
 		if err := tauhash.VerifySeal(chain, header); err != nil {
 			return err
 		}
-	}
-	// If all checks passed, validate any special fields for hard forks
-	if err := misc.VerifyDAOHeaderExtraData(chain.Config(), header); err != nil {
-		return err
-	}
-	if err := misc.VerifyForkHashes(chain.Config(), header, uncle); err != nil {
-		return err
 	}
 	return nil
 }

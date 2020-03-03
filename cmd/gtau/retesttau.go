@@ -17,7 +17,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"math/big"
@@ -31,7 +30,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/hexutil"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/math"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus/misc"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus/tauhash"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/rawdb"
@@ -47,7 +45,7 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/trie"
 
-	cli "gopkg.in/urfave/cli.v1"
+	"gopkg.in/urfave/cli.v1"
 )
 
 var (
@@ -122,7 +120,6 @@ type CParamsParams struct {
 	HomesteadForkBlock         *math.HexOrDecimal64  `json:"homesteadForkBlock"`
 	EIP150ForkBlock            *math.HexOrDecimal64  `json:"EIP150ForkBlock"`
 	EIP158ForkBlock            *math.HexOrDecimal64  `json:"EIP158ForkBlock"`
-	DaoHardforkBlock           *math.HexOrDecimal64  `json:"daoHardforkBlock"`
 	ByzantiumForkBlock         *math.HexOrDecimal64  `json:"byzantiumForkBlock"`
 	ConstantinopleForkBlock    *math.HexOrDecimal64  `json:"constantinopleForkBlock"`
 	ConstantinopleFixForkBlock *math.HexOrDecimal64  `json:"constantinopleFixForkBlock"`
@@ -303,7 +300,6 @@ func (api *RetesttauAPI) SetChainParams(ctx context.Context, chainParams ChainPa
 	}
 	var (
 		homesteadBlock      *big.Int
-		daoForkBlock        *big.Int
 		eip150Block         *big.Int
 		eip155Block         *big.Int
 		eip158Block         *big.Int
@@ -314,9 +310,6 @@ func (api *RetesttauAPI) SetChainParams(ctx context.Context, chainParams ChainPa
 	)
 	if chainParams.Params.HomesteadForkBlock != nil {
 		homesteadBlock = big.NewInt(int64(*chainParams.Params.HomesteadForkBlock))
-	}
-	if chainParams.Params.DaoHardforkBlock != nil {
-		daoForkBlock = big.NewInt(int64(*chainParams.Params.DaoHardforkBlock))
 	}
 	if chainParams.Params.EIP150ForkBlock != nil {
 		eip150Block = big.NewInt(int64(*chainParams.Params.EIP150ForkBlock))
@@ -345,8 +338,6 @@ func (api *RetesttauAPI) SetChainParams(ctx context.Context, chainParams ChainPa
 		Config: &params.ChainConfig{
 			ChainID:             chainId,
 			HomesteadBlock:      homesteadBlock,
-			DAOForkBlock:        daoForkBlock,
-			DAOForkSupport:      false,
 			EIP150Block:         eip150Block,
 			EIP155Block:         eip155Block,
 			EIP158Block:         eip158Block,
@@ -461,25 +452,9 @@ func (api *RetesttauAPI) mineBlock() error {
 	if api.engine != nil {
 		api.engine.Prepare(api.blockchain, header)
 	}
-	// If we are care about TheDAO hard-fork check whtauer to override the extra-data or not
-	if daoBlock := api.chainConfig.DAOForkBlock; daoBlock != nil {
-		// Check whtauer the block is among the fork extra-override range
-		limit := new(big.Int).Add(daoBlock, params.DAOForkExtraRange)
-		if header.Number.Cmp(daoBlock) >= 0 && header.Number.Cmp(limit) < 0 {
-			// Depending whtauer we support or oppose the fork, override differently
-			if api.chainConfig.DAOForkSupport {
-				header.Extra = common.CopyBytes(params.DAOForkBlockExtra)
-			} else if bytes.Equal(header.Extra, params.DAOForkBlockExtra) {
-				header.Extra = []byte{} // If miner opposes, don't let it use the reserved extra-data
-			}
-		}
-	}
 	statedb, err := api.blockchain.StateAt(parent.Root())
 	if err != nil {
 		return err
-	}
-	if api.chainConfig.DAOForkSupport && api.chainConfig.DAOForkBlock != nil && api.chainConfig.DAOForkBlock.Cmp(header.Number) == 0 {
-		misc.ApplyDAOHardFork(statedb)
 	}
 	gasPool := new(core.GasPool).AddGas(header.GasLimit)
 	txCount := 0

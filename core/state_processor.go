@@ -19,7 +19,6 @@ package core
 import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus/misc"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/state"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/vm"
@@ -61,10 +60,6 @@ func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB) (ty
 		allLogs  []*types.Log
 		gp       = new(GasPool).AddGas(block.GasLimit())
 	)
-	// Mutate the block and state according to any hard-fork specs
-	if p.config.DAOForkSupport && p.config.DAOForkBlock != nil && p.config.DAOForkBlock.Cmp(block.Number()) == 0 {
-		misc.ApplyDAOHardFork(statedb)
-	}
 	// Iterate over and process the individual transactions
 	for i, tx := range block.Transactions() {
 		statedb.Prepare(tx.Hash(), block.Hash(), i)
@@ -110,18 +105,18 @@ func ApplyTransaction(config *params.ChainConfig, bc ChainContext, author *commo
 	// ctc delete
 	receipt := types.NewReceipt(root, failed, *usedGas)
 	/*
-	receipt.TxHash = tx.Hash()
-	receipt.GasUsed = gas
-	// if the transaction created a contract, store the creation address in the receipt.
-	if msg.To() == nil {
-		receipt.ContractAddress = crypto.CreateAddress(vmenv.Context.Origin, tx.Nonce())
-	}
-	// Set the receipt logs and create a bloom for filtering
-	receipt.Logs = statedb.GetLogs(tx.Hash())
-	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
-	receipt.BlockHash = statedb.BlockHash()
-	receipt.BlockNumber = header.Number
-	receipt.TransactionIndex = uint(statedb.TxIndex())
-    */
+		receipt.TxHash = tx.Hash()
+		receipt.GasUsed = gas
+		// if the transaction created a contract, store the creation address in the receipt.
+		if msg.To() == nil {
+			receipt.ContractAddress = crypto.CreateAddress(vmenv.Context.Origin, tx.Nonce())
+		}
+		// Set the receipt logs and create a bloom for filtering
+		receipt.Logs = statedb.GetLogs(tx.Hash())
+		receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
+		receipt.BlockHash = statedb.BlockHash()
+		receipt.BlockNumber = header.Number
+		receipt.TransactionIndex = uint(statedb.TxIndex())
+	*/
 	return receipt, gas, err
 }
