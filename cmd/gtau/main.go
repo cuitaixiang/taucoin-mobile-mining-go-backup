@@ -28,19 +28,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/elastic/gosigar"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/accounts"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/accounts/keystore"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/cmd/utils"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/console"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/tauclient"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/internal/debug"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/metrics"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/node"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/tauclient"
+	"github.com/elastic/gosigar"
 	cli "gopkg.in/urfave/cli.v1"
 )
 
@@ -68,7 +68,6 @@ var (
 		utils.ExternalSignerFlag,
 		utils.NoUSBFlag,
 		utils.SmartCardDaemonPathFlag,
-		utils.OverrideIstanbulFlag,
 		utils.TauashCacheDirFlag,
 		utils.TauashCachesInMemoryFlag,
 		utils.TauashCachesOnDiskFlag,

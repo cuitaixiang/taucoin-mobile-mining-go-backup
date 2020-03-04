@@ -121,7 +121,6 @@ type CParamsParams struct {
 	EIP158ForkBlock         *math.HexOrDecimal64  `json:"EIP158ForkBlock"`
 	ByzantiumForkBlock      *math.HexOrDecimal64  `json:"byzantiumForkBlock"`
 	ConstantinopleForkBlock *math.HexOrDecimal64  `json:"constantinopleForkBlock"`
-	IstanbulBlock           *math.HexOrDecimal64  `json:"istanbulForkBlock"`
 	ChainID                 *math.HexOrDecimal256 `json:"chainID"`
 	MaximumExtraDataSize    math.HexOrDecimal64   `json:"maximumExtraDataSize"`
 	TieBreakingGas          bool                  `json:"tieBreakingGas"`
@@ -302,7 +301,6 @@ func (api *RetesttauAPI) SetChainParams(ctx context.Context, chainParams ChainPa
 		eip158Block         *big.Int
 		byzantiumBlock      *big.Int
 		constantinopleBlock *big.Int
-		istanbulBlock       *big.Int
 	)
 	if chainParams.Params.HomesteadForkBlock != nil {
 		homesteadBlock = big.NewInt(int64(*chainParams.Params.HomesteadForkBlock))
@@ -317,9 +315,6 @@ func (api *RetesttauAPI) SetChainParams(ctx context.Context, chainParams ChainPa
 	if chainParams.Params.ConstantinopleForkBlock != nil {
 		constantinopleBlock = big.NewInt(int64(*chainParams.Params.ConstantinopleForkBlock))
 	}
-	if chainParams.Params.IstanbulBlock != nil {
-		istanbulBlock = big.NewInt(int64(*chainParams.Params.IstanbulBlock))
-	}
 
 	genesis := &core.Genesis{
 		Config: &params.ChainConfig{
@@ -329,7 +324,6 @@ func (api *RetesttauAPI) SetChainParams(ctx context.Context, chainParams ChainPa
 			EIP158Block:         eip158Block,
 			ByzantiumBlock:      byzantiumBlock,
 			ConstantinopleBlock: constantinopleBlock,
-			IstanbulBlock:       istanbulBlock,
 		},
 		Nonce:      uint64(chainParams.Genesis.Nonce),
 		Timestamp:  uint64(chainParams.Genesis.Timestamp),

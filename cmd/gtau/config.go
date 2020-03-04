@@ -20,17 +20,16 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"math/big"
 	"os"
 	"reflect"
 	"unicode"
 
-	cli "gopkg.in/urfave/cli.v1"
+	"gopkg.in/urfave/cli.v1"
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/cmd/utils"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/node"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau"
 	"github.com/naoina/toml"
 )
 
@@ -73,9 +72,9 @@ type taustatsConfig struct {
 }
 
 type gtauConfig struct {
-	Tau       tau.Config
-	Node      node.Config
-	Taustats  taustatsConfig
+	Tau      tau.Config
+	Node     node.Config
+	Taustats taustatsConfig
 }
 
 func loadConfig(file string, cfg *gtauConfig) error {
@@ -106,8 +105,8 @@ func defaultNodeConfig() node.Config {
 func makeConfigNode(ctx *cli.Context) (*node.Node, gtauConfig) {
 	// Load defaults.
 	cfg := gtauConfig{
-		Tau:       tau.DefaultConfig,
-		Node:      defaultNodeConfig(),
+		Tau:  tau.DefaultConfig,
+		Node: defaultNodeConfig(),
 	}
 
 	// Load config file.
@@ -134,9 +133,6 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gtauConfig) {
 
 func makeFullNode(ctx *cli.Context) *node.Node {
 	stack, cfg := makeConfigNode(ctx)
-	if ctx.GlobalIsSet(utils.OverrideIstanbulFlag.Name) {
-		cfg.Tau.OverrideIstanbul = new(big.Int).SetUint64(ctx.GlobalUint64(utils.OverrideIstanbulFlag.Name))
-	}
 	utils.RegisterTauService(stack, &cfg.Tau)
 
 	// Add the Tau Stats daemon if requested.
