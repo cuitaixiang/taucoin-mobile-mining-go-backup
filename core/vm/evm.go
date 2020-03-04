@@ -21,13 +21,8 @@ import (
 	"sync/atomic"
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/crypto"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
 )
-
-// emptyCodeHash is used by create to ensure deployment is disallowed to already
-// deployed contract addresses (relevant after the account abstraction).
-var emptyCodeHash = crypto.Keccak256Hash(nil)
 
 type (
 	// CanTransferFunc is the signature of a transfer guard function
@@ -135,18 +130,6 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, fee uint64, value 
 	evm.Transfer(evm.StateDB, caller.Address(), to.Address(), value)
 
 	return ret, err
-}
-
-type codeAndHash struct {
-	code []byte
-	hash common.Hash
-}
-
-func (c *codeAndHash) Hash() common.Hash {
-	if c.hash == (common.Hash{}) {
-		c.hash = crypto.Keccak256Hash(c.code)
-	}
-	return c.hash
 }
 
 // ChainConfig returns the environment's chain configuration
