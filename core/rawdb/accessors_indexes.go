@@ -57,7 +57,7 @@ func ReadTxLookupEntry(db taudb.Reader, hash common.Hash) *uint64 {
 func WriteTxLookupEntries(db taudb.KeyValueWriter, block *types.Block) {
 	number := block.Number().Bytes()
 	for _, tx := range block.Transactions() {
-		if err := db.Put(txLookupKey(tx.Hash()), number); err != nil {
+		if err := db.Put(txLookupKey((*tx).Hash()), number); err != nil {
 			log.Crit("Failed to store transaction lookup entry", "err", err)
 		}
 	}
@@ -85,7 +85,7 @@ func ReadTransaction(db taudb.Reader, hash common.Hash) (*types.Transaction, com
 		return nil, common.Hash{}, 0, 0
 	}
 	for txIndex, tx := range body.Transactions {
-		if tx.Hash() == hash {
+		if (*tx).Hash() == hash {
 			return tx, blockHash, *blockNumber, uint64(txIndex)
 		}
 	}

@@ -449,7 +449,7 @@ func (api *SignerAPI) SignTransaction(ctx context.Context, args SendTxArgs, meth
 		return nil, err
 	}
 	// The one to sign is the one that was returned from the UI
-	signedTx, err := wallet.SignTxWithPassphrase(acc, pw, unsignedTx, api.chainID)
+	signedTx, err := wallet.SignTxWithPassphrase(acc, pw, &unsignedTx, api.chainID)
 	if err != nil {
 		api.UI.ShowError(err.Error())
 		return nil, err

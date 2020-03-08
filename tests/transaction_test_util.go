@@ -54,7 +54,7 @@ func (tt *TransactionTest) Run(config *params.ChainConfig) error {
 		if err != nil {
 			return nil, nil, err
 		}
-		h := tx.Hash()
+		h := (*tx).Hash()
 		return &sender, &h, nil
 	}
 

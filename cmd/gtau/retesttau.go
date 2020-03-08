@@ -378,14 +378,14 @@ func (api *RetesttauAPI) SendRawTransaction(ctx context.Context, rawTx hexutil.B
 		return common.Hash{}, err
 	}
 	if nonceMap, ok := api.txMap[sender]; ok {
-		nonceMap[tx.Nonce()] = tx
+		nonceMap[(*tx).GetNounce()] = tx
 	} else {
 		nonceMap = make(map[uint64]*types.Transaction)
-		nonceMap[tx.Nonce()] = tx
+		nonceMap[(*tx).GetNounce()] = tx
 		api.txMap[sender] = nonceMap
 	}
 	api.txSenders[sender] = struct{}{}
-	return tx.Hash(), nil
+	return (*tx).Hash(), nil
 }
 
 func (api *RetesttauAPI) MineBlocks(ctx context.Context, number uint64) (bool, error) {
@@ -435,7 +435,7 @@ func (api *RetesttauAPI) mineBlock() error {
 		for nonce := statedb.GetNonce(address); ; nonce++ {
 			if tx, ok := m[nonce]; ok {
 				// Try to apply transactions to the state
-				statedb.Prepare(tx.Hash(), common.Hash{}, txCount)
+				statedb.Prepare((*tx).Hash(), common.Hash{}, txCount)
 				snap := statedb.Snapshot()
 
 				receipt, _, err := core.ApplyTransaction(
@@ -583,12 +583,12 @@ func (api *RetesttauAPI) AccountRange(ctx context.Context,
 		signer := types.MakeSigner(api.blockchain.Config(), block.Number())
 		for idx, tx := range block.Transactions() {
 			// Assemble the transaction call message and return if the requested offset
-			msg, _ := tx.AsMessage(signer)
+			msg, _ := (*tx).AsMessage(signer)
 			context := core.NewEVMContext(msg, block.Header(), api.blockchain, nil)
 			// Not yet the searched for transaction, execute on top of the current state
 			vmenv := vm.NewEVM(context, statedb, api.blockchain.Config())
 			if _, _, _, err := core.ApplyMessage(vmenv, msg); err != nil {
-				return AccountRangeResult{}, fmt.Errorf("transaction %#x failed: %v", tx.Hash(), err)
+				return AccountRangeResult{}, fmt.Errorf("transaction %#x failed: %v", (*tx).Hash(), err)
 			}
 			// Ensure any modifications are committed to the state
 			// Only delete empty objects if EIP158/161 (a.k.a Spurious Dragon) is in effect

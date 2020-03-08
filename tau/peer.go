@@ -198,7 +198,7 @@ func (p *peer) MarkTransaction(hash common.Hash) {
 func (p *peer) SendTransactions(txs types.Transactions) error {
 	// Mark all the transactions as known, but ensure we don't overflow our limits
 	for _, tx := range txs {
-		p.knownTxs.Add(tx.Hash())
+		p.knownTxs.Add((*tx).Hash())
 	}
 	for p.knownTxs.Cardinality() >= maxKnownTxs {
 		p.knownTxs.Pop()
@@ -213,7 +213,7 @@ func (p *peer) AsyncSendTransactions(txs []*types.Transaction) {
 	case p.queuedTxs <- txs:
 		// Mark all the transactions as known, but ensure we don't overflow our limits
 		for _, tx := range txs {
-			p.knownTxs.Add(tx.Hash())
+			p.knownTxs.Add((*tx).Hash())
 		}
 		for p.knownTxs.Cardinality() >= maxKnownTxs {
 			p.knownTxs.Pop()

@@ -59,7 +59,7 @@ func (p *statePrefetcher) Prefetch(block *types.Block, statedb *state.StateDB, i
 			return
 		}
 		// Block precaching permitted to continue, execute the transaction
-		statedb.Prepare(tx.Hash(), block.Hash(), i)
+		statedb.Prepare((*tx).Hash(), block.Hash(), i)
 		if err := precacheTransaction(p.config, p.bc, nil, statedb, header, tx); err != nil {
 			return // Ugh, something went horribly wrong, bail out
 		}
@@ -71,7 +71,7 @@ func (p *statePrefetcher) Prefetch(block *types.Block, statedb *state.StateDB, i
 // the transaction successfully, rather to warm up touched data slots.
 func precacheTransaction(config *params.ChainConfig, bc ChainContext, author *common.Address, statedb *state.StateDB, header *types.Header, tx *types.Transaction) error {
 	// Convert the transaction into an executable message and pre-cache its sender
-	msg, err := tx.AsMessage(types.MakeSigner(config, header.Number))
+	msg, err := (*tx).AsMessage(types.MakeSigner(config, header.Number))
 	if err != nil {
 		return err
 	}

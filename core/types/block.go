@@ -294,7 +294,7 @@ func (b *Block) Transactions() Transactions { return b.transactions }
 
 func (b *Block) Transaction(hash common.Hash) *Transaction {
 	for _, transaction := range b.transactions {
-		if transaction.Hash() == hash {
+		if (*transaction).Hash() == hash {
 			return transaction
 		}
 	}

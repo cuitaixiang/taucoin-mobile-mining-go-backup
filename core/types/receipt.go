@@ -303,7 +303,7 @@ func (r Receipts) DeriveFields(config *params.ChainConfig, hash common.Hash, num
 	}
 	for i := 0; i < len(r); i++ {
 		// The transaction hash can be retrieved from the transaction itself
-		r[i].TxHash = txs[i].Hash()
+		r[i].TxHash = (*txs[i]).Hash()
 
 		// block location fields
 		r[i].BlockHash = hash
@@ -311,10 +311,10 @@ func (r Receipts) DeriveFields(config *params.ChainConfig, hash common.Hash, num
 		r[i].TransactionIndex = uint(i)
 
 		// The contract address can be derived from the transaction itself
-		if txs[i].To() == nil {
+		if (*txs[i]).To() == nil {
 			// Deriving the signer is expensive, only do if it's actually needed
 			from, _ := Sender(signer, txs[i])
-			r[i].ContractAddress = crypto.CreateAddress(from, txs[i].Nonce())
+			r[i].ContractAddress = crypto.CreateAddress(from, (*txs[i]).Nonce())
 		}
 		// The used gas can be calculated based on previous r
 		if i == 0 {

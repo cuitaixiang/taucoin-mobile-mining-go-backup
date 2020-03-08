@@ -1949,7 +1949,7 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 	// created in the fork must also be deleted
 	batch := bc.db.NewBatch()
 	for _, tx := range types.TxDifference(deletedTxs, addedTxs) {
-		rawdb.DeleteTxLookupEntry(batch, tx.Hash())
+		rawdb.DeleteTxLookupEntry(batch, (*tx).Hash())
 	}
 	// Delete any canonical number assignments above the new head
 	number := bc.CurrentBlock().NumberU64()

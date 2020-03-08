@@ -71,7 +71,7 @@ func (m *txSortedMap) Get(nonce uint64) *types.Transaction {
 // Put inserts a new transaction into the map, also updating the map's nonce
 // index. If a transaction already exists with the same nonce, it's overwritten.
 func (m *txSortedMap) Put(tx *types.Transaction) {
-	nonce := tx.Nonce()
+	nonce := (*tx).GetNounce()
 	if m.items[nonce] == nil {
 		heap.Push(m.index, nonce)
 	}
@@ -207,7 +207,8 @@ func (m *txSortedMap) Flatten() types.Transactions {
 		for _, tx := range m.items {
 			m.cache = append(m.cache, tx)
 		}
-		sort.Sort(types.TxByNonce(m.cache))
+        //todo need completed
+		//sort.Sort(types.TxByNonce(m.cache))
 	}
 	// Copy the cache to prevent accidental modifications
 	txs := make(types.Transactions, len(m.cache))
@@ -239,7 +240,7 @@ func newTxList(strict bool) *txList {
 // Overlaps returns whtauer the transaction specified has the same nonce as one
 // already contained within the list.
 func (l *txList) Overlaps(tx *types.Transaction) bool {
-	return l.txs.Get(tx.Nonce()) != nil
+	return l.txs.Get((*tx).GetNounce()) != nil
 }
 
 // Add tries to insert a new transaction into the list, returning whtauer the
@@ -249,7 +250,7 @@ func (l *txList) Overlaps(tx *types.Transaction) bool {
 // thresholds are also potentially updated.
 func (l *txList) Add(tx *types.Transaction, priceBump uint64) (bool, *types.Transaction) {
 	// If there's an older better transaction, abort
-	old := l.txs.Get(tx.Nonce())
+	old := l.txs.Get((*tx).GetNounce())
 	if old != nil {
 		//threshold := new(big.Int).Div(new(big.Int).Mul(old.Fee(), big.NewInt(100+int64(priceBump))), big.NewInt(100))
 		//// Have to ensure that the new gas price is higher than the old gas
@@ -259,13 +260,13 @@ func (l *txList) Add(tx *types.Transaction, priceBump uint64) (bool, *types.Tran
 		//	return false, nil
 		//}
 		// Have to ensure new fee > old one
-		if old.Fee().Cmp(tx.Fee()) >= 0 {
+		if (*old).GetFee() >= (*tx).GetFee(){
 			return false, nil
 		}
 	}
 	// Otherwise overwrite the old transaction with the current one
 	l.txs.Put(tx)
-	if cost := tx.Cost(); l.costcap.Cmp(cost) < 0 {
+	if cost := (*tx).Cost(); l.costcap.Cmp(cost) < 0 {
 		l.costcap = cost
 	}
 	return true, old
@@ -295,7 +296,7 @@ func (l *txList) Filter(costLimit *big.Int) (types.Transactions, types.Transacti
 	l.costcap = new(big.Int).Set(costLimit) // Lower the caps to the thresholds
 
 	// Filter out all the transactions above the account's funds
-	removed := l.txs.Filter(func(tx *types.Transaction) bool { return tx.Cost().Cmp(costLimit) > 0 })
+	removed := l.txs.Filter(func(tx *types.Transaction) bool { return (*tx).Cost().Cmp(costLimit) > 0 })
 
 	// If the list was strict, filter anything above the lowest nonce
 	var invalids types.Transactions
@@ -303,11 +304,11 @@ func (l *txList) Filter(costLimit *big.Int) (types.Transactions, types.Transacti
 	if l.strict && len(removed) > 0 {
 		lowest := uint64(math.MaxUint64)
 		for _, tx := range removed {
-			if nonce := tx.Nonce(); lowest > nonce {
+			if nonce := (*tx).GetNounce(); lowest > nonce {
 				lowest = nonce
 			}
 		}
-		invalids = l.txs.Filter(func(tx *types.Transaction) bool { return tx.Nonce() > lowest })
+		invalids = l.txs.Filter(func(tx *types.Transaction) bool { return (*tx).GetNounce() > lowest })
 	}
 	return removed, invalids
 }
@@ -323,13 +324,13 @@ func (l *txList) Cap(threshold int) types.Transactions {
 // the deletion (strict mode only).
 func (l *txList) Remove(tx *types.Transaction) (bool, types.Transactions) {
 	// Remove the transaction from the set
-	nonce := tx.Nonce()
+	nonce := (*tx).GetNounce()
 	if removed := l.txs.Remove(nonce); !removed {
 		return false, nil
 	}
 	// In strict mode, filter out non-executable transactions
 	if l.strict {
-		return true, l.txs.Filter(func(tx *types.Transaction) bool { return tx.Nonce() > nonce })
+		return true, l.txs.Filter(func(tx *types.Transaction) bool { return (*tx).GetNounce() > nonce })
 	}
 	return true, nil
 }
@@ -371,14 +372,13 @@ func (h priceHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
 
 func (h priceHeap) Less(i, j int) bool {
 	// Sort primarily by price, returning the cheaper one
-	switch h[i].Fee().Cmp(h[j].Fee()) {
-	case -1:
+	if (*h[i]).GetFee() < (*h[j]).GetFee() {
 		return true
-	case 1:
+	}else{
 		return false
 	}
 	// If the prices match, stabilize via nonces (high nonce is worse)
-	return h[i].Nonce() > h[j].Nonce()
+	return (*h[i]).GetNounce() > (*h[j]).GetNounce()
 }
 
 func (h *priceHeap) Push(x interface{}) {
@@ -443,15 +443,16 @@ func (l *txPricedList) Cap(threshold *big.Int, local *accountSet) types.Transact
 	for len(*l.items) > 0 {
 		// Discard stale transactions if found during cleanup
 		tx := heap.Pop(l.items).(*types.Transaction)
-		if l.all.Get(tx.Hash()) == nil {
+		if l.all.Get((*tx).Hash()) == nil {
 			l.stales--
 			continue
 		}
 		// Stop the discards if we've reached the threshold
-		if tx.Fee().Cmp(threshold) >= 0 {
-			save = append(save, tx)
-			break
-		}
+        // we need to repair type diff
+		//if (*tx).GetFee() >= threshold.IntValue() {
+		//	save = append(save, tx)
+		//	break
+		//}
 		// Non stale transaction found, discard unless local
 		if local.containsTx(tx) {
 			save = append(save, tx)
@@ -475,7 +476,7 @@ func (l *txPricedList) Underpriced(tx *types.Transaction, local *accountSet) boo
 	// Discard stale price points if found at the heap start
 	for len(*l.items) > 0 {
 		head := []*types.Transaction(*l.items)[0]
-		if l.all.Get(head.Hash()) == nil {
+		if l.all.Get((*head).Hash()) == nil {
 			l.stales--
 			heap.Pop(l.items)
 			continue
@@ -488,7 +489,7 @@ func (l *txPricedList) Underpriced(tx *types.Transaction, local *accountSet) boo
 		return false
 	}
 	cheapest := []*types.Transaction(*l.items)[0]
-	return cheapest.Fee().Cmp(tx.Fee()) >= 0
+	return (*cheapest).GetFee() > (*tx).GetFee()
 }
 
 // Discard finds a number of most underpriced transactions, removes them from the
@@ -500,7 +501,7 @@ func (l *txPricedList) Discard(count int, local *accountSet) types.Transactions 
 	for len(*l.items) > 0 && count > 0 {
 		// Discard stale transactions if found during cleanup
 		tx := heap.Pop(l.items).(*types.Transaction)
-		if l.all.Get(tx.Hash()) == nil {
+		if l.all.Get((*tx).Hash()) == nil {
 			l.stales--
 			continue
 		}

@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"sync/atomic"
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/crypto"
@@ -59,7 +60,7 @@ func SignTx(tx *Transaction, s Signer, prv *ecdsa.PrivateKey) (*Transaction, err
 	if err != nil {
 		return nil, err
 	}
-	return tx.WithSignature(s, sig)
+	return (*tx).WithSignature(s, sig)
 }
 
 // Sender returns the address derived from the signature (V, R, S) using secp256k1
@@ -70,7 +71,8 @@ func SignTx(tx *Transaction, s Signer, prv *ecdsa.PrivateKey) (*Transaction, err
 // signing method. The cache is invalidated if the cached signer does
 // not match the signer used in the current call.
 func Sender(signer Signer, tx *Transaction) (common.Address, error) {
-	if sc := tx.from.Load(); sc != nil {
+	var from atomic.Value = (*tx).GetFrom()
+	if sc := from.Load(); sc != nil {
 		sigCache := sc.(sigCache)
 		// If the signer used to derive from in a previous
 		// call is not the same as used current, invalidate
@@ -84,7 +86,7 @@ func Sender(signer Signer, tx *Transaction) (common.Address, error) {
 	if err != nil {
 		return common.Address{}, err
 	}
-	tx.from.Store(sigCache{signer: signer, from: addr})
+	from.Store(sigCache{signer: signer, from: addr})
 	return addr, nil
 }
 
@@ -125,7 +127,7 @@ func (s EIP155Signer) Equal(s2 Signer) bool {
 var big8 = big.NewInt(8)
 
 func (s EIP155Signer) Sender(tx *Transaction) (common.Address, error) {
-	if !tx.Protected() {
+	if !(*tx).Protected() {
 		return HomesteadSigner{}.Sender(tx)
 	}
 	/* tx-ctc
@@ -133,9 +135,9 @@ func (s EIP155Signer) Sender(tx *Transaction) (common.Address, error) {
 		return common.Address{}, ErrInvalidChainId
 	}
 	*/
-	V := new(big.Int).Sub(tx.data.V, s.chainIdMul)
+	V := new(big.Int).Sub((*tx).GetSigV(), s.chainIdMul)
 	V.Sub(V, big8)
-	return recoverPlain(s.Hash(tx), tx.data.R, tx.data.S, V, true)
+	return recoverPlain(s.Hash(tx), (*tx).GetSigR(), (*tx).GetSigS(), V, true)
 }
 
 // SignatureValues returns signature values. This signature
@@ -167,10 +169,10 @@ func (s EIP155Signer) Hash(tx *Transaction) common.Hash {
 	})
 	*/
 	return rlpHash([]interface{}{
-		tx.data.Nonce,
-		tx.data.Fee,
-		tx.data.Receiver,
-		tx.data.Amount,
+		(*tx).GetNounce(),
+		(*tx).GetFee(),
+		(*tx).GetReceiver(),
+		(*tx).GetAmount(),
 		s.chainId, uint(0), uint(0),
 	})
 }
@@ -191,7 +193,7 @@ func (hs HomesteadSigner) SignatureValues(tx *Transaction, sig []byte) (r, s, v 
 }
 
 func (hs HomesteadSigner) Sender(tx *Transaction) (common.Address, error) {
-	return recoverPlain(hs.Hash(tx), tx.data.R, tx.data.S, tx.data.V, true)
+	return recoverPlain(hs.Hash(tx), (*tx).GetSigR(), (*tx).GetSigS(), (*tx).GetSigV(), true)
 }
 
 type FrontierSigner struct{}
@@ -227,15 +229,15 @@ func (fs FrontierSigner) Hash(tx *Transaction) common.Hash {
 	})
 	*/
 	return rlpHash([]interface{}{
-		tx.data.Nonce,
-		tx.data.Fee,
-		tx.data.Receiver,
-		tx.data.Amount,
+		(*tx).GetNounce(),
+		(*tx).GetFee(),
+		(*tx).GetReceiver(),
+		(*tx).GetAmount(),
 	})
 }
 
 func (fs FrontierSigner) Sender(tx *Transaction) (common.Address, error) {
-	return recoverPlain(fs.Hash(tx), tx.data.R, tx.data.S, tx.data.V, false)
+	return recoverPlain(fs.Hash(tx), (*tx).GetSigR(), (*tx).GetSigS(), (*tx).GetSigV(), false)
 }
 
 func recoverPlain(sighash common.Hash, R, S, Vb *big.Int, homestead bool) (common.Address, error) {

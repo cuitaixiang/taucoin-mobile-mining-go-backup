@@ -50,15 +50,15 @@ func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber
 	}
 	*/
 	from, _ := types.Sender(signer, tx)
-	v, r, s := tx.RawSignatureValues()
+	v, r, s := (*tx).RawSignatureValues()
 
 	result := &RPCTransaction{
 		From:  from,
-		Fee:   (*hexutil.Big)(tx.Fee()),
-		Hash:  tx.Hash(),
-		Nonce: hexutil.Uint64(tx.Nonce()),
-		To:    tx.To(),
-		Value: (*hexutil.Big)(tx.Value()),
+		Fee:   (*hexutil.Big)((*tx).Fee()),
+		Hash:  (*tx).Hash(),
+		Nonce: hexutil.Uint64((*tx).GetNounce()),
+		To:    (*tx).To(),
+		Value: (*hexutil.Big)((*tx).Value()),
 		V:     (*hexutil.Big)(v),
 		R:     (*hexutil.Big)(r),
 		S:     (*hexutil.Big)(s),
@@ -83,7 +83,7 @@ func newRPCTransactionFromBlockIndex(b *types.Block, index uint64) *RPCTransacti
 // newRPCTransactionFromBlockHash returns a transaction that will serialize to the RPC representation.
 func newRPCTransactionFromBlockHash(b *types.Block, hash common.Hash) *RPCTransaction {
 	for idx, tx := range b.Transactions() {
-		if tx.Hash() == hash {
+		if (*tx).Hash() == hash {
 			return newRPCTransactionFromBlockIndex(b, uint64(idx))
 		}
 	}
@@ -115,11 +115,11 @@ func RPCMarshalBlock(b *types.Block, inclTx bool, fullTx bool) (map[string]inter
 
 	if inclTx {
 		formatTx := func(tx *types.Transaction) (interface{}, error) {
-			return tx.Hash(), nil
+			return (*tx).Hash(), nil
 		}
 		if fullTx {
 			formatTx = func(tx *types.Transaction) (interface{}, error) {
-				return newRPCTransactionFromBlockHash(b, tx.Hash()), nil
+				return newRPCTransactionFromBlockHash(b, (*tx).Hash()), nil
 			}
 		}
 		txs := b.Transactions()

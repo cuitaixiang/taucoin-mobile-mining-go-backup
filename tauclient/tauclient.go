@@ -196,11 +196,12 @@ func (tx *rpcTransaction) UnmarshalJSON(msg []byte) error {
 func (ec *Client) TransactionByHash(ctx context.Context, hash common.Hash) (tx *types.Transaction, isPending bool, err error) {
 	var json *rpcTransaction
 	err = ec.c.CallContext(ctx, &json, "tau_getTransactionByHash", hash)
+    temp := *(json.tx)
 	if err != nil {
 		return nil, false, err
 	} else if json == nil {
 		return nil, false, tau.NotFound
-	} else if _, r, _ := json.tx.RawSignatureValues(); r == nil {
+	} else if _, r, _ := temp.RawSignatureValues(); r == nil {
 		return nil, false, fmt.Errorf("server returned transaction without signature")
 	}
 	if json.From != nil && json.BlockHash != nil {
@@ -228,7 +229,7 @@ func (ec *Client) TransactionSender(ctx context.Context, tx *types.Transaction, 
 	if err = ec.c.CallContext(ctx, &meta, "tau_getTransactionByBlockHashAndIndex", block, hexutil.Uint64(index)); err != nil {
 		return common.Address{}, err
 	}
-	if meta.Hash == (common.Hash{}) || meta.Hash != tx.Hash() {
+	if meta.Hash == (common.Hash{}) || meta.Hash != (*tx).Hash() {
 		return common.Address{}, errors.New("wrong inclusion block/index")
 	}
 	return meta.From, nil
@@ -245,12 +246,13 @@ func (ec *Client) TransactionCount(ctx context.Context, blockHash common.Hash) (
 func (ec *Client) TransactionInBlock(ctx context.Context, blockHash common.Hash, index uint) (*types.Transaction, error) {
 	var json *rpcTransaction
 	err := ec.c.CallContext(ctx, &json, "tau_getTransactionByBlockHashAndIndex", blockHash, hexutil.Uint64(index))
+    temp := *(json.tx)
 	if err != nil {
 		return nil, err
 	}
 	if json == nil {
 		return nil, tau.NotFound
-	} else if _, r, _ := json.tx.RawSignatureValues(); r == nil {
+	} else if _, r, _ := temp.RawSignatureValues(); r == nil {
 		return nil, fmt.Errorf("server returned transaction without signature")
 	}
 	if json.From != nil && json.BlockHash != nil {

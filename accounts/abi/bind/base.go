@@ -109,7 +109,7 @@ func DeployContract(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend Co
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
-	c.address = crypto.CreateAddress(opts.From, tx.Nonce())
+	c.address = crypto.CreateAddress(opts.From, (*tx).GetNounce())
 	return c.address, tx, c, nil
 }
 
@@ -225,13 +225,13 @@ func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, i
 		}
 	}
 	// Create the transaction, sign it and schedule it for execution
-	var rawTx *types.Transaction
+	var rawTx types.Transaction
 	rawTx = types.NewTransaction(nonce, c.address, value, gasPrice)
 
 	if opts.Signer == nil {
 		return nil, errors.New("no signer to authorize the transaction with")
 	}
-	signedTx, err := opts.Signer(types.HomesteadSigner{}, opts.From, rawTx)
+	signedTx, err := opts.Signer(types.HomesteadSigner{}, opts.From, &rawTx)
 	if err != nil {
 		return nil, err
 	}

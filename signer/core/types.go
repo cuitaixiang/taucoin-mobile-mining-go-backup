@@ -82,6 +82,6 @@ func (args SendTxArgs) String() string {
 	return err.Error()
 }
 
-func (args *SendTxArgs) toTransaction() *types.Transaction {
+func (args *SendTxArgs) toTransaction() types.Transaction {
 	return types.NewTransaction(uint64(args.Nonce), args.To.Address(), (*big.Int)(&args.Value), (*big.Int)(&args.Fee))
 }

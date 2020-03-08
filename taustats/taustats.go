@@ -526,7 +526,7 @@ func (s *Service) assembleBlockStats(block *types.Block) *blockStats {
 
 		txs = make([]txStats, len(block.Transactions()))
 		for i, tx := range block.Transactions() {
-			txs[i].Hash = tx.Hash()
+			txs[i].Hash = (*tx).Hash()
 		}
 		uncles = block.Uncles()
 	}

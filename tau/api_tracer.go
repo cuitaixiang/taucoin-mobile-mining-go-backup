@@ -205,13 +205,13 @@ func (api *PrivateDebugAPI) traceChain(ctx context.Context, start, end *types.Bl
 
 				// Trace all the transactions contained within
 				for i, tx := range task.block.Transactions() {
-					msg, _ := tx.AsMessage(signer)
+					msg, _ := (*tx).AsMessage(signer)
 					vmctx := core.NewEVMContext(msg, task.block.Header(), api.tau.blockchain, nil)
 
 					res, err := api.traceTx(ctx, msg, vmctx, task.statedb, config)
 					if err != nil {
 						task.results[i] = &txTraceResult{Error: err.Error()}
-						log.Warn("Tracing failed", "hash", tx.Hash(), "block", task.block.NumberU64(), "err", err)
+						log.Warn("Tracing failed", "hash",(*tx).Hash(), "block", task.block.NumberU64(), "err", err)
 						break
 					}
 					// Only delete empty objects if EIP158/161 (a.k.a Spurious Dragon) is in effect
@@ -479,7 +479,7 @@ func (api *PrivateDebugAPI) traceBlock(ctx context.Context, block *types.Block, 
 
 			// Fetch and execute the next transaction trace tasks
 			for task := range jobs {
-				msg, _ := txs[task.index].AsMessage(signer)
+				msg, _ := (*txs[task.index]).AsMessage(signer)
 				vmctx := core.NewEVMContext(msg, block.Header(), api.tau.blockchain, nil)
 
 				res, err := api.traceTx(ctx, msg, vmctx, task.statedb, config)
@@ -498,7 +498,7 @@ func (api *PrivateDebugAPI) traceBlock(ctx context.Context, block *types.Block, 
 		jobs <- &txTraceTask{statedb: statedb.Copy(), index: i}
 
 		// Generate the next state snapshot fast without tracing
-		msg, _ := tx.AsMessage(signer)
+		msg, _ := (*tx).AsMessage(signer)
 		vmctx := core.NewEVMContext(msg, block.Header(), api.tau.blockchain, nil)
 
 		vmenv := vm.NewEVM(vmctx, statedb, api.tau.blockchain.Config())
@@ -567,7 +567,7 @@ func (api *PrivateDebugAPI) standardTraceBlockToFile(ctx context.Context, block 
 	for i, tx := range block.Transactions() {
 		// Prepare the trasaction for un-traced execution
 		var (
-			msg, _ = tx.AsMessage(signer)
+			msg, _ = (*tx).AsMessage(signer)
 			vmctx  = core.NewEVMContext(msg, block.Header(), api.tau.blockchain, nil)
 
 			dump   *os.File
@@ -575,9 +575,9 @@ func (api *PrivateDebugAPI) standardTraceBlockToFile(ctx context.Context, block 
 			err    error
 		)
 		// If the transaction needs tracing, swap out the configs
-		if tx.Hash() == txHash || txHash == (common.Hash{}) {
+		if (*tx).Hash() == txHash || txHash == (common.Hash{}) {
 			// Generate a unique temporary file to dump it into
-			prefix := fmt.Sprintf("block_%#x-%d-%#x-", block.Hash().Bytes()[:4], i, tx.Hash().Bytes()[:4])
+			prefix := fmt.Sprintf("block_%#x-%d-%#x-", block.Hash().Bytes()[:4], i, (*tx).Hash().Bytes()[:4])
 
 			dump, err = ioutil.TempFile(os.TempDir(), prefix)
 			if err != nil {
@@ -606,7 +606,7 @@ func (api *PrivateDebugAPI) standardTraceBlockToFile(ctx context.Context, block 
 		statedb.Finalise(vmenv.ChainConfig().IsEIP158(block.Number()))
 
 		// If we've traced the transaction we were looking for, abort
-		if tx.Hash() == txHash {
+		if (*tx).Hash() == txHash {
 			break
 		}
 	}
@@ -617,7 +617,7 @@ func (api *PrivateDebugAPI) standardTraceBlockToFile(ctx context.Context, block 
 // is contained within the specified block.
 func containsTx(block *types.Block, hash common.Hash) bool {
 	for _, tx := range block.Transactions() {
-		if tx.Hash() == hash {
+		if (*tx).Hash() == hash {
 			return true
 		}
 	}
@@ -799,7 +799,7 @@ func (api *PrivateDebugAPI) computeTxEnv(blockHash common.Hash, txIndex int, ree
 
 	for idx, tx := range block.Transactions() {
 		// Assemble the transaction call message and return if the requested offset
-		msg, _ := tx.AsMessage(signer)
+		msg, _ := (*tx).AsMessage(signer)
 		context := core.NewEVMContext(msg, block.Header(), api.tau.blockchain, nil)
 		if idx == txIndex {
 			return msg, context, statedb, nil
@@ -807,7 +807,7 @@ func (api *PrivateDebugAPI) computeTxEnv(blockHash common.Hash, txIndex int, ree
 		// Not yet the searched for transaction, execute on top of the current state
 		vmenv := vm.NewEVM(context, statedb, api.tau.blockchain.Config())
 		if _, _, _, err := core.ApplyMessage(vmenv, msg); err != nil {
-			return nil, vm.Context{}, nil, fmt.Errorf("transaction %#x failed: %v", tx.Hash(), err)
+			return nil, vm.Context{}, nil, fmt.Errorf("transaction %#x failed: %v", (*tx).Hash(), err)
 		}
 		// Ensure any modifications are committed to the state
 		// Only delete empty objects if EIP158/161 (a.k.a Spurious Dragon) is in effect

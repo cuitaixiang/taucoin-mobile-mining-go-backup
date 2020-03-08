@@ -296,8 +296,8 @@ func (b *SimulatedBackend) SendTransaction(ctx context.Context, tx *types.Transa
 		panic(fmt.Errorf("invalid transaction: %v", err))
 	}
 	nonce := b.pendingState.GetNonce(sender)
-	if tx.Nonce() != nonce {
-		panic(fmt.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce))
+	if (*tx).GetNounce() != nonce {
+		panic(fmt.Errorf("invalid transaction nonce: got %d, want %d", (*tx).GetNounce(), nonce))
 	}
 
 	blocks, _ := core.GenerateChain(b.config, b.blockchain.CurrentBlock(), tauhash.NewFaker(), b.database, 1, func(number int, block *core.BlockGen) {

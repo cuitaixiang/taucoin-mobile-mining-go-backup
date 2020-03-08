@@ -62,7 +62,7 @@ func InitDatabaseFromFreezer(db taudb.Database) error {
 				if block != nil {
 					block.Hash()
 					for _, tx := range block.Transactions() {
-						tx.Hash()
+						(*tx).Hash()
 					}
 				}
 				// Feed the block to the aggregator, or abort on interrupt

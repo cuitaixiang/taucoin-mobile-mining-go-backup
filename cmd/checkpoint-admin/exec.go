@@ -114,7 +114,7 @@ func deploy(ctx *cli.Context) error {
 	if err != nil {
 		utils.Fatalf("Failed to deploy checkpoint oracle %v", err)
 	}
-	log.Info("Deployed checkpoint oracle", "address", oracle, "tx", tx.Hash().Hex())
+	log.Info("Deployed checkpoint oracle", "address", oracle, "tx", (*tx).Hash().Hex())
 
 	return nil
 }
@@ -306,6 +306,6 @@ func publish(ctx *cli.Context) error {
 	if err != nil {
 		utils.Fatalf("Register contract failed %v", err)
 	}
-	log.Info("Successfully registered checkpoint", "tx", tx.Hash().Hex())
+	log.Info("Successfully registered checkpoint", "tx", (*tx).Hash().Hex())
 	return nil
 }
