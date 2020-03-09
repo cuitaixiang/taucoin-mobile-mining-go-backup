@@ -60,7 +60,11 @@ func SignTx(tx *Transaction, s Signer, prv *ecdsa.PrivateKey) (*Transaction, err
 	if err != nil {
 		return nil, err
 	}
-	return (*tx).WithSignature(s, sig)
+    isSign,err := (*tx).WithSignature(s, sig)
+    if isSign {
+       return tx,nil
+    }
+	return nil,err
 }
 
 // Sender returns the address derived from the signature (V, R, S) using secp256k1

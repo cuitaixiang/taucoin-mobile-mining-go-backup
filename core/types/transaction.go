@@ -58,7 +58,7 @@ type Transaction interface {
 	Size() common.StorageSize
 	//this interface need to be repaired
 	AsMessage(s Signer) (Message, error)
-	WithSignature(singer Signer, sig []byte) (*Transaction, error)
+	WithSignature(singer Signer, sig []byte) (bool, error)
 	Cost() *big.Int
 	RawSignatureValues() (v, r, s *big.Int)
 	GetFrom() atomic.Value

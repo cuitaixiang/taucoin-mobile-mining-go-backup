@@ -57,7 +57,11 @@ func NewKeyStoreTransactor(keystore *keystore.KeyStore, account accounts.Account
 			if err != nil {
 				return nil, err
 			}
-			return (*tx).WithSignature(signer, signature)
+            isSign,err := (*tx).WithSignature(signer, signature)
+            if isSign {
+               return tx,nil
+            }
+			return nil,err
 		},
 	}, nil
 }
@@ -76,7 +80,12 @@ func NewKeyedTransactor(key *ecdsa.PrivateKey) *TransactOpts {
 			if err != nil {
 				return nil, err
 			}
-			return (*tx).WithSignature(signer, signature)
+
+            isSign,err := (*tx).WithSignature(signer, signature)
+            if isSign {
+               return tx,nil
+            }
+			return nil,err
 		},
 	}
 }

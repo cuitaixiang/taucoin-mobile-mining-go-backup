@@ -208,16 +208,12 @@ func (ttx *TransferTx) AsMessage(s Signer) (Message, error) {
 	return msg, err
 }
 
-//todo how ...?
-func (ttx *TransferTx) WithSignature(singer Signer, sig []byte) (*Transaction, error) {
-	return nil, nil
-}
-
-func (ttx *TransferTx) withSignature(singer Signer, sig []byte) (*TransferTx, error) {
+func (ttx *TransferTx) WithSignature(singer Signer, sig []byte) (bool, error) {
 	//todo splite and verify ttx
-	cpy := &TransferTx{tx: ttx.tx}
+	//contain signature in ttx itself
+	ttx = &TransferTx{tx: ttx.tx}
 	//fill field of signature in ttx
-	return cpy, nil
+	return true, nil
 }
 
 func (ttx *TransferTx) Cost() *big.Int {

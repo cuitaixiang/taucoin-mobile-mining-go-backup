@@ -705,7 +705,11 @@ func (w *Wallet) SignTx(account accounts.Account, tx *types.Transaction, chainID
 	if err != nil {
 		return nil, err
 	}
-	return (*tx).WithSignature(signer, sig)
+    isSign,err := (*tx).WithSignature(signer, sig)
+    if isSign {
+        return tx,nil
+    }
+	return nil,err
 }
 
 // SignDataWithPassphrase requests the wallet to sign the given hash with the
