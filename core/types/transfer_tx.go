@@ -193,13 +193,14 @@ func (ttx *TransferTx) Size() common.StorageSize {
 	return common.StorageSize(c)
 }
 
-func (ttx *TransferTx) AsMessage(s Signer) (TauTxMessage, error) {
-	msg := TauTxMessage{
-		//todo
-		nonce:  ttx.tx.Nonce,
-		fee:    ttx.tx.Fee,
-		to:     ttx.tx.Receiver,
-		amount: ttx.tx.Amount,
+func (ttx *TransferTx) AsMessage(s Signer) (Message, error) {
+	msg := Message{
+		from:       *ttx.tx.Sender,
+		to:         ttx.tx.Receiver,
+		nonce:      ttx.tx.Nonce,
+		amount:     ttx.tx.Amount,
+		fee:        ttx.tx.Fee,
+		checkNonce: true,
 	}
 
 	var err error
@@ -207,7 +208,12 @@ func (ttx *TransferTx) AsMessage(s Signer) (TauTxMessage, error) {
 	return msg, err
 }
 
-func (ttx *TransferTx) WithSignature(singer Signer, sig []byte) (*TransferTx, error) {
+//todo how ...?
+func (ttx *TransferTx) WithSignature(singer Signer, sig []byte) (*Transaction, error) {
+	return nil, nil
+}
+
+func (ttx *TransferTx) withSignature(singer Signer, sig []byte) (*TransferTx, error) {
 	//todo splite and verify ttx
 	cpy := &TransferTx{tx: ttx.tx}
 	//fill field of signature in ttx
@@ -223,6 +229,44 @@ func (ttx *TransferTx) Cost() *big.Int {
 
 func (ttx *TransferTx) RawSignatureValues() (v, r, s *big.Int) {
 	return ttx.tx.V, ttx.tx.R, ttx.tx.S
+}
+
+func (ttx *TransferTx) GetFrom() atomic.Value {
+	return ttx.from
+}
+
+func (ttx *TransferTx) GetSigV() *big.Int {
+	if ttx.tx.V != nil {
+		return ttx.tx.V
+	}
+	return nil
+}
+
+func (ttx *TransferTx) GetSigR() *big.Int {
+	if ttx.tx.R != nil {
+		return ttx.tx.R
+	}
+	return nil
+}
+
+func (ttx *TransferTx) GetSigS() *big.Int {
+	if ttx.tx.S != nil {
+		return ttx.tx.S
+	}
+	return nil
+}
+
+func (ttx *TransferTx) GetNounce() uint64 {
+	return ttx.tx.Nonce
+}
+func (ttx *TransferTx) GetFee() uint64 {
+	return ttx.tx.Fee.Uint64()
+}
+func (ttx *TransferTx) GetReceiver() common.Address {
+	return *(ttx.tx.Sender)
+}
+func (ttx *TransferTx) GetAmount() big.Int {
+	return *(ttx.tx.Amount)
 }
 
 type TransferTxs []*TransferTx

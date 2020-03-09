@@ -56,6 +56,7 @@ type Transaction interface {
 	//get finger script
 	Hash() common.Hash
 	Size() common.StorageSize
+	//this interface need to be repaired
 	AsMessage(s Signer) (Message, error)
 	WithSignature(singer Signer, sig []byte) (*Transaction, error)
 	Cost() *big.Int
@@ -72,6 +73,32 @@ type Transaction interface {
 
 //func NewTransaction(version OneByte, option OneByte, chainid Byte32s, nonce uint64, timestamp uint32, fee *big.Int, sender common.Address, receiver common.Address, amount *big.Int) *Transaction {
 func NewTransaction(args ...interface{}) Transaction {
+	if v, ok := args[0].(int); ok {
+		//v == 0 represents transfer tx
+		if v == 0 {
+			return NewTransferTransaction(args[1].(OneByte),
+				args[2].(OneByte),
+				args[3].(Byte32s),
+				args[4].(uint64),
+				args[5].(uint32),
+				args[6].(*big.Int),
+				args[7].(common.Address),
+				args[8].(common.Address),
+				args[9].(*big.Int))
+		}
+		//v == 1 represents personal info tx
+		if v == 1 {
+
+		}
+		//v == 2 represents new message tx
+		if v == 2 {
+
+		}
+		//v == 3 represents new chain tx
+		if v == 3 {
+
+		}
+	}
 	return nil
 }
 
