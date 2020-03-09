@@ -413,7 +413,7 @@ func (m callmsg) From() common.Address { return m.CallMsg.From }
 func (m callmsg) Nonce() uint64        { return 0 }
 func (m callmsg) CheckNonce() bool     { return false }
 func (m callmsg) To() *common.Address  { return m.CallMsg.To }
-func (m callmsg) Fee() *big.Int   { return m.CallMsg.GasPrice }
+func (m callmsg) Fee() *big.Int        { return m.CallMsg.GasPrice }
 func (m callmsg) Value() *big.Int      { return m.CallMsg.Value }
 
 // filterBackend implements filters.Backend to support filtering for logs without
@@ -469,9 +469,6 @@ func (fb *filterBackend) SubscribeNewTxsEvent(ch chan<- core.NewTxsEvent) event.
 }
 func (fb *filterBackend) SubscribeChainEvent(ch chan<- core.ChainEvent) event.Subscription {
 	return fb.bc.SubscribeChainEvent(ch)
-}
-func (fb *filterBackend) SubscribeRemovedLogsEvent(ch chan<- core.RemovedLogsEvent) event.Subscription {
-	return fb.bc.SubscribeRemovedLogsEvent(ch)
 }
 func (fb *filterBackend) SubscribeLogsEvent(ch chan<- []*types.Log) event.Subscription {
 	return fb.bc.SubscribeLogsEvent(ch)

@@ -30,11 +30,11 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/state"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/vm"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/event"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rpc"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 )
 
 // TauAPIBackend implements tauapi.Backend for full nodes
@@ -135,10 +135,6 @@ func (b *TauAPIBackend) GetEVM(ctx context.Context, msg core.Message, state *sta
 
 	context := core.NewEVMContext(msg, header, b.tau.BlockChain(), nil)
 	return vm.NewEVM(context, state, b.tau.blockchain.Config()), vmError, nil
-}
-
-func (b *TauAPIBackend) SubscribeRemovedLogsEvent(ch chan<- core.RemovedLogsEvent) event.Subscription {
-	return b.tau.BlockChain().SubscribeRemovedLogsEvent(ch)
 }
 
 func (b *TauAPIBackend) SubscribeChainEvent(ch chan<- core.ChainEvent) event.Subscription {

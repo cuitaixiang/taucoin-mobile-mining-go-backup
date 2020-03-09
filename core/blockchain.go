@@ -138,7 +138,6 @@ type BlockChain struct {
 	gcproc time.Duration  // Accumulates canonical block processing for trie dumping
 
 	hc            *HeaderChain
-	rmLogsFeed    event.Feed
 	chainFeed     event.Feed
 	chainSideFeed event.Feed
 	chainHeadFeed event.Feed
@@ -1847,7 +1846,6 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 		deletedTxs types.Transactions
 		addedTxs   types.Transactions
 
-		deletedLogs []*types.Log
 		rebirthLogs []*types.Log
 
 		// collectLogs collects the logs that were generated during the
@@ -1863,8 +1861,7 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 				for _, log := range receipt.Logs {
 					l := *log
 					if removed {
-						l.Removed = true
-						deletedLogs = append(deletedLogs, &l)
+
 					} else {
 						rebirthLogs = append(rebirthLogs, &l)
 					}
@@ -1969,9 +1966,6 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 	// TODO(karalabe): Can we get rid of the goroutine somehow to guarantee correct
 	// event ordering?
 	go func() {
-		if len(deletedLogs) > 0 {
-			bc.rmLogsFeed.Send(RemovedLogsEvent{deletedLogs})
-		}
 		if len(rebirthLogs) > 0 {
 			bc.logsFeed.Send(rebirthLogs)
 		}
@@ -2168,11 +2162,6 @@ func (bc *BlockChain) Config() *params.ChainConfig { return bc.chainConfig }
 
 // Engine retrieves the blockchain's consensus engine.
 func (bc *BlockChain) Engine() consensus.Engine { return bc.engine }
-
-// SubscribeRemovedLogsEvent registers a subscription of RemovedLogsEvent.
-func (bc *BlockChain) SubscribeRemovedLogsEvent(ch chan<- RemovedLogsEvent) event.Subscription {
-	return bc.scope.Track(bc.rmLogsFeed.Subscribe(ch))
-}
 
 // SubscribeChainEvent registers a subscription of ChainEvent.
 func (bc *BlockChain) SubscribeChainEvent(ch chan<- ChainEvent) event.Subscription {

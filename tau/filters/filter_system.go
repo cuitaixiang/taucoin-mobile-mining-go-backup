@@ -62,8 +62,6 @@ const (
 	// txChanSize is the size of channel listening to NewTxsEvent.
 	// The number is referenced from the size of tx pool.
 	txChanSize = 4096
-	// rmLogsChanSize is the size of channel listening to RemovedLogsEvent.
-	rmLogsChanSize = 10
 	// logsChanSize is the size of channel listening to LogsEvent.
 	logsChanSize = 10
 	// chainEvChanSize is the size of channel listening to ChainEvent.
@@ -102,12 +100,11 @@ type EventSystem struct {
 	pendingLogSub *event.TypeMuxSubscription // Subscription for pending log event
 
 	// Channels
-	install   chan *subscription         // install filter for event notification
-	uninstall chan *subscription         // remove filter for event notification
-	txsCh     chan core.NewTxsEvent      // Channel to receive new transactions event
-	logsCh    chan []*types.Log          // Channel to receive new log event
-	rmLogsCh  chan core.RemovedLogsEvent // Channel to receive removed log event
-	chainCh   chan core.ChainEvent       // Channel to receive new chain event
+	install   chan *subscription    // install filter for event notification
+	uninstall chan *subscription    // remove filter for event notification
+	txsCh     chan core.NewTxsEvent // Channel to receive new transactions event
+	logsCh    chan []*types.Log     // Channel to receive new log event
+	chainCh   chan core.ChainEvent  // Channel to receive new chain event
 }
 
 // NewEventSystem creates a new manager that listens for event on the given mux,
@@ -125,20 +122,18 @@ func NewEventSystem(mux *event.TypeMux, backend Backend, lightMode bool) *EventS
 		uninstall: make(chan *subscription),
 		txsCh:     make(chan core.NewTxsEvent, txChanSize),
 		logsCh:    make(chan []*types.Log, logsChanSize),
-		rmLogsCh:  make(chan core.RemovedLogsEvent, rmLogsChanSize),
 		chainCh:   make(chan core.ChainEvent, chainEvChanSize),
 	}
 
 	// Subscribe events
 	m.txsSub = m.backend.SubscribeNewTxsEvent(m.txsCh)
 	m.logsSub = m.backend.SubscribeLogsEvent(m.logsCh)
-	m.rmLogsSub = m.backend.SubscribeRemovedLogsEvent(m.rmLogsCh)
 	m.chainSub = m.backend.SubscribeChainEvent(m.chainCh)
 	// TODO(rjl493456442): use feed to subscribe pending log event
 	m.pendingLogSub = m.mux.Subscribe(core.PendingLogsEvent{})
 
 	// Make sure none of the subscriptions are empty
-	if m.txsSub == nil || m.logsSub == nil || m.rmLogsSub == nil || m.chainSub == nil ||
+	if m.txsSub == nil || m.logsSub == nil || m.chainSub == nil ||
 		m.pendingLogSub.Closed() {
 		log.Crit("Subscribe for event system failed")
 	}
@@ -331,12 +326,6 @@ func (es *EventSystem) broadcast(filters filterIndex, ev interface{}) {
 				}
 			}
 		}
-	case core.RemovedLogsEvent:
-		for _, f := range filters[LogsSubscription] {
-			if matchedLogs := filterLogs(e.Logs, f.logsCrit.FromBlock, f.logsCrit.ToBlock, f.logsCrit.Addresses, f.logsCrit.Topics); len(matchedLogs) > 0 {
-				f.logs <- matchedLogs
-			}
-		}
 	case *event.TypeMuxEvent:
 		if muxe, ok := e.Data.(core.PendingLogsEvent); ok {
 			for _, f := range filters[PendingLogsSubscription] {
@@ -451,7 +440,6 @@ func (es *EventSystem) eventLoop() {
 		es.pendingLogSub.Unsubscribe()
 		es.txsSub.Unsubscribe()
 		es.logsSub.Unsubscribe()
-		es.rmLogsSub.Unsubscribe()
 		es.chainSub.Unsubscribe()
 	}()
 
@@ -466,8 +454,6 @@ func (es *EventSystem) eventLoop() {
 		case ev := <-es.txsCh:
 			es.broadcast(index, ev)
 		case ev := <-es.logsCh:
-			es.broadcast(index, ev)
-		case ev := <-es.rmLogsCh:
 			es.broadcast(index, ev)
 		case ev := <-es.chainCh:
 			es.broadcast(index, ev)
@@ -501,8 +487,6 @@ func (es *EventSystem) eventLoop() {
 		case <-es.txsSub.Err():
 			return
 		case <-es.logsSub.Err():
-			return
-		case <-es.rmLogsSub.Err():
 			return
 		case <-es.chainSub.Err():
 			return
