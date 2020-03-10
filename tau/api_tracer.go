@@ -35,11 +35,11 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/state"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/vm"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/tracers"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/internal/tauapi"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rlp"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rpc"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/tracers"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/trie"
 )
 
@@ -211,7 +211,7 @@ func (api *PrivateDebugAPI) traceChain(ctx context.Context, start, end *types.Bl
 					res, err := api.traceTx(ctx, msg, vmctx, task.statedb, config)
 					if err != nil {
 						task.results[i] = &txTraceResult{Error: err.Error()}
-						log.Warn("Tracing failed", "hash",(*tx).Hash(), "block", task.block.NumberU64(), "err", err)
+						log.Warn("Tracing failed", "hash", (*tx).Hash(), "block", task.block.NumberU64(), "err", err)
 						break
 					}
 					// Only delete empty objects if EIP158/161 (a.k.a Spurious Dragon) is in effect
@@ -289,7 +289,7 @@ func (api *PrivateDebugAPI) traceChain(ctx context.Context, start, end *types.Bl
 				traced += uint64(len(txs))
 			}
 			// Generate the next state snapshot fast without tracing
-			_, _, _, err := api.tau.blockchain.Processor().Process(block, statedb)
+			_, _, err := api.tau.blockchain.Processor().Process(block, statedb)
 			if err != nil {
 				failed = err
 				break
@@ -670,7 +670,7 @@ func (api *PrivateDebugAPI) computeStateDB(block *types.Block, reexec uint64) (*
 		if block = api.tau.blockchain.GetBlockByNumber(block.NumberU64() + 1); block == nil {
 			return nil, fmt.Errorf("block #%d not found", block.NumberU64()+1)
 		}
-		_, _, _, err := api.tau.blockchain.Processor().Process(block, statedb)
+		_, _, err := api.tau.blockchain.Processor().Process(block, statedb)
 		if err != nil {
 			return nil, fmt.Errorf("processing block %d failed: %v", block.NumberU64(), err)
 		}
