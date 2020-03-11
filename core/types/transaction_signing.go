@@ -60,11 +60,11 @@ func SignTx(tx *Transaction, s Signer, prv *ecdsa.PrivateKey) (*Transaction, err
 	if err != nil {
 		return nil, err
 	}
-    isSign,err := (*tx).WithSignature(s, sig)
-    if isSign {
-       return tx,nil
-    }
-	return nil,err
+	isSign, err := (*tx).WithSignature(s, sig)
+	if isSign {
+		return tx, nil
+	}
+	return nil, err
 }
 
 // Sender returns the address derived from the signature (V, R, S) using secp256k1
@@ -101,7 +101,7 @@ type Signer interface {
 	Sender(tx *Transaction) (common.Address, error)
 	// SignatureValues returns the raw R, S, V values corresponding to the
 	// given signature.
-	SignatureValues(tx *Transaction, sig []byte) (r, s, v *big.Int, err error)
+	SignatureValues(sig []byte) (r, s, v *big.Int, err error)
 	// Hash returns the hash to be signed.
 	Hash(tx *Transaction) common.Hash
 	// Equal returns true if the given signer is the same as the receiver.
@@ -146,8 +146,8 @@ func (s EIP155Signer) Sender(tx *Transaction) (common.Address, error) {
 
 // SignatureValues returns signature values. This signature
 // needs to be in the [R || S || V] format where V is 0 or 1.
-func (s EIP155Signer) SignatureValues(tx *Transaction, sig []byte) (R, S, V *big.Int, err error) {
-	R, S, V, err = HomesteadSigner{}.SignatureValues(tx, sig)
+func (s EIP155Signer) SignatureValues(sig []byte) (R, S, V *big.Int, err error) {
+	R, S, V, err = HomesteadSigner{}.SignatureValues(sig)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -192,8 +192,8 @@ func (s HomesteadSigner) Equal(s2 Signer) bool {
 
 // SignatureValues returns signature values. This signature
 // needs to be in the [R || S || V] format where V is 0 or 1.
-func (hs HomesteadSigner) SignatureValues(tx *Transaction, sig []byte) (r, s, v *big.Int, err error) {
-	return hs.FrontierSigner.SignatureValues(tx, sig)
+func (hs HomesteadSigner) SignatureValues(sig []byte) (r, s, v *big.Int, err error) {
+	return hs.FrontierSigner.SignatureValues(sig)
 }
 
 func (hs HomesteadSigner) Sender(tx *Transaction) (common.Address, error) {
@@ -209,7 +209,7 @@ func (s FrontierSigner) Equal(s2 Signer) bool {
 
 // SignatureValues returns signature values. This signature
 // needs to be in the [R || S || V] format where V is 0 or 1.
-func (fs FrontierSigner) SignatureValues(tx *Transaction, sig []byte) (r, s, v *big.Int, err error) {
+func (fs FrontierSigner) SignatureValues(sig []byte) (r, s, v *big.Int, err error) {
 	if len(sig) != crypto.SignatureLength {
 		panic(fmt.Sprintf("wrong size for signature: got %d, want %d", len(sig), crypto.SignatureLength))
 	}

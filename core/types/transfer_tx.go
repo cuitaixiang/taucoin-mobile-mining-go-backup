@@ -33,7 +33,8 @@ import (
 type TransferTx struct {
 	tx TransferTxData
 
-	hash atomic.Value
+	//cache
+    hash atomic.Value
 	size atomic.Value
 	from atomic.Value
 }
@@ -209,10 +210,15 @@ func (ttx *TransferTx) AsMessage(s Signer) (Message, error) {
 }
 
 func (ttx *TransferTx) WithSignature(singer Signer, sig []byte) (bool, error) {
-	//todo splite and verify ttx
+	V, R, S, err := singer.SignatureValues(sig)
+	if err != nil {
+		return false, err
+	}
 	//contain signature in ttx itself
-	ttx = &TransferTx{tx: ttx.tx}
-	//fill field of signature in ttx
+	//fill field of versioned signature in ttx
+	ttx.tx.V = V
+	ttx.tx.R = R
+	ttx.tx.S = S
 	return true, nil
 }
 
