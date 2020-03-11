@@ -52,11 +52,10 @@ func NewStateProcessor(config *params.ChainConfig, bc *BlockChain, engine consen
 // Process returns the receipts and logs accumulated during the process and
 // returns the amount of gas that was used in the process. If any of the
 // transactions failed to execute due to insufficient gas it will return an error.
-func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB) ([]*types.Log, uint64, error) {
+func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB) (uint64, error) {
 	var (
 		usedGas = new(uint64)
 		header  = block.Header()
-		allLogs []*types.Log
 		gp      = new(GasPool).AddGas(block.GasLimit())
 	)
 	// Iterate over and process the individual transactions
@@ -64,13 +63,13 @@ func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB) ([]
 		statedb.Prepare((*tx).Hash(), block.Hash(), i)
 		_, _, err := ApplyTransaction(p.config, p.bc, nil, gp, statedb, header, tx, usedGas)
 		if err != nil {
-			return nil, 0, err
+			return 0, err
 		}
 	}
 	// Finalize the block, applying any consensus engine specific extras (e.g. block rewards)
 	p.engine.Finalize(p.bc, header, statedb, block.Transactions(), block.Uncles())
 
-	return allLogs, *usedGas, nil
+	return *usedGas, nil
 }
 
 // ApplyTransaction attempts to apply a transaction to the given state database

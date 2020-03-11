@@ -774,17 +774,6 @@ func (bc *BlockChain) GetBlocksFromHash(hash common.Hash, n int) (blocks []*type
 	return
 }
 
-// GetUnclesInChain retrieves all the uncles from a given block backwards until
-// a specific distance is reached.
-func (bc *BlockChain) GetUnclesInChain(block *types.Block, length int) []*types.Header {
-	uncles := []*types.Header{}
-	for i := 0; block != nil && i < length; i++ {
-		uncles = append(uncles, block.Uncles()...)
-		block = bc.GetBlock(block.ParentHash(), block.NumberU64()-1)
-	}
-	return uncles
-}
-
 // TrieNode retrieves a blob of data associated with a trie node (or code hash)
 // either from ephemeral in-memory cache, or from persistent storage.
 func (bc *BlockChain) TrieNode(hash common.Hash) ([]byte, error) {
@@ -1454,10 +1443,9 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 	// faster than direct delivery and requires much less mutex
 	// acquiring.
 	var (
-		stats         = insertStats{startTime: mclock.Now()}
-		events        = make([]interface{}, 0, len(chain))
-		lastCanon     *types.Block
-		coalescedLogs []*types.Log
+		stats     = insertStats{startTime: mclock.Now()}
+		events    = make([]interface{}, 0, len(chain))
+		lastCanon *types.Block
 	)
 	// Start the parallel header verifier
 	headers := make([]*types.Header, len(chain))
@@ -1527,7 +1515,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 		for block != nil && (it.index == 0 || err == consensus.ErrUnknownAncestor) {
 			log.Debug("Future block, postponing import", "number", block.Number(), "hash", block.Hash())
 			if err := bc.addFutureBlock(block); err != nil {
-				return it.index, events, coalescedLogs, err
+				return it.index, events, nil, err
 			}
 			block, err = it.next()
 		}
@@ -1535,13 +1523,13 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 		stats.ignored += it.remaining()
 
 		// If there are any still remaining, mark as ignored
-		return it.index, events, coalescedLogs, err
+		return it.index, events, nil, err
 
 	// Some other error occurred, abort
 	case err != nil:
 		stats.ignored += len(it.chain)
 		bc.reportBlock(block, err)
-		return it.index, events, coalescedLogs, err
+		return it.index, events, nil, err
 	}
 	// No validation errors for the first block (or chain prefix skipped)
 	for ; block != nil && err == nil; block, err = it.next() {
@@ -1553,7 +1541,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 		// If the header is a banned one, straight out abort
 		if BadHashes[block.Hash()] {
 			bc.reportBlock(block, ErrBlacklistedHash)
-			return it.index, events, coalescedLogs, ErrBlacklistedHash
+			return it.index, events, nil, ErrBlacklistedHash
 		}
 		// Retrieve the parent block and it's state to execute on top
 		start := time.Now()
@@ -1564,7 +1552,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 		}
 		statedb, err := state.New(parent.Root, bc.stateCache)
 		if err != nil {
-			return it.index, events, coalescedLogs, err
+			return it.index, events, nil, err
 		}
 		// If we have a followup block, run that against the current state to pre-cache
 		// transactions and probabilistically some of the account/storage trie nodes.
@@ -1585,11 +1573,11 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 		}
 		// Process block using the parent state as reference point
 		substart := time.Now()
-		logs, _, err := bc.processor.Process(block, statedb)
+		_, err = bc.processor.Process(block, statedb)
 		if err != nil {
 			bc.reportBlock(block, err)
 			atomic.StoreUint32(&followupInterrupt, 1)
-			return it.index, events, coalescedLogs, err
+			return it.index, events, nil, err
 		}
 		// Update the metrics touched during block processing
 		accountReadTimer.Update(statedb.AccountReads)     // Account reads are complete, we can mark them
@@ -1608,7 +1596,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 		if err := bc.validator.ValidateState(block, statedb); err != nil {
 			bc.reportBlock(block, err)
 			atomic.StoreUint32(&followupInterrupt, 1)
-			return it.index, events, coalescedLogs, err
+			return it.index, events, nil, err
 		}
 		proctime := time.Since(start)
 
@@ -1623,7 +1611,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 		status, err := bc.writeBlockWithState(block, statedb)
 		if err != nil {
 			atomic.StoreUint32(&followupInterrupt, 1)
-			return it.index, events, coalescedLogs, err
+			return it.index, events, nil, err
 		}
 		atomic.StoreUint32(&followupInterrupt, 1)
 
@@ -1637,11 +1625,10 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 		switch status {
 		case CanonStatTy:
 			log.Debug("Inserted new block", "number", block.Number(), "hash", block.Hash(),
-				"uncles", len(block.Uncles()), "txs", len(block.Transactions()), "elapsed", common.PrettyDuration(time.Since(start)),
+				"txs", len(block.Transactions()), "elapsed", common.PrettyDuration(time.Since(start)),
 				"root", block.Root())
 
-			coalescedLogs = append(coalescedLogs, logs...)
-			events = append(events, ChainEvent{block, block.Hash(), logs})
+			events = append(events, ChainEvent{block, block.Hash(), nil})
 			lastCanon = block
 
 			// Only count canonical blocks for GC processing time
@@ -1650,7 +1637,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 		case SideStatTy:
 			log.Debug("Inserted forked block", "number", block.Number(), "hash", block.Hash(),
 				"diff", block.Difficulty(), "elapsed", common.PrettyDuration(time.Since(start)),
-				"txs", len(block.Transactions()), "uncles", len(block.Uncles()), "root", block.Root())
+				"txs", len(block.Transactions()), "root", block.Root())
 			events = append(events, ChainSideEvent{block})
 
 		default:
@@ -1658,7 +1645,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 			// a log, instead of trying to track down blocks imports that don't emit logs.
 			log.Warn("Inserted block with unknown status", "number", block.Number(), "hash", block.Hash(),
 				"diff", block.Difficulty(), "elapsed", common.PrettyDuration(time.Since(start)),
-				"txs", len(block.Transactions()), "uncles", len(block.Uncles()), "root", block.Root())
+				"txs", len(block.Transactions()), "root", block.Root())
 		}
 		stats.processed++
 
@@ -1668,13 +1655,13 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 	// Any blocks remaining here? The only ones we care about are the future ones
 	if block != nil && err == consensus.ErrFutureBlock {
 		if err := bc.addFutureBlock(block); err != nil {
-			return it.index, events, coalescedLogs, err
+			return it.index, events, nil, err
 		}
 		block, err = it.next()
 
 		for ; block != nil && err == consensus.ErrUnknownAncestor; block, err = it.next() {
 			if err := bc.addFutureBlock(block); err != nil {
-				return it.index, events, coalescedLogs, err
+				return it.index, events, nil, err
 			}
 			stats.queued++
 		}
@@ -1685,7 +1672,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 	if lastCanon != nil && bc.CurrentBlock().Hash() == lastCanon.Hash() {
 		events = append(events, ChainHeadEvent{lastCanon})
 	}
-	return it.index, events, coalescedLogs, err
+	return it.index, events, nil, err
 }
 
 // insertSideChain is called when an import batch hits upon a pruned ancestor
