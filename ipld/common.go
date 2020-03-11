@@ -49,7 +49,7 @@ func keccak256ToCid(codec uint64, h []byte) cid.Cid {
 	return cid.NewCidV1(codec, mh.Multihash(buf))
 }
 
-// commonHashToCid takes a go-tauereum common.Hash and returns its
+// commonHashToCid takes a go-tau common.Hash and returns its
 // cid based on the codec given,
 func commonHashToCid(codec uint64, h common.Hash) cid.Cid {
 	mhash, err := mh.Encode(h[:], mh.KECCAK_256)
@@ -73,7 +73,7 @@ func getRLP(object interface{}) []byte {
 /*
   LOCAL TRIE
 
-// localTrie wraps a go-tauereum trie and its underlying memory db.
+// localTrie wraps a go-tau trie and its underlying memory db.
 // It contributes to the creation of the trie node objects.
 type localTrie struct {
 	db   *taudb.Database
