@@ -19,9 +19,9 @@ func (p PersonalInfoTxData) MarshalJSON() ([]byte, error) {
 		Version     hexutil.Bytes   `json:"version"     gencodec:"required"`
 		Option      hexutil.Bytes   `json:"option"      gencodec:"required"`
 		ChainID     hexutil.Bytes   `json:"chainid"     gencodec:"required"`
-		Nounce      hexutil.Uint64  `json:"nounce"      gencodec:"required"`
+		Nonce       hexutil.Uint64  `json:"nonce"      gencodec:"required"`
 		TimeStamp   hexutil.Uint32  `json:"timestamp"   gencodec:"required"`
-		Fee         hexutil.Bytes   `json:"fee"         gencodec:"required"`
+		Fee         *hexutil.Big    `json:"fee"         gencodec:"required"`
 		V           *hexutil.Big    `json:"v"           gencodec:"required"`
 		R           *hexutil.Big    `json:"r"           gencodec:"required"`
 		S           *hexutil.Big    `json:"s"           gencodec:"required"`
@@ -34,9 +34,9 @@ func (p PersonalInfoTxData) MarshalJSON() ([]byte, error) {
 	enc.Version = hexutil.Bytes(p.Version)
 	enc.Option = hexutil.Bytes(p.Option)
 	enc.ChainID = hexutil.Bytes(p.ChainID)
-	enc.Nounce = hexutil.Uint64(p.Nounce)
+	enc.Nonce = hexutil.Uint64(p.Nonce)
 	enc.TimeStamp = hexutil.Uint32(p.TimeStamp)
-	enc.Fee = hexutil.Bytes(p.Fee)
+	enc.Fee = (*hexutil.Big)(p.Fee)
 	enc.V = (*hexutil.Big)(p.V)
 	enc.R = (*hexutil.Big)(p.R)
 	enc.S = (*hexutil.Big)(p.S)
@@ -53,9 +53,9 @@ func (p *PersonalInfoTxData) UnmarshalJSON(input []byte) error {
 		Version     *hexutil.Bytes  `json:"version"     gencodec:"required"`
 		Option      *hexutil.Bytes  `json:"option"      gencodec:"required"`
 		ChainID     *hexutil.Bytes  `json:"chainid"     gencodec:"required"`
-		Nounce      *hexutil.Uint64 `json:"nounce"      gencodec:"required"`
+		Nonce       *hexutil.Uint64 `json:"nonce"      gencodec:"required"`
 		TimeStamp   *hexutil.Uint32 `json:"timestamp"   gencodec:"required"`
-		Fee         *hexutil.Bytes  `json:"fee"         gencodec:"required"`
+		Fee         *hexutil.Big    `json:"fee"         gencodec:"required"`
 		V           *hexutil.Big    `json:"v"           gencodec:"required"`
 		R           *hexutil.Big    `json:"r"           gencodec:"required"`
 		S           *hexutil.Big    `json:"s"           gencodec:"required"`
@@ -80,10 +80,10 @@ func (p *PersonalInfoTxData) UnmarshalJSON(input []byte) error {
 		return errors.New("missing required field 'chainid' for PersonalInfoTxData")
 	}
 	p.ChainID = Byte32s(*dec.ChainID)
-	if dec.Nounce == nil {
-		return errors.New("missing required field 'nounce' for PersonalInfoTxData")
+	if dec.Nonce == nil {
+		return errors.New("missing required field 'nonce' for PersonalInfoTxData")
 	}
-	p.Nounce = uint64(*dec.Nounce)
+	p.Nonce = uint64(*dec.Nonce)
 	if dec.TimeStamp == nil {
 		return errors.New("missing required field 'timestamp' for PersonalInfoTxData")
 	}
@@ -91,7 +91,7 @@ func (p *PersonalInfoTxData) UnmarshalJSON(input []byte) error {
 	if dec.Fee == nil {
 		return errors.New("missing required field 'fee' for PersonalInfoTxData")
 	}
-	p.Fee = OneByte(*dec.Fee)
+	p.Fee = (*big.Int)(dec.Fee)
 	if dec.V == nil {
 		return errors.New("missing required field 'v' for PersonalInfoTxData")
 	}

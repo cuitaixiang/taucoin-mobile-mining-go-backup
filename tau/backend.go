@@ -75,6 +75,7 @@ type Tau struct {
 
 	// DB interfaces
 	chainDb taudb.Database // Block chain database
+	ipfsDb  taudb.KeyValueStore // Block chain IPFS database
 
 	eventMux       *event.TypeMux
 	engine         consensus.Engine
@@ -125,6 +126,12 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	ipfsDb, err2 := ctx.OpenIpfsDatabase("chaindata", config.DatabaseCache, config.DatabaseHandles, config.DatabaseFreezer, "tau/db/chaindata/")
+	if err2 != nil {
+		return nil, err2
+	}
+
 	chainConfig, genesisHash, genesisErr := core.SetupGenesisBlockWithOverride(chainDb, config.Genesis)
 	if _, ok := genesisErr.(*params.ConfigCompatError); genesisErr != nil && !ok {
 		return nil, genesisErr
@@ -134,6 +141,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 	tau := &Tau{
 		config:         config,
 		chainDb:        chainDb,
+		ipfsDb:         ipfsDb,
 		eventMux:       ctx.EventMux,
 		accountManager: ctx.AccountManager,
 		engine:         CreateConsensusEngine(ctx, chainConfig, &config.Tauash, config.Miner.Notify, config.Miner.Noverify, chainDb),
@@ -192,7 +200,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 	if checkpoint == nil {
 		checkpoint = params.TrustedCheckpoints[genesisHash]
 	}
-	if tau.protocolManager, err = NewProtocolManager(chainConfig, checkpoint, config.SyncMode, config.NetworkId, tau.eventMux, tau.txPool, tau.engine, tau.blockchain, chainDb, cacheLimit, config.Whitelist); err != nil {
+	if tau.protocolManager, err = NewProtocolManager(chainConfig, checkpoint, config.SyncMode, config.NetworkId, tau.eventMux, tau.txPool, tau.engine, tau.blockchain, ipfsDb, cacheLimit, config.Whitelist); err != nil {
 		return nil, err
 	}
 	tau.miner = miner.New(tau, &config.Miner, chainConfig, tau.EventMux(), tau.engine, tau.isLocalBlock)
@@ -444,7 +452,8 @@ func (s *Tau) BlockChain() *core.BlockChain       { return s.blockchain }
 func (s *Tau) TxPool() *core.TxPool               { return s.txPool }
 func (s *Tau) EventMux() *event.TypeMux           { return s.eventMux }
 func (s *Tau) Engine() consensus.Engine           { return s.engine }
-func (s *Tau) ChainDb() taudb.Database            { return s.chainDb }
+func (s *Tau) ChainDb() taudb.Database            { return s.chainDb}
+func (s *Tau) Ipfs() taudb.KeyValueStore          { return s.ipfsDb }
 func (s *Tau) IsListening() bool                  { return true } // Always listening
 func (s *Tau) TauVersion() int                    { return int(ProtocolVersions[0]) }
 func (s *Tau) NetVersion() uint64                 { return s.networkID }
@@ -508,6 +517,7 @@ func (s *Tau) Stop() error {
 	s.eventMux.Stop()
 
 	s.chainDb.Close()
+	s.ipfsDb.Close()
 	close(s.shutdownChan)
 	return nil
 }
