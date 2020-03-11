@@ -34,7 +34,7 @@ type TransferTx struct {
 	tx TransferTxData
 
 	//cache
-    hash atomic.Value
+	hash atomic.Value
 	size atomic.Value
 	from atomic.Value
 }
