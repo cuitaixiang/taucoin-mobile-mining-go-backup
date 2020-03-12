@@ -100,6 +100,7 @@ func (t *BlockTest) Run() error {
 
 	// import pre accounts & construct test genesis block & state root
 	db := rawdb.NewMemoryDatabase()
+	ipfsdb := rawdb.NewMemoryDatabase() // ctc
 	gblock, err := t.genesis(config).Commit(db)
 	if err != nil {
 		return err
@@ -116,7 +117,7 @@ func (t *BlockTest) Run() error {
 	} else {
 		engine = tauhash.NewShared()
 	}
-	chain, err := core.NewBlockChain(db, &core.CacheConfig{TrieCleanLimit: 0}, config, engine, nil)
+	chain, err := core.NewBlockChain(db, ipfsdb, &core.CacheConfig{TrieCleanLimit: 0}, config, engine, nil)
 	if err != nil {
 		return err
 	}

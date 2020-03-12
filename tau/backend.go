@@ -177,7 +177,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 			TrieTimeLimit:       config.TrieTimeout,
 		}
 	)
-	tau.blockchain, err = core.NewBlockChain(chainDb, cacheConfig, chainConfig, tau.engine, tau.shouldPreserve)
+	tau.blockchain, err = core.NewBlockChain(ipfsDb, chainDb, cacheConfig, chainConfig, tau.engine, tau.shouldPreserve)
 	if err != nil {
 		return nil, err
 	}

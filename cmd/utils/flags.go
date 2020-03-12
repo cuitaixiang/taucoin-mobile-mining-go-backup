@@ -1479,7 +1479,7 @@ func SplitTagsFlag(tagsFlag string) map[string]string {
 }
 
 // MakeChainDatabase open an LevelDB using the flags passed to the client and will hard crash if it fails.
-func MakeChainDatabase(ctx *cli.Context, stack *node.Node) taudb.Database {
+func MakeChainDatabase(ctx *cli.Context, stack *node.Node) (taudb.Database, taudb.KeyValueStore){
 	var (
 		cache   = ctx.GlobalInt(CacheFlag.Name) * ctx.GlobalInt(CacheDatabaseFlag.Name) / 100
 		handles = makeDatabaseHandles()
@@ -1488,11 +1488,16 @@ func MakeChainDatabase(ctx *cli.Context, stack *node.Node) taudb.Database {
 	if ctx.GlobalString(SyncModeFlag.Name) == "light" {
 		name = "lightchaindata"
 	}
-	chainDb, err := stack.OpenDatabaseWithFreezer(name, cache, handles, ctx.GlobalString(AncientFlag.Name), "")
-	if err != nil {
-		Fatalf("Could not open database: %v", err)
+	chainDb, errc := stack.OpenDatabaseWithFreezer(name, cache, handles, ctx.GlobalString(AncientFlag.Name), "")
+	if errc != nil {
+		Fatalf("Could not open database: %v", errc)
 	}
-	return chainDb
+
+	ipfsDb, erri := stack.OpenDatabaseWithFreezer(name, cache, handles, ctx.GlobalString(AncientFlag.Name), "")
+	if erri != nil {
+		Fatalf("Could not open database: %v", erri)
+	}
+	return chainDb, ipfsDb
 }
 
 func MakeGenesis(ctx *cli.Context) *core.Genesis {
@@ -1513,7 +1518,7 @@ func MakeGenesis(ctx *cli.Context) *core.Genesis {
 // MakeChain creates a chain manager from set command line flags.
 func MakeChain(ctx *cli.Context, stack *node.Node) (chain *core.BlockChain, chainDb taudb.Database) {
 	var err error
-	chainDb = MakeChainDatabase(ctx, stack)
+	chainDb, ipfsDb:= MakeChainDatabase(ctx, stack)
 	config, _, err := core.SetupGenesisBlock(chainDb, MakeGenesis(ctx))
 	if err != nil {
 		Fatalf("%v", err)
@@ -1546,7 +1551,7 @@ func MakeChain(ctx *cli.Context, stack *node.Node) (chain *core.BlockChain, chai
 	if ctx.GlobalIsSet(CacheFlag.Name) || ctx.GlobalIsSet(CacheGCFlag.Name) {
 		cache.TrieDirtyLimit = ctx.GlobalInt(CacheFlag.Name) * ctx.GlobalInt(CacheGCFlag.Name) / 100
 	}
-	chain, err = core.NewBlockChain(chainDb, cache, config, engine, nil)
+	chain, err = core.NewBlockChain(chainDb, ipfsDb, cache, config, engine, nil)
 	if err != nil {
 		Fatalf("Can't create BlockChain: %v", err)
 	}

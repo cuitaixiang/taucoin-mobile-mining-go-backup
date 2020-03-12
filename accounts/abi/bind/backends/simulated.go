@@ -63,10 +63,10 @@ type SimulatedBackend struct {
 
 // NewSimulatedBackendWithDatabase creates a new binding backend based on the given database
 // and uses a simulated blockchain for testing purposes.
-func NewSimulatedBackendWithDatabase(database taudb.Database, alloc core.GenesisAlloc, gasLimit uint64) *SimulatedBackend {
+func NewSimulatedBackendWithDatabase(database taudb.Database, ipfsDb taudb.KeyValueStore, alloc core.GenesisAlloc, gasLimit uint64) *SimulatedBackend {
 	genesis := core.Genesis{Config: params.AllTauashProtocolChanges, GasLimit: gasLimit, Alloc: alloc}
 	genesis.MustCommit(database)
-	blockchain, _ := core.NewBlockChain(database, nil, genesis.Config, tauhash.NewFaker(), nil)
+	blockchain, _ := core.NewBlockChain(database, ipfsDb, nil, genesis.Config, tauhash.NewFaker(), nil)
 
 	backend := &SimulatedBackend{
 		database:   database,
@@ -81,7 +81,7 @@ func NewSimulatedBackendWithDatabase(database taudb.Database, alloc core.Genesis
 // NewSimulatedBackend creates a new binding backend using a simulated blockchain
 // for testing purposes.
 func NewSimulatedBackend(alloc core.GenesisAlloc, gasLimit uint64) *SimulatedBackend {
-	return NewSimulatedBackendWithDatabase(rawdb.NewMemoryDatabase(), alloc, gasLimit)
+	return NewSimulatedBackendWithDatabase(rawdb.NewMemoryDatabase(), rawdb.NewMemoryDatabase(), alloc, gasLimit)
 }
 
 // Close terminates the underlying blockchain's update loop.

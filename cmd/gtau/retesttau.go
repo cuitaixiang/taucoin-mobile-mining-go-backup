@@ -95,6 +95,7 @@ type RetestWeb3API interface {
 
 type RetesttauAPI struct {
 	tauDb         taudb.Database
+	ipfsDb        taudb.KeyValueStore
 	db            state.Database
 	chainConfig   *params.ChainConfig
 	author        common.Address
@@ -266,6 +267,7 @@ func (api *RetesttauAPI) SetChainParams(ctx context.Context, chainParams ChainPa
 		api.tauDb.Close()
 	}
 	tauDb := rawdb.NewMemoryDatabase()
+	ipfsDb := rawdb.NewMemoryDatabase()
 	accounts := make(core.GenesisAlloc)
 	for address, account := range chainParams.Accounts {
 		balance := big.NewInt(0)
@@ -346,7 +348,7 @@ func (api *RetesttauAPI) SetChainParams(ctx context.Context, chainParams ChainPa
 	}
 	engine := &NoRewardEngine{inner: inner, rewardsOn: chainParams.SealEngine != "NoReward"}
 
-	blockchain, err := core.NewBlockChain(tauDb, nil, chainConfig, engine, nil)
+	blockchain, err := core.NewBlockChain(tauDb, ipfsDb, nil, chainConfig, engine, nil)
 	if err != nil {
 		return false, err
 	}
@@ -356,9 +358,10 @@ func (api *RetesttauAPI) SetChainParams(ctx context.Context, chainParams ChainPa
 	api.author = chainParams.Genesis.Author
 	api.extraData = chainParams.Genesis.ExtraData
 	api.tauDb = tauDb
+	api.ipfsDb = ipfsDb
 	api.engine = engine
 	api.blockchain = blockchain
-	api.db = state.NewDatabase(api.tauDb)
+	api.db = state.NewDatabase(api.ipfsDb)
 	api.blockNumber = 0
 	api.txMap = make(map[common.Address]map[uint64]*types.Transaction)
 	api.txSenders = make(map[common.Address]struct{})
