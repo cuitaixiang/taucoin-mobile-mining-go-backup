@@ -45,7 +45,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rlp"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rpc"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/filters"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 )
 
@@ -74,7 +73,7 @@ type Tau struct {
 	lesServer       LesServer
 
 	// DB interfaces
-	chainDb taudb.Database // Block chain database
+	chainDb taudb.Database      // Block chain database
 	ipfsDb  taudb.KeyValueStore // Block chain IPFS database
 
 	eventMux       *event.TypeMux
@@ -295,11 +294,6 @@ func (s *Tau) APIs() []rpc.API {
 			Service:   NewPrivateMinerAPI(s),
 			Public:    false,
 		}, {
-			Namespace: "tau",
-			Version:   "1.0",
-			Service:   filters.NewPublicFilterAPI(s.APIBackend, false),
-			Public:    true,
-		}, {
 			Namespace: "admin",
 			Version:   "1.0",
 			Service:   NewPrivateAdminAPI(s),
@@ -452,7 +446,7 @@ func (s *Tau) BlockChain() *core.BlockChain       { return s.blockchain }
 func (s *Tau) TxPool() *core.TxPool               { return s.txPool }
 func (s *Tau) EventMux() *event.TypeMux           { return s.eventMux }
 func (s *Tau) Engine() consensus.Engine           { return s.engine }
-func (s *Tau) ChainDb() taudb.Database            { return s.chainDb}
+func (s *Tau) ChainDb() taudb.Database            { return s.chainDb }
 func (s *Tau) Ipfs() taudb.KeyValueStore          { return s.ipfsDb }
 func (s *Tau) IsListening() bool                  { return true } // Always listening
 func (s *Tau) TauVersion() int                    { return int(ProtocolVersions[0]) }
