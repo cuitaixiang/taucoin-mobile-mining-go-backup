@@ -57,6 +57,14 @@ type Compacter interface {
 
 // KeyValueStore contains all the methods required to allow handling different
 // key-value data stores backing the high level database.
+type IpfsStore interface {
+	KeyValueReader
+	KeyValueWriter
+	Batcher
+}
+
+// KeyValueStore contains all the methods required to allow handling different
+// key-value data stores backing the high level database.
 type KeyValueStore interface {
 	KeyValueReader
 	KeyValueWriter

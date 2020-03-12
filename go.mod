@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/Azure/azure-storage-blob-go v0.8.0
-	github.com/Tau-Coin/taucoin-go-p2p v0.0.0-20200226052631-f220b54ccefa
+	github.com/Tau-Coin/taucoin-go-p2p v0.0.0-20200312121956-0fb26f4926da
 	github.com/allegro/bigcache v1.2.1
 	github.com/apilayer/freegeoip v3.5.0+incompatible
 	github.com/aristanetworks/goarista v0.0.0-20200206021550-59c4040ef2d3

@@ -95,7 +95,7 @@ type RetestWeb3API interface {
 
 type RetesttauAPI struct {
 	tauDb         taudb.Database
-	ipfsDb        taudb.KeyValueStore
+	ipfsDb        taudb.IpfsStore
 	db            state.Database
 	chainConfig   *params.ChainConfig
 	author        common.Address

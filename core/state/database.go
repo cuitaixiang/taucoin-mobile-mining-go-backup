@@ -90,14 +90,14 @@ type Trie interface {
 // NewDatabase creates a backing store for state. The returned database is safe for
 // concurrent use, but does not retain any recent trie nodes in memory. To keep some
 // historical state in memory, use the NewDatabaseWithCache constructor.
-func NewDatabase(db taudb.KeyValueStore) Database {
+func NewDatabase(db taudb.IpfsStore) Database {
 	return NewDatabaseWithCache(db, 0)
 }
 
 // NewDatabaseWithCache creates a backing store for state. The returned database
 // is safe for concurrent use and retains a lot of collapsed RLP trie nodes in a
 // large memory cache.
-func NewDatabaseWithCache(db taudb.KeyValueStore, cache int) Database {
+func NewDatabaseWithCache(db taudb.IpfsStore, cache int) Database {
 	csc, _ := lru.New(codeSizeCacheSize)
 	return &cachingDB{
 		db:            trie.NewDatabaseWithCache(db, cache),

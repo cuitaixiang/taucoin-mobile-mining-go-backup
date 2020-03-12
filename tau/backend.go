@@ -74,7 +74,7 @@ type Tau struct {
 
 	// DB interfaces
 	chainDb taudb.Database      // Block chain database
-	ipfsDb  taudb.KeyValueStore // Block chain IPFS database
+	ipfsDb  taudb.IpfsStore // Block chain IPFS database
 
 	eventMux       *event.TypeMux
 	engine         consensus.Engine
@@ -447,7 +447,7 @@ func (s *Tau) TxPool() *core.TxPool               { return s.txPool }
 func (s *Tau) EventMux() *event.TypeMux           { return s.eventMux }
 func (s *Tau) Engine() consensus.Engine           { return s.engine }
 func (s *Tau) ChainDb() taudb.Database            { return s.chainDb }
-func (s *Tau) Ipfs() taudb.KeyValueStore          { return s.ipfsDb }
+func (s *Tau) Ipfs() taudb.IpfsStore              { return s.ipfsDb }
 func (s *Tau) IsListening() bool                  { return true } // Always listening
 func (s *Tau) TauVersion() int                    { return int(ProtocolVersions[0]) }
 func (s *Tau) NetVersion() uint64                 { return s.networkID }
@@ -511,7 +511,6 @@ func (s *Tau) Stop() error {
 	s.eventMux.Stop()
 
 	s.chainDb.Close()
-	s.ipfsDb.Close()
 	close(s.shutdownChan)
 	return nil
 }

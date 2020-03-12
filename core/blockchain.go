@@ -134,7 +134,7 @@ type BlockChain struct {
 	cacheConfig *CacheConfig        // Cache configuration for pruning
 
 	db     taudb.Database // Low level persistent database to store final content in
-	ipfsDb taudb.KeyValueStore // database in ipfs system for statedb
+	ipfsDb taudb.IpfsStore // database in ipfs system for statedb
 	triegc *prque.Prque   // Priority queue mapping block numbers to tries to gc
 	gcproc time.Duration  // Accumulates canonical block processing for trie dumping
 
@@ -179,7 +179,7 @@ type BlockChain struct {
 // NewBlockChain returns a fully initialised block chain using information
 // available in the database. It initialises the default Tau Validator and
 // Processor.
-func NewBlockChain(db taudb.Database, ipfsDb taudb.KeyValueStore, cacheConfig *CacheConfig, chainConfig *params.ChainConfig, engine consensus.Engine, shouldPreserve func(block *types.Block) bool) (*BlockChain, error) {
+func NewBlockChain(db taudb.Database, ipfsDb taudb.IpfsStore, cacheConfig *CacheConfig, chainConfig *params.ChainConfig, engine consensus.Engine, shouldPreserve func(block *types.Block) bool) (*BlockChain, error) {
 	if cacheConfig == nil {
 		cacheConfig = &CacheConfig{
 			TrieCleanLimit: 256,

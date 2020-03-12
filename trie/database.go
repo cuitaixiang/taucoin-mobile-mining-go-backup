@@ -67,7 +67,7 @@ const secureKeyLength = 11 + 32
 // behind this split design is to provide read access to RPC handlers and sync
 // servers even while the trie is executing expensive garbage collection.
 type Database struct {
-	diskdb taudb.KeyValueStore // Persistent storage for matured trie nodes
+	diskdb taudb.IpfsStore // Persistent storage for matured trie nodes
 
 	cleans  *bigcache.BigCache          // GC friendly memory cache of clean node RLPs
 	dirties map[common.Hash]*cachedNode // Data and references relationships of dirty nodes
@@ -288,14 +288,14 @@ func (t trienodeHasher) Sum64(key string) uint64 {
 // NewDatabase creates a new trie database to store ephemeral trie content before
 // its written out to disk or garbage collected. No read cache is created, so all
 // data retrievals will hit the underlying disk database.
-func NewDatabase(diskdb taudb.KeyValueStore) *Database {
+func NewDatabase(diskdb taudb.IpfsStore) *Database {
 	return NewDatabaseWithCache(diskdb, 0)
 }
 
 // NewDatabaseWithCache creates a new trie database to store ephemeral trie content
 // before its written out to disk or garbage collected. It also acts as a read cache
 // for nodes loaded from disk.
-func NewDatabaseWithCache(diskdb taudb.KeyValueStore, cache int) *Database {
+func NewDatabaseWithCache(diskdb taudb.IpfsStore, cache int) *Database {
 	var cleans *bigcache.BigCache
 	if cache > 0 {
 		cleans, _ = bigcache.NewBigCache(bigcache.Config{
