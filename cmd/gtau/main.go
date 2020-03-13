@@ -206,7 +206,7 @@ func init() {
 		// See config.go
 		dumpConfigCommand,
 		// See retesttau.go
-		retesttauCommand,
+		//retesttauCommand,
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))
 
