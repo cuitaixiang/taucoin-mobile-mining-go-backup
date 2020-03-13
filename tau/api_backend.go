@@ -109,22 +109,6 @@ func (b *TauAPIBackend) StateAndHeaderByNumber(ctx context.Context, number rpc.B
 	return stateDb, header, err
 }
 
-func (b *TauAPIBackend) GetReceipts(ctx context.Context, hash common.Hash) (types.Receipts, error) {
-	return b.tau.blockchain.GetReceiptsByHash(hash), nil
-}
-
-func (b *TauAPIBackend) GetLogs(ctx context.Context, hash common.Hash) ([][]*types.Log, error) {
-	receipts := b.tau.blockchain.GetReceiptsByHash(hash)
-	if receipts == nil {
-		return nil, nil
-	}
-	logs := make([][]*types.Log, len(receipts))
-	for i, receipt := range receipts {
-		logs[i] = receipt.Logs
-	}
-	return logs, nil
-}
-
 func (b *TauAPIBackend) GetTd(blockHash common.Hash) *big.Int {
 	return b.tau.blockchain.GetTdByHash(blockHash)
 }
@@ -147,10 +131,6 @@ func (b *TauAPIBackend) SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) e
 
 func (b *TauAPIBackend) SubscribeChainSideEvent(ch chan<- core.ChainSideEvent) event.Subscription {
 	return b.tau.BlockChain().SubscribeChainSideEvent(ch)
-}
-
-func (b *TauAPIBackend) SubscribeLogsEvent(ch chan<- []*types.Log) event.Subscription {
-	return b.tau.BlockChain().SubscribeLogsEvent(ch)
 }
 
 func (b *TauAPIBackend) SendTx(ctx context.Context, signedTx *types.Transaction) error {

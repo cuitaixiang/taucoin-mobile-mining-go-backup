@@ -560,18 +560,7 @@ func (w *worker) resultLoop() {
 				log.Error("Block found but no relative pending task", "number", block.Number(), "sealhash", sealhash, "hash", hash)
 				continue
 			}
-			// Different block could share same sealhash, deep copy here to prevent write-write conflict.
-			var (
-				logs []*types.Log
-			)
-			for _, receipt := range task.receipts {
-				// Update the block hash in all logs since it is now available and not when the
-				// receipt/log of individual transactions were created.
-				for _, log := range receipt.Logs {
-					log.BlockHash = hash
-				}
-				logs = append(logs, receipt.Logs...)
-			}
+
 			// Commit block and state to database.
 			stat, err := w.chain.WriteBlockWithState(block, task.state)
 			if err != nil {
@@ -587,12 +576,12 @@ func (w *worker) resultLoop() {
 			var events []interface{}
 			switch stat {
 			case core.CanonStatTy:
-				events = append(events, core.ChainEvent{Block: block, Hash: block.Hash(), Logs: logs})
+				events = append(events, core.ChainEvent{Block: block, Hash: block.Hash()})
 				events = append(events, core.ChainHeadEvent{Block: block})
 			case core.SideStatTy:
 				events = append(events, core.ChainSideEvent{Block: block})
 			}
-			w.chain.PostChainEvents(events, logs)
+			w.chain.PostChainEvents(events)
 
 			// Insert the block into the set of pending ones to resultLoop for confirmations
 			w.unconfirmed.Insert(block.NumberU64(), block.Hash())
@@ -683,20 +672,6 @@ func (w *worker) updateSnapshot() {
 	)
 
 	w.snapshotState = w.current.state.Copy()
-}
-
-func (w *worker) commitTransaction(tx *types.Transaction, coinbase common.Address) ([]*types.Log, error) {
-	snap := w.current.state.Snapshot()
-
-	receipt, _, err := core.ApplyTransaction(w.chainConfig, w.chain, &coinbase, w.current.gasPool, w.current.state, w.current.header, tx, &w.current.header.GasUsed)
-	if err != nil {
-		w.current.state.RevertToSnapshot(snap)
-		return nil, err
-	}
-	w.current.txs = append(w.current.txs, tx)
-	w.current.receipts = append(w.current.receipts, receipt)
-
-	return receipt.Logs, nil
 }
 
 //func (w *worker) commitTransactions(txs *types.TransactionsByFeeAndNonce, coinbase common.Address, interrupt *int32) bool {
