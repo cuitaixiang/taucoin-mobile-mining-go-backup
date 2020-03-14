@@ -20,8 +20,6 @@
 package ipfsdb
 
 import (
-	"sync"
-	"time"
 	"context"
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
@@ -30,32 +28,11 @@ import (
 	"github.com/Tau-Coin/taucoin-go-p2p/taudb"
 )
 
-const (
-	// degradationWarnInterval specifies how often warning should be printed if the
-	// leveldb database cannot keep up with requested writes.
-	degradationWarnInterval = time.Minute
-
-	// minCache is the minimum amount of memory in megabytes to allocate to leveldb
-	// read and write caching, split half and half.
-	minCache = 16
-
-	// minHandles is the minimum number of files handles to allocate to the open
-	// database files.
-	minHandles = 16
-
-	// metricsGatheringInterval specifies the interval to retrieve leveldb database
-	// compaction, io and pause stats to report to the user.
-	metricsGatheringInterval = 3 * time.Second
-)
-
 // Database is a persistent key-value store. Apart from basic data storage
 // functionality it also supports batch writes and iterating over the keyspace in
 // binary-alphabetical order.
 type Database struct {
 	idb *ipfsdb.IPFSdb // LevelDB instance
-
-	quitLock sync.Mutex      // Mutex protecting the quit channel access
-	quitChan chan chan error // Quit channel to stop the metrics collection before closing the database
 
 	log log.Logger // Contextual logger tracking the database path
 }
@@ -74,7 +51,6 @@ func New() (*Database, error) {
 	idb := &Database{
 		idb:       ipfsdb,
 		log:      logger,
-		quitChan: make(chan chan error),
 	}
 
 	return idb, nil
