@@ -58,9 +58,7 @@ type fetchResult struct {
 	Hash    common.Hash // Hash of the header to prevent recalculating
 
 	Header       *types.Header
-	Uncles       []*types.Header
 	Transactions types.Transactions
-	Receipts     types.Receipts
 }
 
 // queue represents hashes that are either need fetching or are being fetched
@@ -386,12 +384,6 @@ func (q *queue) Results(block bool) []*fetchResult {
 		// Recalculate the result item weights to prevent memory exhaustion
 		for _, result := range results {
 			size := result.Header.Size()
-			for _, uncle := range result.Uncles {
-				size += uncle.Size()
-			}
-			for _, receipt := range result.Receipts {
-				size += receipt.Size()
-			}
 			for _, tx := range result.Transactions {
 				size += (*tx).Size()
 			}

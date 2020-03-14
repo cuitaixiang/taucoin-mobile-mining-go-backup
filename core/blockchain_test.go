@@ -34,8 +34,8 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/vm"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/crypto"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 )
 
 // So we can deterministically seed different blockchains
@@ -147,7 +147,7 @@ func testBlockChainImport(chain types.Blocks, blockchain *BlockChain) error {
 		if err != nil {
 			return err
 		}
-		receipts, _, usedGas, err := blockchain.processor.Process(block, statedb, )
+		receipts, _, usedGas, err := blockchain.processor.Process(block, statedb)
 		if err != nil {
 			blockchain.reportBlock(block, receipts, err)
 			return err
@@ -640,7 +640,7 @@ func TestFastVsFullChains(t *testing.T) {
 	if n, err := fast.InsertHeaderChain(headers, 1); err != nil {
 		t.Fatalf("failed to insert header %d: %v", n, err)
 	}
-	if n, err := fast.InsertReceiptChain(blocks, receipts, 0); err != nil {
+	if n, err := fast.CompleteHeaderChainWithBlock(blocks, receipts, 0); err != nil {
 		t.Fatalf("failed to insert receipt %d: %v", n, err)
 	}
 	// Freezer style fast import the chain.
@@ -660,7 +660,7 @@ func TestFastVsFullChains(t *testing.T) {
 	if n, err := ancient.InsertHeaderChain(headers, 1); err != nil {
 		t.Fatalf("failed to insert header %d: %v", n, err)
 	}
-	if n, err := ancient.InsertReceiptChain(blocks, receipts, uint64(len(blocks)/2)); err != nil {
+	if n, err := ancient.CompleteHeaderChainWithBlock(blocks, receipts, uint64(len(blocks)/2)); err != nil {
 		t.Fatalf("failed to insert receipt %d: %v", n, err)
 	}
 	// Iterate over all chain data components, and cross reference
@@ -773,7 +773,7 @@ func TestLightVsFastVsFullChainHeads(t *testing.T) {
 	if n, err := fast.InsertHeaderChain(headers, 1); err != nil {
 		t.Fatalf("failed to insert header %d: %v", n, err)
 	}
-	if n, err := fast.InsertReceiptChain(blocks, receipts, 0); err != nil {
+	if n, err := fast.CompleteHeaderChainWithBlock(blocks, receipts, 0); err != nil {
 		t.Fatalf("failed to insert receipt %d: %v", n, err)
 	}
 	assert(t, "fast", fast, height, height, 0)
@@ -789,7 +789,7 @@ func TestLightVsFastVsFullChainHeads(t *testing.T) {
 	if n, err := ancient.InsertHeaderChain(headers, 1); err != nil {
 		t.Fatalf("failed to insert header %d: %v", n, err)
 	}
-	if n, err := ancient.InsertReceiptChain(blocks, receipts, uint64(3*len(blocks)/4)); err != nil {
+	if n, err := ancient.CompleteHeaderChainWithBlock(blocks, receipts, uint64(3*len(blocks)/4)); err != nil {
 		t.Fatalf("failed to insert receipt %d: %v", n, err)
 	}
 	assert(t, "ancient", ancient, height, height, 0)
@@ -1658,7 +1658,7 @@ func TestBlockchainRecovery(t *testing.T) {
 	if n, err := ancient.InsertHeaderChain(headers, 1); err != nil {
 		t.Fatalf("failed to insert header %d: %v", n, err)
 	}
-	if n, err := ancient.InsertReceiptChain(blocks, receipts, uint64(3*len(blocks)/4)); err != nil {
+	if n, err := ancient.CompleteHeaderChainWithBlock(blocks, receipts, uint64(3*len(blocks)/4)); err != nil {
 		t.Fatalf("failed to insert receipt %d: %v", n, err)
 	}
 	ancient.Stop()
@@ -1720,7 +1720,7 @@ func TestIncompleteAncientReceiptChainInsertion(t *testing.T) {
 		return number == blocks[len(blocks)/2].NumberU64()
 	}
 	previousFastBlock := ancient.CurrentFastBlock()
-	if n, err := ancient.InsertReceiptChain(blocks, receipts, uint64(3*len(blocks)/4)); err == nil {
+	if n, err := ancient.CompleteHeaderChainWithBlock(blocks, receipts, uint64(3*len(blocks)/4)); err == nil {
 		t.Fatalf("failed to insert receipt %d: %v", n, err)
 	}
 	if ancient.CurrentFastBlock().NumberU64() != previousFastBlock.NumberU64() {
@@ -1730,7 +1730,7 @@ func TestIncompleteAncientReceiptChainInsertion(t *testing.T) {
 		t.Fatalf("failed to truncate ancient data")
 	}
 	ancient.terminateInsert = nil
-	if n, err := ancient.InsertReceiptChain(blocks, receipts, uint64(3*len(blocks)/4)); err != nil {
+	if n, err := ancient.CompleteHeaderChainWithBlock(blocks, receipts, uint64(3*len(blocks)/4)); err != nil {
 		t.Fatalf("failed to insert receipt %d: %v", n, err)
 	}
 	if ancient.CurrentFastBlock().NumberU64() != blocks[len(blocks)-1].NumberU64() {
@@ -1946,7 +1946,7 @@ func testInsertKnownChainData(t *testing.T, typ string) {
 			if err != nil {
 				return err
 			}
-			_, err = chain.InsertReceiptChain(blocks, receipts, 0)
+			_, err = chain.CompleteHeaderChainWithBlock(blocks, receipts, 0)
 			return err
 		}
 		asserter = func(t *testing.T, block *types.Block) {

@@ -203,8 +203,8 @@ type BlockChain interface {
 	// InsertChain inserts a batch of blocks into the local chain.
 	InsertChain(types.Blocks) (int, error)
 
-	// InsertReceiptChain inserts a batch of receipts into the local chain.
-	InsertReceiptChain(types.Blocks, []types.Receipts, uint64) (int, error)
+	// CompleteHeaderChainWithBlock inserts a batch of receipts into the local chain.
+	CompleteHeaderChainWithBlock(types.Blocks, uint64) (int, error)
 }
 
 // New creates a new downloader to fetch hashes and blocks from remote peers.
@@ -479,23 +479,23 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, td *big.I
 			d.ancientLimit = height - maxForkAncestry - 1
 		}
 		/*
-		frozen, _ := d.stateDB.Ancients() // Ignore the error here since light client can also hit here.
-		// If a part of blockchain data has already been written into active store,
-		// disable the ancient style insertion explicitly.
-		if origin >= frozen && frozen != 0 {
-			d.ancientLimit = 0
-			log.Info("Disabling direct-ancient mode", "origin", origin, "ancient", frozen-1)
-		} else if d.ancientLimit > 0 {
-			log.Debug("Enabling direct-ancient mode", "ancient", d.ancientLimit)
-		}
-		// Rewind the ancient store and blockchain if reorg happens.
-		if origin+1 < frozen {
-			var hashes []common.Hash
-			for i := origin + 1; i < d.lightchain.CurrentHeader().Number.Uint64(); i++ {
-				hashes = append(hashes, rawdb.ReadCanonicalHash(d.stateDB, i))
+			frozen, _ := d.stateDB.Ancients() // Ignore the error here since light client can also hit here.
+			// If a part of blockchain data has already been written into active store,
+			// disable the ancient style insertion explicitly.
+			if origin >= frozen && frozen != 0 {
+				d.ancientLimit = 0
+				log.Info("Disabling direct-ancient mode", "origin", origin, "ancient", frozen-1)
+			} else if d.ancientLimit > 0 {
+				log.Debug("Enabling direct-ancient mode", "ancient", d.ancientLimit)
 			}
-			d.lightchain.Rollback(hashes)
-		}
+			// Rewind the ancient store and blockchain if reorg happens.
+			if origin+1 < frozen {
+				var hashes []common.Hash
+				for i := origin + 1; i < d.lightchain.CurrentHeader().Number.Uint64(); i++ {
+					hashes = append(hashes, rawdb.ReadCanonicalHash(d.stateDB, i))
+				}
+				d.lightchain.Rollback(hashes)
+			}
 		*/
 	}
 	// Initiate the sync using a concurrent header and content retrieval algorithm
@@ -1491,7 +1491,7 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 	)
 	blocks := make([]*types.Block, len(results))
 	for i, result := range results {
-		blocks[i] = types.NewBlockWithHeader(result.Header).WithBody(result.Transactions, result.Uncles)
+		blocks[i] = types.NewBlockWithHeader(result.Header).WithBody(result.Transactions)
 	}
 	if index, err := d.blockchain.InsertChain(blocks); err != nil {
 		if index < len(results) {
@@ -1640,12 +1640,10 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult, stateSync *state
 		"lastnumn", last.Number, "lasthash", last.Hash(),
 	)
 	blocks := make([]*types.Block, len(results))
-	receipts := make([]types.Receipts, len(results))
 	for i, result := range results {
-		blocks[i] = types.NewBlockWithHeader(result.Header).WithBody(result.Transactions, result.Uncles)
-		receipts[i] = result.Receipts
+		blocks[i] = types.NewBlockWithHeader(result.Header).WithBody(result.Transactions)
 	}
-	if index, err := d.blockchain.InsertReceiptChain(blocks, receipts, d.ancientLimit); err != nil {
+	if index, err := d.blockchain.CompleteHeaderChainWithBlock(blocks, d.ancientLimit); err != nil {
 		log.Debug("Downloaded item processing failed", "number", results[index].Header.Number, "hash", results[index].Header.Hash(), "err", err)
 		return errInvalidChain
 	}
@@ -1653,11 +1651,11 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult, stateSync *state
 }
 
 func (d *Downloader) commitPivotBlock(result *fetchResult) error {
-	block := types.NewBlockWithHeader(result.Header).WithBody(result.Transactions, result.Uncles)
+	block := types.NewBlockWithHeader(result.Header).WithBody(result.Transactions)
 	log.Debug("Committing fast sync pivot as new head", "number", block.Number(), "hash", block.Hash())
 
 	// Commit the pivot block as the new head, will require full sync from here on
-	if _, err := d.blockchain.InsertReceiptChain([]*types.Block{block}, []types.Receipts{result.Receipts}, d.ancientLimit); err != nil {
+	if _, err := d.blockchain.CompleteHeaderChainWithBlock([]*types.Block{block}, d.ancientLimit); err != nil {
 		return err
 	}
 	if err := d.blockchain.FastSyncCommitHead(block.Hash()); err != nil {
@@ -1675,13 +1673,8 @@ func (d *Downloader) DeliverHeaders(id string, headers []*types.Header) (err err
 }
 
 // DeliverBodies injects a new batch of block bodies received from a remote node.
-func (d *Downloader) DeliverBodies(id string, transactions [][]*types.Transaction, uncles [][]*types.Header) (err error) {
-	return d.deliver(id, d.bodyCh, &bodyPack{id, transactions, uncles}, bodyInMeter, bodyDropMeter)
-}
-
-// DeliverReceipts injects a new batch of receipts received from a remote node.
-func (d *Downloader) DeliverReceipts(id string, receipts [][]*types.Receipt) (err error) {
-	return d.deliver(id, d.receiptCh, &receiptPack{id, receipts}, receiptInMeter, receiptDropMeter)
+func (d *Downloader) DeliverBodies(id string, transactions [][]*types.Transaction) (err error) {
+	return d.deliver(id, d.bodyCh, &bodyPack{id, transactions}, bodyInMeter, bodyDropMeter)
 }
 
 // DeliverNodeData injects a new batch of node state data received from a remote node.

@@ -123,27 +123,14 @@ func (p *FakePeer) RequestHeadersByNumber(number uint64, amount int, skip int, r
 // corresponding to the specified block hashes.
 func (p *FakePeer) RequestBodies(hashes []common.Hash) error {
 	var (
-		txs    [][]*types.Transaction
-		uncles [][]*types.Header
+		txs [][]*types.Transaction
 	)
 	for _, hash := range hashes {
 		block := rawdb.ReadBlock(p.db, hash, *p.hc.GetBlockNumber(hash))
 
 		txs = append(txs, block.Transactions())
-		uncles = append(uncles, block.Uncles())
 	}
-	p.dl.DeliverBodies(p.id, txs, uncles)
-	return nil
-}
-
-// RequestReceipts implements downloader.Peer, returning a batch of transaction
-// receipts corresponding to the specified block hashes.
-func (p *FakePeer) RequestReceipts(hashes []common.Hash) error {
-	var receipts [][]*types.Receipt
-	for _, hash := range hashes {
-		receipts = append(receipts, rawdb.ReadRawReceipts(p.db, hash, *p.hc.GetBlockNumber(hash)))
-	}
-	p.dl.DeliverReceipts(p.id, receipts)
+	p.dl.DeliverBodies(p.id, txs)
 	return nil
 }
 
