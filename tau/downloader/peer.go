@@ -104,9 +104,6 @@ func (w *lightPeerWrapper) RequestHeadersByNumber(i uint64, amount int, skip int
 func (w *lightPeerWrapper) RequestBodies([]common.Hash) error {
 	panic("RequestBodies not supported in light client mode sync")
 }
-func (w *lightPeerWrapper) RequestReceipts([]common.Hash) error {
-	panic("RequestReceipts not supported in light client mode sync")
-}
 func (w *lightPeerWrapper) RequestNodeData([]common.Hash) error {
 	panic("RequestNodeData not supported in light client mode sync")
 }

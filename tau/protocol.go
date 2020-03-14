@@ -60,8 +60,6 @@ const (
 	// Protocol messages belonging to tau/63
 	GetNodeDataMsg = 0x0d
 	NodeDataMsg    = 0x0e
-	GetReceiptsMsg = 0x0f
-	ReceiptsMsg    = 0x10
 )
 
 type errCode int

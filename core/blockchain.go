@@ -410,7 +410,7 @@ func (bc *BlockChain) SetHead(head uint64) error {
 		// Ignore the error here since light client won't hit this path
 		frozen, _ := bc.db.Ancients()
 		if num+1 <= frozen {
-			// Truncate all relative data(header, total difficulty, body, receipt
+			// Truncate all relative data(header, total difficulty, body
 			// and canonical hash) from ancient store.
 			if err := bc.db.TruncateAncients(num + 1); err != nil {
 				log.Crit("Failed to truncate ancient data", "number", num, "err", err)
@@ -419,11 +419,10 @@ func (bc *BlockChain) SetHead(head uint64) error {
 			// Remove the hash <-> number mapping from the active store.
 			rawdb.DeleteHeaderNumber(db, hash)
 		} else {
-			// Remove relative body and receipts from the active store.
+			// Remove relative body from the active store.
 			// The header, total difficulty and canonical hash will be
 			// removed in the hc.SetHead function.
 			rawdb.DeleteBody(db, hash, num)
-			rawdb.DeleteReceipts(db, hash, num)
 		}
 		// Todo(rjl493456442) txlookup, bloombits, etc
 	}
@@ -888,11 +887,10 @@ type numberHash struct {
 	hash   common.Hash
 }
 
-// CompleteHeaderChainWithBlock attempts to complete an already existing header chain with
-// transaction and receipt data.
+// CompleteHeaderChainWithBlock attempts to complete an already existing header chain with transaction
 func (bc *BlockChain) CompleteHeaderChainWithBlock(blockChain types.Blocks, ancientLimit uint64) (int, error) {
 	// We don't require the chainMu here since we want to maximize the
-	// concurrency of header insertion and receipt insertion.
+	// concurrency of header insertion.
 	bc.wg.Add(1)
 	defer bc.wg.Done()
 
@@ -901,7 +899,7 @@ func (bc *BlockChain) CompleteHeaderChainWithBlock(blockChain types.Blocks, anci
 	for i := 0; i < len(blockChain); i++ {
 		if i != 0 {
 			if blockChain[i].NumberU64() != blockChain[i-1].NumberU64()+1 || blockChain[i].ParentHash() != blockChain[i-1].Hash() {
-				log.Error("Non contiguous receipt insert", "number", blockChain[i].Number(), "hash", blockChain[i].Hash(), "parent", blockChain[i].ParentHash(),
+				log.Error("Non contiguous block insert", "number", blockChain[i].Number(), "hash", blockChain[i].Hash(), "parent", blockChain[i].ParentHash(),
 					"prevnumber", blockChain[i-1].Number(), "prevhash", blockChain[i-1].Hash())
 				return 0, fmt.Errorf("non contiguous insert: item %d is #%d [%x…], item %d is #%d [%x…] (parent [%x…])", i-1, blockChain[i-1].NumberU64(),
 					blockChain[i-1].Hash().Bytes()[:4], i, blockChain[i].NumberU64(), blockChain[i].Hash().Bytes()[:4], blockChain[i].ParentHash().Bytes()[:4])
@@ -938,7 +936,7 @@ func (bc *BlockChain) CompleteHeaderChainWithBlock(blockChain types.Blocks, anci
 		bc.chainmu.Unlock()
 		return false
 	}
-	// writeAncient writes blockchain and corresponding receipt chain into ancient store.
+	// writeAncient writes blockchain into ancient store.
 	//
 	// this function only accepts canonical chain data. All side chain will be reverted
 	// eventually.
@@ -1087,7 +1085,7 @@ func (bc *BlockChain) CompleteHeaderChainWithBlock(blockChain types.Blocks, anci
 		}
 		return 0, nil
 	}
-	// writeLive writes blockchain and corresponding receipt chain into active store.
+	// writeLive writes blockchain into active store.
 	writeLive := func(blockChain types.Blocks) (int, error) {
 		batch := bc.db.NewBatch()
 		for i, block := range blockChain {
@@ -1125,7 +1123,7 @@ func (bc *BlockChain) CompleteHeaderChainWithBlock(blockChain types.Blocks, anci
 		updateHead(blockChain[len(blockChain)-1])
 		return 0, nil
 	}
-	// Write downloaded chain data and corresponding receipt chain data.
+	// Write downloaded chain data.
 	if len(ancientBlocks) > 0 {
 		if n, err := writeAncient(ancientBlocks); err != nil {
 			if err == errInsertionInterrupted {
@@ -1186,7 +1184,7 @@ func (bc *BlockChain) writeKnownBlock(block *types.Block) error {
 			return err
 		}
 	}
-	// Write the positional metadata for transaction/receipt lookups.
+	// Write the positional metadata for transaction lookups.
 	// Preimages here is empty, ignore it.
 	rawdb.WriteTxLookupEntries(bc.db, block)
 
@@ -1311,7 +1309,7 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, state *state.State
 				return NonStatTy, err
 			}
 		}
-		// Write the positional metadata for transaction/receipt lookups and preimages
+		// Write the positional metadata for transaction lookups and preimages
 		rawdb.WriteTxLookupEntries(batch, block)
 		rawdb.WritePreimages(batch, state.Preimages())
 
@@ -1836,12 +1834,11 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 		// Insert the block in the canonical way, re-writing history
 		bc.insert(newChain[i])
 
-		// Write lookup entries for hash based transaction/receipt searches
+		// Write lookup entries for hash based transaction searches
 		rawdb.WriteTxLookupEntries(bc.db, newChain[i])
 		addedTxs = append(addedTxs, newChain[i].Transactions()...)
 	}
-	// When transactions get deleted from the database, the receipts that were
-	// created in the fork must also be deleted
+
 	batch := bc.db.NewBatch()
 	for _, tx := range types.TxDifference(deletedTxs, addedTxs) {
 		rawdb.DeleteTxLookupEntry(batch, (*tx).Hash())

@@ -22,38 +22,34 @@ import (
 )
 
 var (
-	propTxnInPacketsMeter     = metrics.NewRegisteredMeter("tau/prop/txns/in/packets", nil)
-	propTxnInTrafficMeter     = metrics.NewRegisteredMeter("tau/prop/txns/in/traffic", nil)
-	propTxnOutPacketsMeter    = metrics.NewRegisteredMeter("tau/prop/txns/out/packets", nil)
-	propTxnOutTrafficMeter    = metrics.NewRegisteredMeter("tau/prop/txns/out/traffic", nil)
-	propHashInPacketsMeter    = metrics.NewRegisteredMeter("tau/prop/hashes/in/packets", nil)
-	propHashInTrafficMeter    = metrics.NewRegisteredMeter("tau/prop/hashes/in/traffic", nil)
-	propHashOutPacketsMeter   = metrics.NewRegisteredMeter("tau/prop/hashes/out/packets", nil)
-	propHashOutTrafficMeter   = metrics.NewRegisteredMeter("tau/prop/hashes/out/traffic", nil)
-	propBlockInPacketsMeter   = metrics.NewRegisteredMeter("tau/prop/blocks/in/packets", nil)
-	propBlockInTrafficMeter   = metrics.NewRegisteredMeter("tau/prop/blocks/in/traffic", nil)
-	propBlockOutPacketsMeter  = metrics.NewRegisteredMeter("tau/prop/blocks/out/packets", nil)
-	propBlockOutTrafficMeter  = metrics.NewRegisteredMeter("tau/prop/blocks/out/traffic", nil)
-	reqHeaderInPacketsMeter   = metrics.NewRegisteredMeter("tau/req/headers/in/packets", nil)
-	reqHeaderInTrafficMeter   = metrics.NewRegisteredMeter("tau/req/headers/in/traffic", nil)
-	reqHeaderOutPacketsMeter  = metrics.NewRegisteredMeter("tau/req/headers/out/packets", nil)
-	reqHeaderOutTrafficMeter  = metrics.NewRegisteredMeter("tau/req/headers/out/traffic", nil)
-	reqBodyInPacketsMeter     = metrics.NewRegisteredMeter("tau/req/bodies/in/packets", nil)
-	reqBodyInTrafficMeter     = metrics.NewRegisteredMeter("tau/req/bodies/in/traffic", nil)
-	reqBodyOutPacketsMeter    = metrics.NewRegisteredMeter("tau/req/bodies/out/packets", nil)
-	reqBodyOutTrafficMeter    = metrics.NewRegisteredMeter("tau/req/bodies/out/traffic", nil)
-	reqStateInPacketsMeter    = metrics.NewRegisteredMeter("tau/req/states/in/packets", nil)
-	reqStateInTrafficMeter    = metrics.NewRegisteredMeter("tau/req/states/in/traffic", nil)
-	reqStateOutPacketsMeter   = metrics.NewRegisteredMeter("tau/req/states/out/packets", nil)
-	reqStateOutTrafficMeter   = metrics.NewRegisteredMeter("tau/req/states/out/traffic", nil)
-	reqReceiptInPacketsMeter  = metrics.NewRegisteredMeter("tau/req/receipts/in/packets", nil)
-	reqReceiptInTrafficMeter  = metrics.NewRegisteredMeter("tau/req/receipts/in/traffic", nil)
-	reqReceiptOutPacketsMeter = metrics.NewRegisteredMeter("tau/req/receipts/out/packets", nil)
-	reqReceiptOutTrafficMeter = metrics.NewRegisteredMeter("tau/req/receipts/out/traffic", nil)
-	miscInPacketsMeter        = metrics.NewRegisteredMeter("tau/misc/in/packets", nil)
-	miscInTrafficMeter        = metrics.NewRegisteredMeter("tau/misc/in/traffic", nil)
-	miscOutPacketsMeter       = metrics.NewRegisteredMeter("tau/misc/out/packets", nil)
-	miscOutTrafficMeter       = metrics.NewRegisteredMeter("tau/misc/out/traffic", nil)
+	propTxnInPacketsMeter    = metrics.NewRegisteredMeter("tau/prop/txns/in/packets", nil)
+	propTxnInTrafficMeter    = metrics.NewRegisteredMeter("tau/prop/txns/in/traffic", nil)
+	propTxnOutPacketsMeter   = metrics.NewRegisteredMeter("tau/prop/txns/out/packets", nil)
+	propTxnOutTrafficMeter   = metrics.NewRegisteredMeter("tau/prop/txns/out/traffic", nil)
+	propHashInPacketsMeter   = metrics.NewRegisteredMeter("tau/prop/hashes/in/packets", nil)
+	propHashInTrafficMeter   = metrics.NewRegisteredMeter("tau/prop/hashes/in/traffic", nil)
+	propHashOutPacketsMeter  = metrics.NewRegisteredMeter("tau/prop/hashes/out/packets", nil)
+	propHashOutTrafficMeter  = metrics.NewRegisteredMeter("tau/prop/hashes/out/traffic", nil)
+	propBlockInPacketsMeter  = metrics.NewRegisteredMeter("tau/prop/blocks/in/packets", nil)
+	propBlockInTrafficMeter  = metrics.NewRegisteredMeter("tau/prop/blocks/in/traffic", nil)
+	propBlockOutPacketsMeter = metrics.NewRegisteredMeter("tau/prop/blocks/out/packets", nil)
+	propBlockOutTrafficMeter = metrics.NewRegisteredMeter("tau/prop/blocks/out/traffic", nil)
+	reqHeaderInPacketsMeter  = metrics.NewRegisteredMeter("tau/req/headers/in/packets", nil)
+	reqHeaderInTrafficMeter  = metrics.NewRegisteredMeter("tau/req/headers/in/traffic", nil)
+	reqHeaderOutPacketsMeter = metrics.NewRegisteredMeter("tau/req/headers/out/packets", nil)
+	reqHeaderOutTrafficMeter = metrics.NewRegisteredMeter("tau/req/headers/out/traffic", nil)
+	reqBodyInPacketsMeter    = metrics.NewRegisteredMeter("tau/req/bodies/in/packets", nil)
+	reqBodyInTrafficMeter    = metrics.NewRegisteredMeter("tau/req/bodies/in/traffic", nil)
+	reqBodyOutPacketsMeter   = metrics.NewRegisteredMeter("tau/req/bodies/out/packets", nil)
+	reqBodyOutTrafficMeter   = metrics.NewRegisteredMeter("tau/req/bodies/out/traffic", nil)
+	reqStateInPacketsMeter   = metrics.NewRegisteredMeter("tau/req/states/in/packets", nil)
+	reqStateInTrafficMeter   = metrics.NewRegisteredMeter("tau/req/states/in/traffic", nil)
+	reqStateOutPacketsMeter  = metrics.NewRegisteredMeter("tau/req/states/out/packets", nil)
+	reqStateOutTrafficMeter  = metrics.NewRegisteredMeter("tau/req/states/out/traffic", nil)
+	miscInPacketsMeter       = metrics.NewRegisteredMeter("tau/misc/in/packets", nil)
+	miscInTrafficMeter       = metrics.NewRegisteredMeter("tau/misc/in/traffic", nil)
+	miscOutPacketsMeter      = metrics.NewRegisteredMeter("tau/misc/out/packets", nil)
+	miscOutTrafficMeter      = metrics.NewRegisteredMeter("tau/misc/out/traffic", nil)
 )
 
 // meteredMsgReadWriter is a wrapper around a p2p.MsgReadWriter, capable of
@@ -94,8 +90,6 @@ func (rw *meteredMsgReadWriter) ReadMsg() (p2p.Msg, error) {
 
 	case rw.version >= tau63 && msg.Code == NodeDataMsg:
 		packets, traffic = reqStateInPacketsMeter, reqStateInTrafficMeter
-	case rw.version >= tau63 && msg.Code == ReceiptsMsg:
-		packets, traffic = reqReceiptInPacketsMeter, reqReceiptInTrafficMeter
 
 	case msg.Code == NewBlockHashesMsg:
 		packets, traffic = propHashInPacketsMeter, propHashInTrafficMeter
@@ -121,8 +115,6 @@ func (rw *meteredMsgReadWriter) WriteMsg(msg p2p.Msg) error {
 
 	case rw.version >= tau63 && msg.Code == NodeDataMsg:
 		packets, traffic = reqStateOutPacketsMeter, reqStateOutTrafficMeter
-	case rw.version >= tau63 && msg.Code == ReceiptsMsg:
-		packets, traffic = reqReceiptOutPacketsMeter, reqReceiptOutTrafficMeter
 
 	case msg.Code == NewBlockHashesMsg:
 		packets, traffic = propHashOutPacketsMeter, propHashOutTrafficMeter
