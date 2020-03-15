@@ -24,10 +24,8 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/accounts"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/bloombits"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/state"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/vm"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/event"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rpc"
@@ -46,7 +44,6 @@ type Backend interface {
 	EventMux() *event.TypeMux
 	AccountManager() *accounts.Manager
 	ExtRPCEnabled() bool
-	RPCGasCap() *big.Int // global gas cap for tau_call over rpc: DoS protection
 
 	// Blockchain API
 	SetHead(number uint64)
@@ -56,7 +53,6 @@ type Backend interface {
 	BlockByHash(ctx context.Context, hash common.Hash) (*types.Block, error)
 	StateAndHeaderByNumber(ctx context.Context, number rpc.BlockNumber) (*state.StateDB, *types.Header, error)
 	GetTd(hash common.Hash) *big.Int
-	GetEVM(ctx context.Context, msg core.Message, state *state.StateDB, header *types.Header) (*vm.EVM, func() error, error)
 	SubscribeChainEvent(ch chan<- core.ChainEvent) event.Subscription
 	SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) event.Subscription
 	SubscribeChainSideEvent(ch chan<- core.ChainSideEvent) event.Subscription
@@ -70,10 +66,6 @@ type Backend interface {
 	Stats() (pending int, queued int)
 	TxPoolContent() (map[common.Address]types.Transactions, map[common.Address]types.Transactions)
 	SubscribeNewTxsEvent(chan<- core.NewTxsEvent) event.Subscription
-
-	// Filter API
-	BloomStatus() (uint64, uint64)
-	ServiceFilter(ctx context.Context, session *bloombits.MatcherSession)
 
 	ChainConfig() *params.ChainConfig
 	CurrentBlock() *types.Block

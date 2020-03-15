@@ -25,7 +25,6 @@ import (
 	"sync/atomic"
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/accounts"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/accounts/abi/bind"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/hexutil"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus"
@@ -48,15 +47,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 )
 
-type LesServer interface {
-	Start(srvr *p2p.Server)
-	Stop()
-	APIs() []rpc.API
-	Protocols() []p2p.Protocol
-	SetBloomBitsIndexer(bbIndexer *core.ChainIndexer)
-	SetContractBackend(bind.ContractBackend)
-}
-
 // Tau implements the Tau full node service.
 type Tau struct {
 	config *Config
@@ -70,10 +60,9 @@ type Tau struct {
 	txPool          *core.TxPool
 	blockchain      *core.BlockChain
 	protocolManager *ProtocolManager
-	lesServer       LesServer
 
 	// DB interfaces
-	chainDb taudb.Database      // Block chain database
+	chainDb taudb.Database  // Block chain database
 	ipfsDb  taudb.IpfsStore // Block chain IPFS database
 
 	eventMux       *event.TypeMux
@@ -93,14 +82,6 @@ type Tau struct {
 	netRPCService *tauapi.PublicNetAPI
 
 	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and tauerbase)
-}
-
-// SetClient sets a rpc client which connecting to our local node.
-func (s *Tau) SetContractBackend(backend bind.ContractBackend) {
-	// Pass the rpc client to les server if it is enabled.
-	if s.lesServer != nil {
-		s.lesServer.SetContractBackend(backend)
-	}
 }
 
 // New creates a new Tau object (including the
@@ -143,7 +124,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 		ipfsDb:         ipfsDb,
 		eventMux:       ctx.EventMux,
 		accountManager: ctx.AccountManager,
-		engine:         CreateConsensusEngine(ctx, chainConfig, &config.Tauash, config.Miner.Notify, config.Miner.Noverify, chainDb),
+		engine:         CreateConsensusEngine(ctx, chainConfig, &config.Tauash, config.Miner.Notify, config.Miner.Noverify),
 		shutdownChan:   make(chan bool),
 		networkID:      config.NetworkId,
 		gasPrice:       config.Miner.GasPrice,
@@ -228,30 +209,17 @@ func makeExtraData(extra []byte) []byte {
 }
 
 // CreateConsensusEngine creates the required type of consensus engine instance for an Tau service
-func CreateConsensusEngine(ctx *node.ServiceContext, chainConfig *params.ChainConfig, config *tauhash.Config, notify []string, noverify bool, db taudb.Database) consensus.Engine {
-	// Otherwise assume proof-of-work
-	switch config.PowMode {
-	case tauhash.ModeFake:
-		log.Warn("Tauash used in fake mode")
-		return tauhash.NewFaker()
-	case tauhash.ModeTest:
-		log.Warn("Tauash used in test mode")
-		return tauhash.NewTester(nil, noverify)
-	case tauhash.ModeShared:
-		log.Warn("Tauash used in shared mode")
-		return tauhash.NewShared()
-	default:
-		engine := tauhash.New(tauhash.Config{
-			CacheDir:       ctx.ResolvePath(config.CacheDir),
-			CachesInMem:    config.CachesInMem,
-			CachesOnDisk:   config.CachesOnDisk,
-			DatasetDir:     config.DatasetDir,
-			DatasetsInMem:  config.DatasetsInMem,
-			DatasetsOnDisk: config.DatasetsOnDisk,
-		}, notify, noverify)
-		engine.SetThreads(-1) // Disable CPU mining
-		return engine
-	}
+func CreateConsensusEngine(ctx *node.ServiceContext, chainConfig *params.ChainConfig, config *tauhash.Config, notify []string, noverify bool) consensus.Engine {
+	engine := tauhash.New(tauhash.Config{
+		CacheDir:       ctx.ResolvePath(config.CacheDir),
+		CachesInMem:    config.CachesInMem,
+		CachesOnDisk:   config.CachesOnDisk,
+		DatasetDir:     config.DatasetDir,
+		DatasetsInMem:  config.DatasetsInMem,
+		DatasetsOnDisk: config.DatasetsOnDisk,
+	}, notify, noverify)
+	engine.SetThreads(-1) // Disable CPU mining
+	return engine
 }
 
 // APIs return the collection of RPC services the tau package offers.
@@ -259,17 +227,8 @@ func CreateConsensusEngine(ctx *node.ServiceContext, chainConfig *params.ChainCo
 func (s *Tau) APIs() []rpc.API {
 	apis := tauapi.GetAPIs(s.APIBackend)
 
-	// Append any APIs exposed explicitly by the les server
-	if s.lesServer != nil {
-		apis = append(apis, s.lesServer.APIs()...)
-	}
 	// Append any APIs exposed explicitly by the consensus engine
 	apis = append(apis, s.engine.APIs(s.BlockChain())...)
-
-	// Append any APIs exposed explicitly by the les server
-	if s.lesServer != nil {
-		apis = append(apis, s.lesServer.APIs()...)
-	}
 
 	// Append all the local APIs and return
 	return append(apis, []rpc.API{
@@ -463,9 +422,6 @@ func (s *Tau) Protocols() []p2p.Protocol {
 		protos[i] = s.protocolManager.makeProtocol(vsn)
 		protos[i].Attributes = []enr.Entry{s.currentTauEntry()}
 	}
-	if s.lesServer != nil {
-		protos = append(protos, s.lesServer.Protocols()...)
-	}
 	return protos
 }
 
@@ -482,17 +438,9 @@ func (s *Tau) Start(srvr *p2p.Server) error {
 
 	// Figure out a max peers count based on the server limits
 	maxPeers := srvr.MaxPeers
-	if s.config.LightServ > 0 {
-		if s.config.LightPeers >= srvr.MaxPeers {
-			return fmt.Errorf("invalid peer config: light peer count (%d) >= total peer count (%d)", s.config.LightPeers, srvr.MaxPeers)
-		}
-		maxPeers -= s.config.LightPeers
-	}
+
 	// Start the networking layer and the light server if requested
 	s.protocolManager.Start(maxPeers)
-	if s.lesServer != nil {
-		s.lesServer.Start(srvr)
-	}
 	return nil
 }
 
@@ -503,9 +451,6 @@ func (s *Tau) Stop() error {
 	s.blockchain.Stop()
 	s.engine.Close()
 	s.protocolManager.Stop()
-	if s.lesServer != nil {
-		s.lesServer.Stop()
-	}
 	s.txPool.Stop()
 	s.miner.Stop()
 	s.eventMux.Stop()

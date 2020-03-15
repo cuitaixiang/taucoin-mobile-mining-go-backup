@@ -23,13 +23,10 @@ import (
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/accounts"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/math"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/bloombits"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/rawdb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/state"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/vm"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/event"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rpc"
@@ -113,14 +110,6 @@ func (b *TauAPIBackend) GetTd(blockHash common.Hash) *big.Int {
 	return b.tau.blockchain.GetTdByHash(blockHash)
 }
 
-func (b *TauAPIBackend) GetEVM(ctx context.Context, msg core.Message, state *state.StateDB, header *types.Header) (*vm.EVM, func() error, error) {
-	state.SetBalance(msg.From(), math.MaxBig256)
-	vmError := func() error { return nil }
-
-	context := core.NewEVMContext(msg, header, b.tau.BlockChain(), nil)
-	return vm.NewEVM(context, state, b.tau.blockchain.Config()), vmError, nil
-}
-
 func (b *TauAPIBackend) SubscribeChainEvent(ch chan<- core.ChainEvent) event.Subscription {
 	return b.tau.BlockChain().SubscribeChainEvent(ch)
 }
@@ -200,19 +189,4 @@ func (b *TauAPIBackend) AccountManager() *accounts.Manager {
 
 func (b *TauAPIBackend) ExtRPCEnabled() bool {
 	return b.extRPCEnabled
-}
-
-func (b *TauAPIBackend) RPCGasCap() *big.Int {
-	return b.tau.config.RPCGasCap
-}
-
-func (b *TauAPIBackend) BloomStatus() (uint64, uint64) {
-	sections, _, _ := b.tau.bloomIndexer.Sections()
-	return params.BloomBitsBlocks, sections
-}
-
-func (b *TauAPIBackend) ServiceFilter(ctx context.Context, session *bloombits.MatcherSession) {
-	for i := 0; i < bloomFilterThreads; i++ {
-		go session.Multiplex(bloomRetrievalBatch, bloomRetrievalWait, b.tau.bloomRequests)
-	}
 }

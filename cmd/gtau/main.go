@@ -88,16 +88,7 @@ var (
 		utils.SyncModeFlag,
 		utils.ExitWhenSyncedFlag,
 		utils.GCModeFlag,
-		utils.LightServeFlag,
-		utils.LightLegacyServFlag,
-		utils.LightIngressFlag,
-		utils.LightEgressFlag,
-		utils.LightMaxPeersFlag,
-		utils.LightLegacyPeersFlag,
 		utils.LightKDFFlag,
-		utils.UltraLightServersFlag,
-		utils.UltraLightFractionFlag,
-		utils.UltraLightOnlyAnnounceFlag,
 		utils.WhitelistFlag,
 		utils.CacheFlag,
 		utils.CacheDatabaseFlag,
@@ -160,7 +151,6 @@ var (
 		utils.IPCDisabledFlag,
 		utils.IPCPathFlag,
 		utils.InsecureUnlockAllowedFlag,
-		utils.RPCGlobalGasCap,
 	}
 
 	metricsFlags = []cli.Flag{
@@ -324,16 +314,6 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		utils.Fatalf("Failed to attach to self: %v", err)
 	}
 	tauClient := tauclient.NewClient(rpcClient)
-
-	// Set contract backend for tau service if local node
-	// is serving LES requests.
-	if ctx.GlobalInt(utils.LightLegacyServFlag.Name) > 0 || ctx.GlobalInt(utils.LightServeFlag.Name) > 0 {
-		var tauService *tau.Tau
-		if err := stack.Service(&tauService); err != nil {
-			utils.Fatalf("Failed to retrieve tau service: %v", err)
-		}
-		tauService.SetContractBackend(tauClient)
-	}
 
 	go func() {
 		// Open any wallets already attached
