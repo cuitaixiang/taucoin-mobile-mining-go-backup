@@ -7,8 +7,6 @@ import (
 	mh "github.com/multiformats/go-multihash"
 
 	common "github.com/Tau-Coin/taucoin-mobile-mining-go/common"
-	//"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
-	//"github.com/Tau-Coin/taucoin-mobile-mining-go/trie"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rlp"
 )
 
@@ -17,10 +15,10 @@ import (
 // https://github.com/multiformats/multicodec/blob/master/table.csv
 const (
 	RawBinary           = 0x55
-	MTauBlock           = 0xf0
-	MTauBlockList       = 0xf1
-	MTauTxTrie          = 0xf2
-	MTauTx              = 0xf3
+	MTauBlock           = 0xa0
+	MTauBlockList       = 0xa1
+	MTauTx              = 0xa2
+	MTauTxTrie          = 0xa3
 )
 
 // rawdataToCid takes the desired codec and a slice of bytes
@@ -58,6 +56,15 @@ func commonHashToCid(codec uint64, h common.Hash) cid.Cid {
 	}
 
 	return cid.NewCidV1(codec, mhash)
+}
+
+func commonHashToCidString(codec uint64, h common.Hash) string {
+	mhash, err := mh.Encode(h[:], mh.KECCAK_256)
+	if err != nil {
+		panic(err)
+	}
+
+	return cid.NewCidV1(codec, mhash).String()
 }
 
 // getRLP encodes the given object to RLP returning its bytes.
