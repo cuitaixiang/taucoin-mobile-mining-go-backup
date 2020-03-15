@@ -30,7 +30,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus/tauhash"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/bloombits"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/rawdb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/event"
@@ -68,9 +67,6 @@ type Tau struct {
 	eventMux       *event.TypeMux
 	engine         consensus.Engine
 	accountManager *accounts.Manager
-
-	bloomRequests chan chan *bloombits.Retrieval // Channel receiving bloom data retrieval requests
-	bloomIndexer  *core.ChainIndexer             // Bloom indexer operating during block imports
 
 	APIBackend *TauAPIBackend
 
@@ -129,8 +125,6 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 		networkID:      config.NetworkId,
 		gasPrice:       config.Miner.GasPrice,
 		tauerbase:      config.Miner.Tauerbase,
-		bloomRequests:  make(chan chan *bloombits.Retrieval),
-		bloomIndexer:   NewBloomIndexer(chainDb, params.BloomBitsBlocks, params.BloomConfirms),
 	}
 
 	bcVersion := rawdb.ReadDatabaseVersion(chainDb)
@@ -167,7 +161,6 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 		tau.blockchain.SetHead(compat.RewindTo)
 		rawdb.WriteChainConfig(chainDb, genesisHash, chainConfig)
 	}
-	tau.bloomIndexer.Start(tau.blockchain)
 
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
@@ -430,9 +423,6 @@ func (s *Tau) Protocols() []p2p.Protocol {
 func (s *Tau) Start(srvr *p2p.Server) error {
 	s.startTauEntryUpdate(srvr.LocalNode())
 
-	// Start the bloom bits servicing goroutines
-	s.startBloomHandlers(params.BloomBitsBlocks)
-
 	// Start the RPC service
 	s.netRPCService = tauapi.NewPublicNetAPI(srvr, s.NetVersion())
 
@@ -447,7 +437,6 @@ func (s *Tau) Start(srvr *p2p.Server) error {
 // Stop implements node.Service, terminating all internal goroutines used by the
 // Tau protocol.
 func (s *Tau) Stop() error {
-	s.bloomIndexer.Close()
 	s.blockchain.Stop()
 	s.engine.Close()
 	s.protocolManager.Stop()
