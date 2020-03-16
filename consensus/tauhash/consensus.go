@@ -186,10 +186,6 @@ func (tauhash *Tauash) verifyHeader(chain consensus.ChainReader, header, parent 
 	if header.GasLimit > cap {
 		return fmt.Errorf("invalid gasLimit: have %v, max %v", header.GasLimit, cap)
 	}
-	// Verify that the gasUsed is <= gasLimit
-	if header.GasUsed > header.GasLimit {
-		return fmt.Errorf("invalid gasUsed: have %d, gasLimit %d", header.GasUsed, header.GasLimit)
-	}
 
 	// Verify that the gas limit remains within allowed bounds
 	diff := int64(parent.GasLimit) - int64(header.GasLimit)
@@ -437,11 +433,9 @@ func (tauhash *Tauash) SealHash(header *types.Header) (hash common.Hash) {
 		header.Coinbase,
 		header.Root,
 		header.TxHash,
-		header.Bloom,
 		header.Difficulty,
 		header.Number,
 		header.GasLimit,
-		header.GasUsed,
 		header.Time,
 		header.Extra,
 	})

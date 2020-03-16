@@ -64,34 +64,12 @@ type ChainReader interface {
 	SubscribeNewHead(ctx context.Context, ch chan<- *types.Header) (Subscription, error)
 }
 
-// TransactionReader provides access to past transactions and their receipts.
-// Implementations may impose arbitrary restrictions on the transactions and receipts that
-// can be retrieved. Historic transactions may not be available.
-//
-// Avoid relying on this interface if possible. Contract logs (through the LogFilterer
-// interface) are more reliable and usually safer in the presence of chain
-// reorganisations.
-//
-// The returned error is NotFound if the requested item does not exist.
-type TransactionReader interface {
-	// TransactionByHash checks the pool of pending transactions in addition to the
-	// blockchain. The isPending return value indicates whtauer the transaction has been
-	// mined yet. Note that the transaction may not be part of the canonical chain even if
-	// it's not pending.
-	TransactionByHash(ctx context.Context, txHash common.Hash) (tx *types.Transaction, isPending bool, err error)
-	// TransactionReceipt returns the receipt of a mined transaction. Note that the
-	// transaction may not be included in the current canonical chain even if a receipt
-	// exists.
-	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
-}
-
 // ChainStateReader wraps access to the state trie of the canonical blockchain. Note that
 // implementations of the interface may be unable to return state values for old blocks.
 // In many cases, using CallContract can be preferable to reading raw contract storage.
 type ChainStateReader interface {
 	BalanceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (*big.Int, error)
 	MessageAt(ctx context.Context, account common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error)
-	CodeAt(ctx context.Context, account common.Address, blockNumber *big.Int) ([]byte, error)
 	NonceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (uint64, error)
 }
 
@@ -119,37 +97,6 @@ type CallMsg struct {
 	GasPrice *big.Int        // wei <-> gas exchange ratio
 	Value    *big.Int        // amount of wei sent along with the call
 	Data     []byte          // input data, usually an ABI-encoded contract method invocation
-}
-
-// FilterQuery contains options for contract log filtering.
-type FilterQuery struct {
-	BlockHash *common.Hash     // used by tau_getLogs, return logs only from block with this hash
-	FromBlock *big.Int         // beginning of the queried range, nil means genesis block
-	ToBlock   *big.Int         // end of the range, nil means latest block
-	Addresses []common.Address // restricts matches to events created by specific contracts
-
-	// The Topic list restricts matches to particular event topics. Each event has a list
-	// of topics. Topics matches a prefix of that list. An empty element slice matches any
-	// topic. Non-empty elements represent an alternative that matches any of the
-	// contained topics.
-	//
-	// Examples:
-	// {} or nil          matches any topic list
-	// {{A}}              matches topic A in first position
-	// {{}, {B}}          matches any topic in first position AND B in second position
-	// {{A}, {B}}         matches topic A in first position AND B in second position
-	// {{A, B}, {C, D}}   matches topic (A OR B) in first position AND (C OR D) in second position
-	Topics [][]common.Hash
-}
-
-// LogFilterer provides access to contract log events using a one-off query or continuous
-// event subscription.
-//
-// Logs received through a streaming query subscription may have Removed set to true,
-// indicating that the log was reverted due to a chain reorganisation.
-type LogFilterer interface {
-	FilterLogs(ctx context.Context, q FilterQuery) ([]types.Log, error)
-	SubscribeFilterLogs(ctx context.Context, q FilterQuery, ch chan<- types.Log) (Subscription, error)
 }
 
 // TransactionSender wraps transaction sending. The SendTransaction method injects a

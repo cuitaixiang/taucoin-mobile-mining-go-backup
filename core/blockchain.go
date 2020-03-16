@@ -1693,7 +1693,7 @@ func (bc *BlockChain) insertSideChain(block *types.Block, it *insertIterator) (i
 			}
 			log.Debug("Injected sidechain block", "number", block.Number(), "hash", block.Hash(),
 				"diff", block.Difficulty(), "elapsed", common.PrettyDuration(time.Since(start)),
-				"txs", len(block.Transactions()), "uncles", len(block.Uncles()), "root", block.Root())
+				"txs", len(block.Transactions()), "root", block.Root())
 		}
 	}
 	// At this point, we've written all sidechain blocks to database. Loop ended

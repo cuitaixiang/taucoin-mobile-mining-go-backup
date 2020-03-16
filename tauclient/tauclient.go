@@ -237,19 +237,6 @@ func (ec *Client) TransactionInBlock(ctx context.Context, blockHash common.Hash,
 	return json.tx, err
 }
 
-// TransactionReceipt returns the receipt of a transaction by transaction hash.
-// Note that the receipt is not available for pending transactions.
-func (ec *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
-	var r *types.Receipt
-	err := ec.c.CallContext(ctx, &r, "tau_getTransactionReceipt", txHash)
-	if err == nil {
-		if r == nil {
-			return nil, tau.NotFound
-		}
-	}
-	return r, err
-}
-
 func toBlockNumArg(number *big.Int) string {
 	if number == nil {
 		return "latest"
@@ -327,63 +314,12 @@ func (ec *Client) MessageAt(ctx context.Context, account common.Address, key com
 	return result, err
 }
 
-// CodeAt returns the contract code of the given account.
-// The block number can be nil, in which case the code is taken from the latest known block.
-func (ec *Client) CodeAt(ctx context.Context, account common.Address, blockNumber *big.Int) ([]byte, error) {
-	var result hexutil.Bytes
-	err := ec.c.CallContext(ctx, &result, "tau_getCode", account, toBlockNumArg(blockNumber))
-	return result, err
-}
-
 // NonceAt returns the account nonce of the given account.
 // The block number can be nil, in which case the nonce is taken from the latest known block.
 func (ec *Client) NonceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (uint64, error) {
 	var result hexutil.Uint64
 	err := ec.c.CallContext(ctx, &result, "tau_getTransactionCount", account, toBlockNumArg(blockNumber))
 	return uint64(result), err
-}
-
-// Filters
-
-// FilterLogs executes a filter query.
-func (ec *Client) FilterLogs(ctx context.Context, q tau.FilterQuery) ([]types.Log, error) {
-	var result []types.Log
-	arg, err := toFilterArg(q)
-	if err != nil {
-		return nil, err
-	}
-	err = ec.c.CallContext(ctx, &result, "tau_getLogs", arg)
-	return result, err
-}
-
-// SubscribeFilterLogs subscribes to the results of a streaming filter query.
-func (ec *Client) SubscribeFilterLogs(ctx context.Context, q tau.FilterQuery, ch chan<- types.Log) (tau.Subscription, error) {
-	arg, err := toFilterArg(q)
-	if err != nil {
-		return nil, err
-	}
-	return ec.c.TauSubscribe(ctx, ch, "logs", arg)
-}
-
-func toFilterArg(q tau.FilterQuery) (interface{}, error) {
-	arg := map[string]interface{}{
-		"address": q.Addresses,
-		"topics":  q.Topics,
-	}
-	if q.BlockHash != nil {
-		arg["blockHash"] = *q.BlockHash
-		if q.FromBlock != nil || q.ToBlock != nil {
-			return nil, fmt.Errorf("cannot specify both BlockHash and FromBlock/ToBlock")
-		}
-	} else {
-		if q.FromBlock == nil {
-			arg["fromBlock"] = "0x0"
-		} else {
-			arg["fromBlock"] = toBlockNumArg(q.FromBlock)
-		}
-		arg["toBlock"] = toBlockNumArg(q.ToBlock)
-	}
-	return arg, nil
 }
 
 // Pending State
@@ -399,13 +335,6 @@ func (ec *Client) PendingBalanceAt(ctx context.Context, account common.Address) 
 func (ec *Client) PendingMessageAt(ctx context.Context, account common.Address, key common.Hash) ([]byte, error) {
 	var result hexutil.Bytes
 	err := ec.c.CallContext(ctx, &result, "tau_getStorageAt", account, key, "pending")
-	return result, err
-}
-
-// PendingCodeAt returns the contract code of the given account in the pending state.
-func (ec *Client) PendingCodeAt(ctx context.Context, account common.Address) ([]byte, error) {
-	var result hexutil.Bytes
-	err := ec.c.CallContext(ctx, &result, "tau_getCode", account, "pending")
 	return result, err
 }
 

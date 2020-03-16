@@ -17,15 +17,12 @@
 package vm
 
 import (
-	"encoding/hex"
 	"fmt"
-	"io"
 	"math/big"
 	"time"
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/math"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
 )
 
 // Storage represents a contract's storage.
@@ -65,7 +62,7 @@ type StructLog struct {
 type structLogMarshaling struct {
 	Gas         math.HexOrDecimal64
 	GasCost     math.HexOrDecimal64
-	ErrorString string `json:"error"`  // adds call to ErrorString() in MarshalJSON
+	ErrorString string `json:"error"` // adds call to ErrorString() in MarshalJSON
 }
 
 // ErrorString formats the log's error as a string.
@@ -163,36 +160,3 @@ func (l *StructLogger) Error() error { return l.err }
 
 // Output returns the VM return value captured by the trace.
 func (l *StructLogger) Output() []byte { return l.output }
-
-// WriteTrace writes a formatted trace to the given writer
-func WriteTrace(writer io.Writer, logs []StructLog) {
-	for _, log := range logs {
-		fmt.Fprintf(writer, "pc=%08d gas=%v cost=%v", log.Pc, log.Gas, log.GasCost)
-		if log.Err != nil {
-			fmt.Fprintf(writer, " ERROR: %v", log.Err)
-		}
-		fmt.Fprintln(writer)
-
-		if len(log.Storage) > 0 {
-			fmt.Fprintln(writer, "Storage:")
-			for h, item := range log.Storage {
-				fmt.Fprintf(writer, "%x: %x\n", h, item)
-			}
-		}
-		fmt.Fprintln(writer)
-	}
-}
-
-// WriteLogs writes vm logs in a readable format to the given writer
-func WriteLogs(writer io.Writer, logs []*types.Log) {
-	for _, log := range logs {
-		fmt.Fprintf(writer, "LOG%d: %x bn=%d txi=%x\n", len(log.Topics), log.Address, log.BlockNumber, log.TxIndex)
-
-		for i, topic := range log.Topics {
-			fmt.Fprintf(writer, "%08d  %x\n", i, topic)
-		}
-
-		fmt.Fprint(writer, hex.Dump(log.Data))
-		fmt.Fprintln(writer)
-	}
-}
