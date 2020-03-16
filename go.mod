@@ -28,6 +28,7 @@ require (
 	github.com/huin/goupnp v1.0.0
 	github.com/influxdata/influxdb v1.7.9
 	github.com/ipfs/go-cid v0.0.5
+	github.com/ipfs/go-ipfs v0.4.23
 	github.com/ipfs/go-ipld-format v0.0.2
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/julienschmidt/httprouter v1.3.0
@@ -50,12 +51,14 @@ require (
 	github.com/syndtr/goleveldb v1.0.1-0.20190923125748-758128399b1d
 	github.com/tyler-smith/go-bip39 v1.0.2
 	github.com/wsddn/go-ecdh v0.0.0-20161211032359-48726bab9208
-	golang.org/x/crypto v0.0.0-20200206161412-a0c6ece9d31a
+	golang.org/x/crypto v0.0.0-20200221231518-2aa609cf4a9d
 	golang.org/x/net v0.0.0-20200202094626-16171245cfb2
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
-	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5
+	golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae
 	golang.org/x/text v0.3.2
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce
 	gopkg.in/olebedev/go-duktape.v3 v3.0.0-20190709231704-1e4459ed25ff
 	gopkg.in/urfave/cli.v1 v1.20.0
 )
+
+replace github.com/ipfs/go-ipfs => github.com/tau-coin/go-ipfs v0.4.22-0.20200313092758-7b227442e904
