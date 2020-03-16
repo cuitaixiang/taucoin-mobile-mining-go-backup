@@ -137,14 +137,6 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 	}
 	log.Info("Initialising Tau protocol", "versions", ProtocolVersions, "network", config.NetworkId, "dbversion", dbVer)
 
-	if !config.SkipBcVersionCheck {
-		if bcVersion != nil && *bcVersion > core.BlockChainVersion {
-			return nil, fmt.Errorf("database version is v%d, Gtau %s only supports v%d", *bcVersion, params.VersionWithMeta, core.BlockChainVersion)
-		} else if bcVersion == nil || *bcVersion < core.BlockChainVersion {
-			log.Warn("Upgrade blockchain database version", "from", dbVer, "to", core.BlockChainVersion)
-			rawdb.WriteDatabaseVersion(chainDb, core.BlockChainVersion)
-		}
-	}
 	var (
 		cacheConfig = &core.CacheConfig{
 			TrieCleanLimit:      config.TrieCleanCache,
@@ -154,10 +146,12 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 			TrieTimeLimit:       config.TrieTimeout,
 		}
 	)
+
 	tau.blockchain, err = core.NewBlockChain(chainDb, ipfsDb, cacheConfig, chainConfig, tau.engine, tau.shouldPreserve)
 	if err != nil {
 		return nil, err
 	}
+
 	// Rewind the chain in case of an incompatible config upgrade.
 	if compat, ok := genesisErr.(*params.ConfigCompatError); ok {
 		log.Warn("Rewinding chain to upgrade configuration", "err", compat)
@@ -166,6 +160,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 	}
 	tau.bloomIndexer.Start(tau.blockchain)
 
+	log.Info("New Tx Pool")
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
