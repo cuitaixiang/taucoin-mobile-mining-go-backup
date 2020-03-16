@@ -71,7 +71,7 @@ type Tau struct {
 	APIBackend *TauAPIBackend
 
 	miner     *miner.Miner
-	gasPrice  *big.Int
+	feeFloor  *big.Int
 	tauerbase common.Address
 
 	networkID     uint64
@@ -87,10 +87,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 	if !config.SyncMode.IsValid() {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
-	if config.Miner.GasPrice == nil || config.Miner.GasPrice.Cmp(common.Big0) <= 0 {
-		log.Warn("Sanitizing invalid miner gas price", "provided", config.Miner.GasPrice, "updated", DefaultConfig.Miner.GasPrice)
-		config.Miner.GasPrice = new(big.Int).Set(DefaultConfig.Miner.GasPrice)
-	}
+
 	if config.NoPruning && config.TrieDirtyCache > 0 {
 		config.TrieCleanCache += config.TrieDirtyCache
 		config.TrieDirtyCache = 0
@@ -123,7 +120,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 		engine:         CreateConsensusEngine(ctx, chainConfig, &config.Tauash, config.Miner.Notify, config.Miner.Noverify),
 		shutdownChan:   make(chan bool),
 		networkID:      config.NetworkId,
-		gasPrice:       config.Miner.GasPrice,
+		feeFloor:       config.Miner.FeeFloor,
 		tauerbase:      config.Miner.Tauerbase,
 	}
 
@@ -134,14 +131,6 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 	}
 	log.Info("Initialising Tau protocol", "versions", ProtocolVersions, "network", config.NetworkId, "dbversion", dbVer)
 
-	if !config.SkipBcVersionCheck {
-		if bcVersion != nil && *bcVersion > core.BlockChainVersion {
-			return nil, fmt.Errorf("database version is v%d, Gtau %s only supports v%d", *bcVersion, params.VersionWithMeta, core.BlockChainVersion)
-		} else if bcVersion == nil || *bcVersion < core.BlockChainVersion {
-			log.Warn("Upgrade blockchain database version", "from", dbVer, "to", core.BlockChainVersion)
-			rawdb.WriteDatabaseVersion(chainDb, core.BlockChainVersion)
-		}
-	}
 	var (
 		cacheConfig = &core.CacheConfig{
 			TrieCleanLimit:      config.TrieCleanCache,
@@ -151,10 +140,12 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 			TrieTimeLimit:       config.TrieTimeout,
 		}
 	)
+
 	tau.blockchain, err = core.NewBlockChain(chainDb, ipfsDb, cacheConfig, chainConfig, tau.engine, tau.shouldPreserve)
 	if err != nil {
 		return nil, err
 	}
+
 	// Rewind the chain in case of an incompatible config upgrade.
 	if compat, ok := genesisErr.(*params.ConfigCompatError); ok {
 		log.Warn("Rewinding chain to upgrade configuration", "err", compat)
@@ -162,6 +153,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 		rawdb.WriteChainConfig(chainDb, genesisHash, chainConfig)
 	}
 
+	log.Info("New Tx Pool")
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
@@ -357,9 +349,9 @@ func (s *Tau) StartMining(threads int) error {
 	if !s.IsMining() {
 		// Propagate the initial price point to the transaction pool
 		s.lock.RLock()
-		price := s.gasPrice
+		price := s.feeFloor
 		s.lock.RUnlock()
-		s.txPool.SetGasPrice(price)
+		s.txPool.SetFeeFloor(price)
 
 		// Configure the local mining address
 		eb, err := s.Tauerbase()

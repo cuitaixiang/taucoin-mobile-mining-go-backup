@@ -128,13 +128,13 @@ func (api *PrivateMinerAPI) SetExtra(extra string) (bool, error) {
 	return true, nil
 }
 
-// SetGasPrice sets the minimum accepted gas price for the miner.
-func (api *PrivateMinerAPI) SetGasPrice(gasPrice hexutil.Big) bool {
+// SetFeeFloor sets the minimum accepted gas price for the miner.
+func (api *PrivateMinerAPI) SetFeeFloor(gasPrice hexutil.Big) bool {
 	api.e.lock.Lock()
-	api.e.gasPrice = (*big.Int)(&gasPrice)
+	api.e.feeFloor = (*big.Int)(&gasPrice)
 	api.e.lock.Unlock()
 
-	api.e.txPool.SetGasPrice((*big.Int)(&gasPrice))
+	api.e.txPool.SetFeeFloor((*big.Int)(&gasPrice))
 	return true
 }
 

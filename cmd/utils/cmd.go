@@ -27,6 +27,8 @@ import (
 	"strings"
 	"syscall"
 
+	ipfs "github.com/ipfs/go-ipfs/lib"
+
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/rawdb"
@@ -34,6 +36,7 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/crypto"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/internal/debug"
+	ipfscfg "github.com/Tau-Coin/taucoin-mobile-mining-go/ipfs"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/node"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rlp"
@@ -64,6 +67,20 @@ func Fatalf(format string, args ...interface{}) {
 }
 
 func StartNode(stack *node.Node) {
+	var (
+		initErr         error
+		startErr        error
+		daemonErrCh     <-chan error
+	)
+
+	// Anyway, ipfs daemon should be bringup.
+	if initErr = ipfs.InitIpfs(ipfscfg.DefaultRepoPath()); initErr != nil {
+		Fatalf("Error setting ipfs repo path: %v", initErr)
+	}
+	if startErr, daemonErrCh = ipfs.StartDaemon(); startErr != nil {
+		Fatalf("Error starting ipfs daemon: %v", startErr)
+	}
+
 	if err := stack.Start(); err != nil {
 		Fatalf("Error starting protocol stack: %v", err)
 	}
@@ -71,9 +88,25 @@ func StartNode(stack *node.Node) {
 		sigc := make(chan os.Signal, 1)
 		signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
 		defer signal.Stop(sigc)
-		<-sigc
-		log.Info("Got interrupt, shutting down...")
+
+		var ipfsErr error
+
+		select {
+		case <-sigc:
+			log.Info("Got interrupt, shutting down...")
+
+		case ipfsErr = <-daemonErrCh:
+			log.Error("Ipfs daemon died, shutting down...", "internal error", ipfsErr)
+		}
+
 		go stack.Stop()
+
+		if ipfsErr == nil {
+			// In this condtion, got interrupt
+			ipfs.StopDaemon()
+			log.Info("Ipfs daemon stopped", "err", <-daemonErrCh)
+		}
+
 		for i := 10; i > 0; i-- {
 			<-sigc
 			if i > 1 {
