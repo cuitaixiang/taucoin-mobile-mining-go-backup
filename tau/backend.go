@@ -107,7 +107,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 		return nil, err
 	}
 
-	ipfsDb, err2 := ctx.OpenIpfsDatabase("chaindata", config.DatabaseCache, config.DatabaseHandles, config.DatabaseFreezer, "tau/db/chaindata/")
+	ipfsDb, err2 := ctx.OpenIpfsDatabase()
 	if err2 != nil {
 		return nil, err2
 	}
@@ -157,7 +157,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 			TrieTimeLimit:       config.TrieTimeout,
 		}
 	)
-	tau.blockchain, err = core.NewBlockChain(ipfsDb, chainDb, cacheConfig, chainConfig, tau.engine, tau.shouldPreserve)
+	tau.blockchain, err = core.NewBlockChain(chainDb, ipfsDb, cacheConfig, chainConfig, tau.engine, tau.shouldPreserve)
 	if err != nil {
 		return nil, err
 	}

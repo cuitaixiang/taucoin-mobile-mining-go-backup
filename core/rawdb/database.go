@@ -222,7 +222,7 @@ func NewLevelDBDatabaseWithFreezer(file string, cache int, handles int, freezer 
 
 // NewIpfsDBDatabaseWithFreezer creates a persistent key-value database with a
 // freezer moving immutable chain segments into cold storage.
-func NewIpfsDBDatabase(file string, cache int, handles int, freezer string, namespace string) (taudb.IpfsStore, error) {
+func NewIpfsDBDatabase() (taudb.IpfsStore, error) {
 	IpfsDb, err := ipfsdb.New()
 	if err != nil {
 		return nil, err
