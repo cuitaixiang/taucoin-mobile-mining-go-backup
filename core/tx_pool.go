@@ -401,9 +401,9 @@ func (pool *TxPool) GasPrice() *big.Int {
 	return new(big.Int).Set(pool.gasPrice)
 }
 
-// SetGasPrice updates the minimum price required by the transaction pool for a
+// SetFeeFloor updates the minimum fee required by the transaction pool for a
 // new transaction, and drops all transactions below this threshold.
-func (pool *TxPool) SetGasPrice(price *big.Int) {
+func (pool *TxPool) SetFeeFloor(price *big.Int) {
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
 

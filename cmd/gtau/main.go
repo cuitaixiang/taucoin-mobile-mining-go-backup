@@ -102,11 +102,8 @@ var (
 		utils.MinerThreadsFlag,
 		utils.MinerLegacyThreadsFlag,
 		utils.MinerNotifyFlag,
-		utils.MinerGasTargetFlag,
-		utils.MinerLegacyGasTargetFlag,
-		utils.MinerGasLimitFlag,
-		utils.MinerGasPriceFlag,
-		utils.MinerLegacyGasPriceFlag,
+		utils.MinerFeeFloorFlag,
+		utils.MinerLegacyFeeFloorFlag,
 		utils.MinerTauerbaseFlag,
 		utils.MinerLegacyTauerbaseFlag,
 		utils.MinerExtraDataFlag,
@@ -382,12 +379,12 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		if err := stack.Service(&tau); err != nil {
 			utils.Fatalf("Tau service not running: %v", err)
 		}
-		// Set the gas price to the limits from the CLI and start mining
-		gasprice := utils.GlobalBig(ctx, utils.MinerLegacyGasPriceFlag.Name)
-		if ctx.IsSet(utils.MinerGasPriceFlag.Name) {
-			gasprice = utils.GlobalBig(ctx, utils.MinerGasPriceFlag.Name)
+		// Set the minimum fee to the limits from the CLI and start mining
+		feeFloor := utils.GlobalBig(ctx, utils.MinerLegacyFeeFloorFlag.Name)
+		if ctx.IsSet(utils.MinerFeeFloorFlag.Name) {
+			feeFloor = utils.GlobalBig(ctx, utils.MinerFeeFloorFlag.Name)
 		}
-		tau.TxPool().SetGasPrice(gasprice)
+		tau.TxPool().SetFeeFloor(feeFloor)
 
 		threads := ctx.GlobalInt(utils.MinerLegacyThreadsFlag.Name)
 		if ctx.GlobalIsSet(utils.MinerThreadsFlag.Name) {

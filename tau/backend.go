@@ -75,7 +75,7 @@ type Tau struct {
 	APIBackend *TauAPIBackend
 
 	miner     *miner.Miner
-	gasPrice  *big.Int
+	feeFloor  *big.Int
 	tauerbase common.Address
 
 	networkID     uint64
@@ -91,10 +91,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 	if !config.SyncMode.IsValid() {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
-	if config.Miner.GasPrice == nil || config.Miner.GasPrice.Cmp(common.Big0) <= 0 {
-		log.Warn("Sanitizing invalid miner gas price", "provided", config.Miner.GasPrice, "updated", DefaultConfig.Miner.GasPrice)
-		config.Miner.GasPrice = new(big.Int).Set(DefaultConfig.Miner.GasPrice)
-	}
+
 	if config.NoPruning && config.TrieDirtyCache > 0 {
 		config.TrieCleanCache += config.TrieDirtyCache
 		config.TrieDirtyCache = 0
@@ -127,7 +124,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 		engine:         CreateConsensusEngine(ctx, chainConfig, &config.Tauash, config.Miner.Notify, config.Miner.Noverify),
 		shutdownChan:   make(chan bool),
 		networkID:      config.NetworkId,
-		gasPrice:       config.Miner.GasPrice,
+		feeFloor:       config.Miner.FeeFloor,
 		tauerbase:      config.Miner.Tauerbase,
 		bloomRequests:  make(chan chan *bloombits.Retrieval),
 		bloomIndexer:   NewBloomIndexer(chainDb, params.BloomBitsBlocks, params.BloomConfirms),
@@ -364,9 +361,9 @@ func (s *Tau) StartMining(threads int) error {
 	if !s.IsMining() {
 		// Propagate the initial price point to the transaction pool
 		s.lock.RLock()
-		price := s.gasPrice
+		price := s.feeFloor
 		s.lock.RUnlock()
-		s.txPool.SetGasPrice(price)
+		s.txPool.SetFeeFloor(price)
 
 		// Configure the local mining address
 		eb, err := s.Tauerbase()

@@ -342,30 +342,15 @@ var (
 		Name:  "miner.notify",
 		Usage: "Comma separated HTTP URL list to notify of new work packages",
 	}
-	MinerGasTargetFlag = cli.Uint64Flag{
-		Name:  "miner.gastarget",
-		Usage: "Target gas floor for mined blocks",
-		Value: tau.DefaultConfig.Miner.GasFloor,
+	MinerFeeFloorFlag = BigFlag{
+		Name:  "miner.feefloor",
+		Usage: "Minimum fee for mining a transaction",
+		Value: tau.DefaultConfig.Miner.FeeFloor,
 	}
-	MinerLegacyGasTargetFlag = cli.Uint64Flag{
-		Name:  "targetgaslimit",
-		Usage: "Target gas floor for mined blocks (deprecated, use --miner.gastarget)",
-		Value: tau.DefaultConfig.Miner.GasFloor,
-	}
-	MinerGasLimitFlag = cli.Uint64Flag{
-		Name:  "miner.gaslimit",
-		Usage: "Target gas ceiling for mined blocks",
-		Value: tau.DefaultConfig.Miner.GasCeil,
-	}
-	MinerGasPriceFlag = BigFlag{
-		Name:  "miner.gasprice",
-		Usage: "Minimum gas price for mining a transaction",
-		Value: tau.DefaultConfig.Miner.GasPrice,
-	}
-	MinerLegacyGasPriceFlag = BigFlag{
-		Name:  "gasprice",
-		Usage: "Minimum gas price for mining a transaction (deprecated, use --miner.gasprice)",
-		Value: tau.DefaultConfig.Miner.GasPrice,
+	MinerLegacyFeeFloorFlag = BigFlag{
+		Name:  "feefloor",
+		Usage: "Minimum fee for mining a transaction (deprecated, use --miner.gasprice)",
+		Value: tau.DefaultConfig.Miner.FeeFloor,
 	}
 	MinerTauerbaseFlag = cli.StringFlag{
 		Name:  "miner.tauerbase",
@@ -565,20 +550,6 @@ var (
 		Usage: "JavaScript root path for `loadScript`",
 		Value: ".",
 	}
-
-	// Gas price oracle settings
-	/*
-		GpoBlocksFlag = cli.IntFlag{
-			Name:  "gpoblocks",
-			Usage: "Number of recent blocks to check for gas prices",
-			Value: tau.DefaultConfig.GPO.Blocks,
-		}
-		GpoPercentileFlag = cli.IntFlag{
-			Name:  "gpopercentile",
-			Usage: "Suggested gas price is the given percentile of a set of recent transaction gas prices",
-			Value: tau.DefaultConfig.GPO.Percentile,
-		}
-	*/
 
 	// Metrics flags
 	MetricsEnabledFlag = cli.BoolFlag{
@@ -1093,20 +1064,11 @@ func setMiner(ctx *cli.Context, cfg *miner.Config) {
 	if ctx.GlobalIsSet(MinerExtraDataFlag.Name) {
 		cfg.ExtraData = []byte(ctx.GlobalString(MinerExtraDataFlag.Name))
 	}
-	if ctx.GlobalIsSet(MinerLegacyGasTargetFlag.Name) {
-		cfg.GasFloor = ctx.GlobalUint64(MinerLegacyGasTargetFlag.Name)
+	if ctx.GlobalIsSet(MinerLegacyFeeFloorFlag.Name) {
+		cfg.FeeFloor = GlobalBig(ctx, MinerLegacyFeeFloorFlag.Name)
 	}
-	if ctx.GlobalIsSet(MinerGasTargetFlag.Name) {
-		cfg.GasFloor = ctx.GlobalUint64(MinerGasTargetFlag.Name)
-	}
-	if ctx.GlobalIsSet(MinerGasLimitFlag.Name) {
-		cfg.GasCeil = ctx.GlobalUint64(MinerGasLimitFlag.Name)
-	}
-	if ctx.GlobalIsSet(MinerLegacyGasPriceFlag.Name) {
-		cfg.GasPrice = GlobalBig(ctx, MinerLegacyGasPriceFlag.Name)
-	}
-	if ctx.GlobalIsSet(MinerGasPriceFlag.Name) {
-		cfg.GasPrice = GlobalBig(ctx, MinerGasPriceFlag.Name)
+	if ctx.GlobalIsSet(MinerFeeFloorFlag.Name) {
+		cfg.FeeFloor = GlobalBig(ctx, MinerFeeFloorFlag.Name)
 	}
 	if ctx.GlobalIsSet(MinerRecommitIntervalFlag.Name) {
 		cfg.Recommit = ctx.Duration(MinerRecommitIntervalFlag.Name)
@@ -1279,8 +1241,8 @@ func SetTauConfig(ctx *cli.Context, stack *node.Node, cfg *tau.Config) {
 		log.Info("Using developer account", "address", developer.Address)
 
 		cfg.Genesis = core.DeveloperGenesisBlock(developer.Address)
-		if !ctx.GlobalIsSet(MinerGasPriceFlag.Name) && !ctx.GlobalIsSet(MinerLegacyGasPriceFlag.Name) {
-			cfg.Miner.GasPrice = big.NewInt(1)
+		if !ctx.GlobalIsSet(MinerFeeFloorFlag.Name) && !ctx.GlobalIsSet(MinerLegacyFeeFloorFlag.Name) {
+			cfg.Miner.FeeFloor = big.NewInt(1)
 		}
 	}
 }
