@@ -73,19 +73,8 @@ func (ctx *ServiceContext) OpenDatabaseWithFreezer(name string, cache int, handl
 // also attaching a chain freezer to it that moves ancient chain data from the
 // database to immutable append-only files. If the node is an ephemeral one, a
 // memory database is returned.
-func (ctx *ServiceContext) OpenIpfsDatabase(name string, cache int, handles int, freezer string, namespace string) (taudb.Database, error) {
-	if ctx.config.DataDir == "" {
-		return rawdb.NewMemoryDatabase(), nil
-	}
-	root := ctx.config.ResolvePath(name)
-
-	switch {
-	case freezer == "":
-		freezer = filepath.Join(root, "ancient")
-	case !filepath.IsAbs(freezer):
-		freezer = ctx.config.ResolvePath(freezer)
-	}
-	return rawdb.NewLevelDBDatabaseWithFreezer(root, cache, handles, freezer, namespace)
+func (ctx *ServiceContext) OpenIpfsDatabase() (taudb.IpfsStore, error) {
+	return rawdb.NewIpfsDBDatabase()
 }
 // ResolvePath resolves a user path into the data directory if that was relative
 // and if the user actually uses persistent storage. It will return an empty string
