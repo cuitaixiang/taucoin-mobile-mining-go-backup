@@ -1,6 +1,6 @@
 module github.com/Tau-Coin/taucoin-mobile-mining-go
 
-go 1.13
+go 1.14
 
 require (
 	github.com/Azure/azure-storage-blob-go v0.8.0
