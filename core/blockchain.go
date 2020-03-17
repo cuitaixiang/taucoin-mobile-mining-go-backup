@@ -984,7 +984,7 @@ func (bc *BlockChain) CompleteHeaderChainWithBlock(blockChain types.Blocks, anci
 				}
 				h := rawdb.ReadCanonicalHash(bc.db, frozen)
 				b := rawdb.ReadBlock(bc.db, h, frozen)
-				size += rawdb.WriteAncientBlock(bc.db, b, nil, rawdb.ReadTd(bc.db, h, frozen))
+				size += rawdb.WriteAncientBlock(bc.db, b, rawdb.ReadTd(bc.db, h, frozen))
 				count += 1
 
 				// Always keep genesis block in active database.
@@ -1028,7 +1028,7 @@ func (bc *BlockChain) CompleteHeaderChainWithBlock(blockChain types.Blocks, anci
 				log.Info("Migrated ancient blocks", "count", count, "elapsed", common.PrettyDuration(time.Since(start)))
 			}
 			// Flush data into ancient database.
-			size += rawdb.WriteAncientBlock(bc.db, block, nil, bc.GetTd(block.Hash(), block.NumberU64()))
+			size += rawdb.WriteAncientBlock(bc.db, block, bc.GetTd(block.Hash(), block.NumberU64()))
 			rawdb.WriteTxLookupEntries(batch, block)
 
 			stats.processed++

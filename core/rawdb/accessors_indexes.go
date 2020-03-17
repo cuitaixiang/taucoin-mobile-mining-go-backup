@@ -21,10 +21,9 @@ import (
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rlp"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 )
 
 // ReadTxLookupEntry retrieves the positional metadata associated with a transaction
@@ -91,41 +90,4 @@ func ReadTransaction(db taudb.Reader, hash common.Hash) (*types.Transaction, com
 	}
 	log.Error("Transaction not found", "number", blockNumber, "hash", blockHash, "txhash", hash)
 	return nil, common.Hash{}, 0, 0
-}
-
-// ReadReceipt retrieves a specific transaction receipt from the database, along with
-// its added positional metadata.
-func ReadReceipt(db taudb.Reader, hash common.Hash, config *params.ChainConfig) (*types.Receipt, common.Hash, uint64, uint64) {
-	// Retrieve the context of the receipt based on the transaction hash
-	blockNumber := ReadTxLookupEntry(db, hash)
-	if blockNumber == nil {
-		return nil, common.Hash{}, 0, 0
-	}
-	blockHash := ReadCanonicalHash(db, *blockNumber)
-	if blockHash == (common.Hash{}) {
-		return nil, common.Hash{}, 0, 0
-	}
-	// Read all the receipts from the block and return the one with the matching hash
-	receipts := ReadReceipts(db, blockHash, *blockNumber, config)
-	for receiptIndex, receipt := range receipts {
-		if receipt.TxHash == hash {
-			return receipt, blockHash, *blockNumber, uint64(receiptIndex)
-		}
-	}
-	log.Error("Receipt not found", "number", blockNumber, "hash", blockHash, "txhash", hash)
-	return nil, common.Hash{}, 0, 0
-}
-
-// ReadBloomBits retrieves the compressed bloom bit vector belonging to the given
-// section and bit index from the.
-func ReadBloomBits(db taudb.KeyValueReader, bit uint, section uint64, head common.Hash) ([]byte, error) {
-	return db.Get(bloomBitsKey(bit, section, head))
-}
-
-// WriteBloomBits stores the compressed bloom bits vector belonging to the given
-// section and bit index.
-func WriteBloomBits(db taudb.KeyValueWriter, bit uint, section uint64, head common.Hash, bits []byte) {
-	if err := db.Put(bloomBitsKey(bit, section, head), bits); err != nil {
-		log.Crit("Failed to store bloom bits", "err", err)
-	}
 }

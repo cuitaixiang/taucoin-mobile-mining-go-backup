@@ -26,10 +26,10 @@ import (
 	"time"
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/metrics"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/prometheus/tsdb/fileutil"
 )
 
@@ -177,7 +177,7 @@ func (f *freezer) AncientSize(kind string) (uint64, error) {
 // Notably, this function is lock free but kind of thread-safe. All out-of-order
 // injection will be rejected. But if two injections with same number happen at
 // the same time, we can get into the trouble.
-func (f *freezer) AppendAncient(number uint64, hash, header, body, receipts, td []byte) (err error) {
+func (f *freezer) AppendAncient(number uint64, hash, header, body, td []byte) (err error) {
 	// Ensure the binary blobs we are appending is continuous with freezer.
 	if atomic.LoadUint64(&f.frozen) != number {
 		return errOutOrderInsertion
@@ -204,10 +204,6 @@ func (f *freezer) AppendAncient(number uint64, hash, header, body, receipts, td 
 	}
 	if err := f.tables[freezerBodiesTable].Append(f.frozen, body); err != nil {
 		log.Error("Failed to append ancient body", "number", f.frozen, "hash", hash, "err", err)
-		return err
-	}
-	if err := f.tables[freezerReceiptTable].Append(f.frozen, receipts); err != nil {
-		log.Error("Failed to append ancient receipts", "number", f.frozen, "hash", hash, "err", err)
 		return err
 	}
 	if err := f.tables[freezerDifficultyTable].Append(f.frozen, td); err != nil {
@@ -312,11 +308,6 @@ func (f *freezer) freeze(db taudb.KeyValueStore) {
 				log.Error("Block body missing, can't freeze", "number", f.frozen, "hash", hash)
 				break
 			}
-			receipts := ReadReceiptsRLP(nfdb, hash, f.frozen)
-			if len(receipts) == 0 {
-				log.Error("Block receipts missing, can't freeze", "number", f.frozen, "hash", hash)
-				break
-			}
 			td := ReadTdRLP(nfdb, hash, f.frozen)
 			if len(td) == 0 {
 				log.Error("Total difficulty missing, can't freeze", "number", f.frozen, "hash", hash)
@@ -324,7 +315,7 @@ func (f *freezer) freeze(db taudb.KeyValueStore) {
 			}
 			log.Trace("Deep froze ancient block", "number", f.frozen, "hash", hash)
 			// Inject all the components into the relevant data tables
-			if err := f.AppendAncient(f.frozen, hash[:], header, body, receipts, td); err != nil {
+			if err := f.AppendAncient(f.frozen, hash[:], header, body, td); err != nil {
 				break
 			}
 			ancients = append(ancients, hash)

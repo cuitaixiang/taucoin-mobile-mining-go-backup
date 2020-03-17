@@ -24,11 +24,11 @@ import (
 	"time"
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb/leveldb"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb/ipfsdb"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb/memorydb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb/ipfsdb"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb/leveldb"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb/memorydb"
 	"github.com/olekukonko/tablewriter"
 )
 
@@ -80,7 +80,7 @@ func (db *nofreezedb) AncientSize(kind string) (uint64, error) {
 }
 
 // AppendAncient returns an error as we don't have a backing chain freezer.
-func (db *nofreezedb) AppendAncient(number uint64, hash, header, body, receipts, td []byte) error {
+func (db *nofreezedb) AppendAncient(number uint64, hash, header, body, td []byte) error {
 	return errNotSupported
 }
 
