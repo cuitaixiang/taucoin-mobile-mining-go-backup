@@ -195,7 +195,6 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.MinerNotifyFlag,
 			utils.MinerFeeFloorFlag,
 			utils.MinerTauerbaseFlag,
-			utils.MinerExtraDataFlag,
 			utils.MinerRecommitIntervalFlag,
 			utils.MinerNoVerfiyFlag,
 		},
@@ -229,13 +228,8 @@ var AppHelpFlagGroups = []flagGroup{
 		Flags: metricsFlags,
 	},
 	{
-		Name: "DEPRECATED",
-		Flags: []cli.Flag{
-			utils.MinerLegacyThreadsFlag,
-			utils.MinerLegacyFeeFloorFlag,
-			utils.MinerLegacyTauerbaseFlag,
-			utils.MinerLegacyExtraDataFlag,
-		},
+		Name:  "DEPRECATED",
+		Flags: []cli.Flag{},
 	},
 	{
 		Name: "MISC",

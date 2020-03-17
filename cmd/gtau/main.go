@@ -100,14 +100,9 @@ var (
 		utils.MaxPendingPeersFlag,
 		utils.MiningEnabledFlag,
 		utils.MinerThreadsFlag,
-		utils.MinerLegacyThreadsFlag,
 		utils.MinerNotifyFlag,
 		utils.MinerFeeFloorFlag,
-		utils.MinerLegacyFeeFloorFlag,
 		utils.MinerTauerbaseFlag,
-		utils.MinerLegacyTauerbaseFlag,
-		utils.MinerExtraDataFlag,
-		utils.MinerLegacyExtraDataFlag,
 		utils.MinerRecommitIntervalFlag,
 		utils.MinerNoVerfiyFlag,
 		utils.NATFlag,
@@ -380,16 +375,11 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 			utils.Fatalf("Tau service not running: %v", err)
 		}
 		// Set the minimum fee to the limits from the CLI and start mining
-		feeFloor := utils.GlobalBig(ctx, utils.MinerLegacyFeeFloorFlag.Name)
-		if ctx.IsSet(utils.MinerFeeFloorFlag.Name) {
-			feeFloor = utils.GlobalBig(ctx, utils.MinerFeeFloorFlag.Name)
-		}
+		feeFloor := utils.GlobalBig(ctx, utils.MinerFeeFloorFlag.Name)
 		tau.TxPool().SetFeeFloor(feeFloor)
 
-		threads := ctx.GlobalInt(utils.MinerLegacyThreadsFlag.Name)
-		if ctx.GlobalIsSet(utils.MinerThreadsFlag.Name) {
-			threads = ctx.GlobalInt(utils.MinerThreadsFlag.Name)
-		}
+		threads := ctx.GlobalInt(utils.MinerThreadsFlag.Name)
+
 		if err := tau.StartMining(threads); err != nil {
 			utils.Fatalf("Failed to start mining: %v", err)
 		}

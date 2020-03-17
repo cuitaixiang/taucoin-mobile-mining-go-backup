@@ -333,11 +333,6 @@ var (
 		Usage: "Number of CPU threads to use for mining",
 		Value: 0,
 	}
-	MinerLegacyThreadsFlag = cli.IntFlag{
-		Name:  "minerthreads",
-		Usage: "Number of CPU threads to use for mining (deprecated, use --miner.threads)",
-		Value: 0,
-	}
 	MinerNotifyFlag = cli.StringFlag{
 		Name:  "miner.notify",
 		Usage: "Comma separated HTTP URL list to notify of new work packages",
@@ -347,28 +342,10 @@ var (
 		Usage: "Minimum fee for mining a transaction",
 		Value: tau.DefaultConfig.Miner.FeeFloor,
 	}
-	MinerLegacyFeeFloorFlag = BigFlag{
-		Name:  "feefloor",
-		Usage: "Minimum fee for mining a transaction (deprecated, use --miner.gasprice)",
-		Value: tau.DefaultConfig.Miner.FeeFloor,
-	}
 	MinerTauerbaseFlag = cli.StringFlag{
 		Name:  "miner.tauerbase",
 		Usage: "Public address for block mining rewards (default = first account)",
 		Value: "0",
-	}
-	MinerLegacyTauerbaseFlag = cli.StringFlag{
-		Name:  "tauerbase",
-		Usage: "Public address for block mining rewards (default = first account, deprecated, use --miner.tauerbase)",
-		Value: "0",
-	}
-	MinerExtraDataFlag = cli.StringFlag{
-		Name:  "miner.extradata",
-		Usage: "Block extra data set by the miner (default = client version)",
-	}
-	MinerLegacyExtraDataFlag = cli.StringFlag{
-		Name:  "extradata",
-		Usage: "Block extra data set by the miner (default = client version, deprecated, use --miner.extradata)",
 	}
 	MinerRecommitIntervalFlag = cli.DurationFlag{
 		Name:  "miner.recommit",
@@ -853,9 +830,6 @@ func MakeAddress(ks *keystore.KeyStore, account string) (accounts.Account, error
 func setTauerbase(ctx *cli.Context, ks *keystore.KeyStore, cfg *tau.Config) {
 	// Extract the current tauerbase, new flag overriding legacy one
 	var tauerbase string
-	if ctx.GlobalIsSet(MinerLegacyTauerbaseFlag.Name) {
-		tauerbase = ctx.GlobalString(MinerLegacyTauerbaseFlag.Name)
-	}
 	if ctx.GlobalIsSet(MinerTauerbaseFlag.Name) {
 		tauerbase = ctx.GlobalString(MinerTauerbaseFlag.Name)
 	}
@@ -1058,15 +1032,6 @@ func setMiner(ctx *cli.Context, cfg *miner.Config) {
 	if ctx.GlobalIsSet(MinerNotifyFlag.Name) {
 		cfg.Notify = strings.Split(ctx.GlobalString(MinerNotifyFlag.Name), ",")
 	}
-	if ctx.GlobalIsSet(MinerLegacyExtraDataFlag.Name) {
-		cfg.ExtraData = []byte(ctx.GlobalString(MinerLegacyExtraDataFlag.Name))
-	}
-	if ctx.GlobalIsSet(MinerExtraDataFlag.Name) {
-		cfg.ExtraData = []byte(ctx.GlobalString(MinerExtraDataFlag.Name))
-	}
-	if ctx.GlobalIsSet(MinerLegacyFeeFloorFlag.Name) {
-		cfg.FeeFloor = GlobalBig(ctx, MinerLegacyFeeFloorFlag.Name)
-	}
 	if ctx.GlobalIsSet(MinerFeeFloorFlag.Name) {
 		cfg.FeeFloor = GlobalBig(ctx, MinerFeeFloorFlag.Name)
 	}
@@ -1241,7 +1206,7 @@ func SetTauConfig(ctx *cli.Context, stack *node.Node, cfg *tau.Config) {
 		log.Info("Using developer account", "address", developer.Address)
 
 		cfg.Genesis = core.DeveloperGenesisBlock(developer.Address)
-		if !ctx.GlobalIsSet(MinerFeeFloorFlag.Name) && !ctx.GlobalIsSet(MinerLegacyFeeFloorFlag.Name) {
+		if !ctx.GlobalIsSet(MinerFeeFloorFlag.Name) {
 			cfg.Miner.FeeFloor = big.NewInt(1)
 		}
 	}

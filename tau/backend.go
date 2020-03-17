@@ -20,13 +20,11 @@ package tau
 import (
 	"fmt"
 	"math/big"
-	"runtime"
 	"sync"
 	"sync/atomic"
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/accounts"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/hexutil"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus/tauhash"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core"
@@ -40,7 +38,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/p2p"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/p2p/enr"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/rlp"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rpc"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
@@ -169,28 +166,10 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 		return nil, err
 	}
 	tau.miner = miner.New(tau, &config.Miner, chainConfig, tau.EventMux(), tau.engine, tau.isLocalBlock)
-	tau.miner.SetExtra(makeExtraData(config.Miner.ExtraData))
 
 	tau.APIBackend = &TauAPIBackend{ctx.ExtRPCEnabled(), tau}
 
 	return tau, nil
-}
-
-func makeExtraData(extra []byte) []byte {
-	if len(extra) == 0 {
-		// create default extradata
-		extra, _ = rlp.EncodeToBytes([]interface{}{
-			uint(params.VersionMajor<<16 | params.VersionMinor<<8 | params.VersionPatch),
-			"gtau",
-			runtime.Version(),
-			runtime.GOOS,
-		})
-	}
-	if uint64(len(extra)) > params.MaximumExtraDataSize {
-		log.Warn("Miner extra data exceed limit", "extra", hexutil.Bytes(extra), "limit", params.MaximumExtraDataSize)
-		extra = nil
-	}
-	return extra
 }
 
 // CreateConsensusEngine creates the required type of consensus engine instance for an Tau service

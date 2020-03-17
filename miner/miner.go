@@ -18,13 +18,11 @@
 package miner
 
 import (
-	"fmt"
 	"math/big"
 	"sync/atomic"
 	"time"
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/hexutil"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/state"
@@ -45,7 +43,6 @@ type Backend interface {
 type Config struct {
 	Tauerbase common.Address `toml:",omitempty"` // Public address for block mining rewards (default = first account)
 	Notify    []string       `toml:",omitempty"` // HTTP URL list to be notified of new work packages(only useful in tauhash).
-	ExtraData hexutil.Bytes  `toml:",omitempty"` // Block extra data set by the miner
 	FeeFloor  *big.Int       // Minimum gas price for mining a transaction
 	Recommit  time.Duration  // The time interval for miner to re-create mining work.
 	Noverify  bool           // Disable remote mining solution verification(only useful in tauhash).
