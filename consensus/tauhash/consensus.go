@@ -162,10 +162,6 @@ func (tauhash *Tauash) verifyHeaderWorker(chain consensus.ChainReader, headers [
 // stock Tau tauhash engine.
 // See YP section 4.3.4. "Block Header Validity"
 func (tauhash *Tauash) verifyHeader(chain consensus.ChainReader, header, parent *types.Header, uncle bool, seal bool) error {
-	// Ensure that the header's extra-data section is of a reasonable size
-	if uint64(len(header.Extra)) > params.MaximumExtraDataSize {
-		return fmt.Errorf("extra-data too long: %d > %d", len(header.Extra), params.MaximumExtraDataSize)
-	}
 	// Verify the header's timestamp
 	if !uncle {
 		if header.Time > uint64(time.Now().Add(allowedFutureBlockTime).Unix()) {
@@ -181,22 +177,7 @@ func (tauhash *Tauash) verifyHeader(chain consensus.ChainReader, header, parent 
 	if expected.Cmp(header.Difficulty) != 0 {
 		return fmt.Errorf("invalid difficulty: have %v, want %v", header.Difficulty, expected)
 	}
-	// Verify that the gas limit is <= 2^63-1
-	cap := uint64(0x7fffffffffffffff)
-	if header.GasLimit > cap {
-		return fmt.Errorf("invalid gasLimit: have %v, max %v", header.GasLimit, cap)
-	}
 
-	// Verify that the gas limit remains within allowed bounds
-	diff := int64(parent.GasLimit) - int64(header.GasLimit)
-	if diff < 0 {
-		diff *= -1
-	}
-	limit := parent.GasLimit / params.GasLimitBoundDivisor
-
-	if uint64(diff) >= limit || header.GasLimit < params.MinGasLimit {
-		return fmt.Errorf("invalid gas limit: have %d, want %d += %d", header.GasLimit, parent.GasLimit, limit)
-	}
 	// Verify that the block number is parent's +1
 	if diff := new(big.Int).Sub(header.Number, parent.Number); diff.Cmp(big.NewInt(1)) != 0 {
 		return consensus.ErrInvalidNumber
@@ -435,9 +416,7 @@ func (tauhash *Tauash) SealHash(header *types.Header) (hash common.Hash) {
 		header.TxHash,
 		header.Difficulty,
 		header.Number,
-		header.GasLimit,
 		header.Time,
-		header.Extra,
 	})
 	hasher.Sum(hash[:0])
 	return hash

@@ -29,10 +29,10 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/state"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/event"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/params"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
 )
 
 // Backend wraps all methods required for mining.
@@ -147,14 +147,6 @@ func (self *Miner) HashRate() uint64 {
 		return uint64(pow.Hashrate())
 	}
 	return 0
-}
-
-func (self *Miner) SetExtra(extra []byte) error {
-	if uint64(len(extra)) > params.MaximumExtraDataSize {
-		return fmt.Errorf("Extra exceeds max length. %d > %v", len(extra), params.MaximumExtraDataSize)
-	}
-	self.worker.setExtra(extra)
-	return nil
 }
 
 // SetRecommitInterval sets the interval for sealing work resubmitting.

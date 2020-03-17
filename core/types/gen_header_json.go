@@ -22,9 +22,7 @@ func (h Header) MarshalJSON() ([]byte, error) {
 		TxHash     common.Hash    `json:"transactionsRoot" gencodec:"required"`
 		Difficulty *hexutil.Big   `json:"difficulty"       gencodec:"required"`
 		Number     *hexutil.Big   `json:"number"           gencodec:"required"`
-		GasLimit   hexutil.Uint64 `json:"gasLimit"         gencodec:"required"`
 		Time       hexutil.Uint64 `json:"timestamp"        gencodec:"required"`
-		Extra      hexutil.Bytes  `json:"extraData"        gencodec:"required"`
 		MixDigest  common.Hash    `json:"mixHash"`
 		Nonce      BlockNonce     `json:"nonce"`
 		Hash       common.Hash    `json:"hash"`
@@ -36,9 +34,7 @@ func (h Header) MarshalJSON() ([]byte, error) {
 	enc.TxHash = h.TxHash
 	enc.Difficulty = (*hexutil.Big)(h.Difficulty)
 	enc.Number = (*hexutil.Big)(h.Number)
-	enc.GasLimit = hexutil.Uint64(h.GasLimit)
 	enc.Time = hexutil.Uint64(h.Time)
-	enc.Extra = h.Extra
 	enc.MixDigest = h.MixDigest
 	enc.Nonce = h.Nonce
 	enc.Hash = h.Hash()
@@ -54,9 +50,7 @@ func (h *Header) UnmarshalJSON(input []byte) error {
 		TxHash     *common.Hash    `json:"transactionsRoot" gencodec:"required"`
 		Difficulty *hexutil.Big    `json:"difficulty"       gencodec:"required"`
 		Number     *hexutil.Big    `json:"number"           gencodec:"required"`
-		GasLimit   *hexutil.Uint64 `json:"gasLimit"         gencodec:"required"`
 		Time       *hexutil.Uint64 `json:"timestamp"        gencodec:"required"`
-		Extra      *hexutil.Bytes  `json:"extraData"        gencodec:"required"`
 		MixDigest  *common.Hash    `json:"mixHash"`
 		Nonce      *BlockNonce     `json:"nonce"`
 	}
@@ -88,18 +82,10 @@ func (h *Header) UnmarshalJSON(input []byte) error {
 		return errors.New("missing required field 'number' for Header")
 	}
 	h.Number = (*big.Int)(dec.Number)
-	if dec.GasLimit == nil {
-		return errors.New("missing required field 'gasLimit' for Header")
-	}
-	h.GasLimit = uint64(*dec.GasLimit)
 	if dec.Time == nil {
 		return errors.New("missing required field 'timestamp' for Header")
 	}
 	h.Time = uint64(*dec.Time)
-	if dec.Extra == nil {
-		return errors.New("missing required field 'extraData' for Header")
-	}
-	h.Extra = *dec.Extra
 	if dec.MixDigest != nil {
 		h.MixDigest = *dec.MixDigest
 	}

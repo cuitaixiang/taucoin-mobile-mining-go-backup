@@ -74,9 +74,7 @@ type Header struct {
 	TxHash     common.Hash    `json:"transactionsRoot" gencodec:"required"`
 	Difficulty *big.Int       `json:"difficulty"       gencodec:"required"`
 	Number     *big.Int       `json:"number"           gencodec:"required"`
-	GasLimit   uint64         `json:"gasLimit"         gencodec:"required"`
 	Time       uint64         `json:"timestamp"        gencodec:"required"`
-	Extra      []byte         `json:"extraData"        gencodec:"required"`
 	MixDigest  common.Hash    `json:"mixHash"`
 	Nonce      BlockNonce     `json:"nonce"`
 }
@@ -85,9 +83,7 @@ type Header struct {
 type headerMarshaling struct {
 	Difficulty *hexutil.Big
 	Number     *hexutil.Big
-	GasLimit   hexutil.Uint64
 	Time       hexutil.Uint64
-	Extra      hexutil.Bytes
 	Hash       common.Hash `json:"hash"` // adds call to Hash() in MarshalJSON
 }
 
@@ -102,7 +98,7 @@ var headerSize = common.StorageSize(reflect.TypeOf(Header{}).Size())
 // Size returns the approximate memory used by all internal contents. It is used
 // to approximate and limit the memory consumption of various caches.
 func (h *Header) Size() common.StorageSize {
-	return headerSize + common.StorageSize(len(h.Extra)+(h.Difficulty.BitLen()+h.Number.BitLen())/8)
+	return headerSize + common.StorageSize((h.Difficulty.BitLen()+h.Number.BitLen())/8)
 }
 
 // SanityCheck checks a few basic things -- these checks are way beyond what
@@ -117,9 +113,6 @@ func (h *Header) SanityCheck() error {
 		if diffLen := h.Difficulty.BitLen(); diffLen > 80 {
 			return fmt.Errorf("too large block difficulty: bitlen %d", diffLen)
 		}
-	}
-	if eLen := len(h.Extra); eLen > 100*1024 {
-		return fmt.Errorf("too large block extradata: size %d", eLen)
 	}
 	return nil
 }
@@ -223,10 +216,6 @@ func CopyHeader(h *Header) *Header {
 	if cpy.Number = new(big.Int); h.Number != nil {
 		cpy.Number.Set(h.Number)
 	}
-	if len(h.Extra) > 0 {
-		cpy.Extra = make([]byte, len(h.Extra))
-		copy(cpy.Extra, h.Extra)
-	}
 	return &cpy
 }
 
@@ -274,7 +263,6 @@ func (b *Block) Transaction(hash common.Hash) *Transaction {
 }
 
 func (b *Block) Number() *big.Int     { return new(big.Int).Set(b.header.Number) }
-func (b *Block) GasLimit() uint64     { return b.header.GasLimit }
 func (b *Block) Difficulty() *big.Int { return new(big.Int).Set(b.header.Difficulty) }
 func (b *Block) Time() uint64         { return b.header.Time }
 
@@ -285,7 +273,6 @@ func (b *Block) Coinbase() common.Address { return b.header.Coinbase }
 func (b *Block) Root() common.Hash        { return b.header.Root }
 func (b *Block) ParentHash() common.Hash  { return b.header.ParentHash }
 func (b *Block) TxHash() common.Hash      { return b.header.TxHash }
-func (b *Block) Extra() []byte            { return common.CopyBytes(b.header.Extra) }
 
 func (b *Block) Header() *Header { return CopyHeader(b.header) }
 
