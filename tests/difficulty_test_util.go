@@ -53,7 +53,6 @@ func (test *DifficultyTest) Run(config *params.ChainConfig) error {
 		Difficulty: test.ParentDifficulty,
 		Time:       test.ParentTimestamp,
 		Number:     parentNumber,
-		UncleHash:  test.UncleHash,
 	}
 
 	actual := tauhash.CalcDifficulty(config, test.CurrentTimestamp, parent)

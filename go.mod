@@ -30,6 +30,7 @@ require (
 	github.com/ipfs/go-cid v0.0.5
 	github.com/ipfs/go-ipfs v0.4.23
 	github.com/ipfs/go-ipld-format v0.0.2
+	github.com/ipfs/interface-go-ipfs-core v0.2.6
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/karalabe/usb v0.0.0-20191104083709-911d15fe12a9
