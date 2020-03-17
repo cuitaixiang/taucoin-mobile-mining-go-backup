@@ -20,7 +20,6 @@ import (
 	"math/big"
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
 )
 
 // StateDB is an EVM database for full state querying.
@@ -51,7 +50,6 @@ type StateDB interface {
 	RevertToSnapshot(int)
 	Snapshot() int
 
-	AddLog(*types.Log)
 	AddPreimage(common.Hash, []byte)
 }
 

@@ -112,9 +112,6 @@ type (
 	refundChange struct {
 		prev uint64
 	}
-	addLogChange struct {
-		txhash common.Hash
-	}
 	addPreimageChange struct {
 		hash common.Hash
 	}
@@ -184,20 +181,6 @@ func (ch refundChange) revert(s *StateDB) {
 }
 
 func (ch refundChange) dirtied() *common.Address {
-	return nil
-}
-
-func (ch addLogChange) revert(s *StateDB) {
-	logs := s.logs[ch.txhash]
-	if len(logs) == 1 {
-		delete(s.logs, ch.txhash)
-	} else {
-		s.logs[ch.txhash] = logs[:len(logs)-1]
-	}
-	s.logSize--
-}
-
-func (ch addLogChange) dirtied() *common.Address {
 	return nil
 }
 

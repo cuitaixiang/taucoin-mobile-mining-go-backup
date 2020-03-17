@@ -34,8 +34,7 @@ import (
 )
 
 var (
-	EmptyRootHash  = DeriveSha(Transactions{})
-	EmptyUncleHash = rlpHash([]*Header(nil))
+	EmptyRootHash = DeriveSha(Transactions{})
 )
 
 // A BlockNonce is a 64-bit hash which proves (combined with the

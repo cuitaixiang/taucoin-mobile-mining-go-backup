@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/metrics"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rlp"
@@ -38,7 +37,6 @@ type revision struct {
 var (
 	// emptyRoot is the known root hash of an empty trie.
 	emptyRoot = common.HexToHash("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421")
-
 )
 
 type proofList [][]byte
@@ -77,8 +75,6 @@ type StateDB struct {
 
 	thash, bhash common.Hash
 	txIndex      int
-	logs         map[common.Hash][]*types.Log
-	logSize      uint
 
 	preimages map[common.Hash][]byte
 
@@ -110,7 +106,6 @@ func New(root common.Hash, db Database) (*StateDB, error) {
 		trie:              tr,
 		stateObjects:      make(map[common.Address]*stateObject),
 		stateObjectsDirty: make(map[common.Address]struct{}),
-		logs:              make(map[common.Hash][]*types.Log),
 		preimages:         make(map[common.Hash][]byte),
 		journal:           newJournal(),
 	}, nil
@@ -140,34 +135,9 @@ func (self *StateDB) Reset(root common.Hash) error {
 	self.thash = common.Hash{}
 	self.bhash = common.Hash{}
 	self.txIndex = 0
-	self.logs = make(map[common.Hash][]*types.Log)
-	self.logSize = 0
 	self.preimages = make(map[common.Hash][]byte)
 	self.clearJournalAndRefund()
 	return nil
-}
-
-func (self *StateDB) AddLog(log *types.Log) {
-	self.journal.append(addLogChange{txhash: self.thash})
-
-	log.TxHash = self.thash
-	log.BlockHash = self.bhash
-	log.TxIndex = uint(self.txIndex)
-	log.Index = self.logSize
-	self.logs[self.thash] = append(self.logs[self.thash], log)
-	self.logSize++
-}
-
-func (self *StateDB) GetLogs(hash common.Hash) []*types.Log {
-	return self.logs[hash]
-}
-
-func (self *StateDB) Logs() []*types.Log {
-	var logs []*types.Log
-	for _, lgs := range self.logs {
-		logs = append(logs, lgs...)
-	}
-	return logs
 }
 
 // AddPreimage records a SHA3 preimage seen by the VM.
@@ -428,8 +398,6 @@ func (self *StateDB) Copy() *StateDB {
 		stateObjects:      make(map[common.Address]*stateObject, len(self.journal.dirties)),
 		stateObjectsDirty: make(map[common.Address]struct{}, len(self.journal.dirties)),
 		refund:            self.refund,
-		logs:              make(map[common.Hash][]*types.Log, len(self.logs)),
-		logSize:           self.logSize,
 		preimages:         make(map[common.Hash][]byte, len(self.preimages)),
 		journal:           newJournal(),
 	}
@@ -452,14 +420,6 @@ func (self *StateDB) Copy() *StateDB {
 			state.stateObjects[addr] = self.stateObjects[addr].deepCopy(state)
 			state.stateObjectsDirty[addr] = struct{}{}
 		}
-	}
-	for hash, logs := range self.logs {
-		cpy := make([]*types.Log, len(logs))
-		for i, l := range logs {
-			cpy[i] = new(types.Log)
-			*cpy[i] = *l
-		}
-		state.logs[hash] = cpy
 	}
 	for hash, preimage := range self.preimages {
 		state.preimages[hash] = preimage
