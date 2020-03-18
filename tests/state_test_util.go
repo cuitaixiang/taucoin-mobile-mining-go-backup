@@ -159,8 +159,6 @@ func (t *StateTest) Run(subtest StateSubtest, vmconfig vm.Config) (*state.StateD
 	context.GetHash = vmTestBlockHash
 	evm := vm.NewEVM(context, statedb, config)
 
-	gaspool := new(core.GasPool)
-	gaspool.AddGas(block.GasLimit())
 	snapshot := statedb.Snapshot()
 	if _, _, _, err := core.ApplyMessage(evm, msg); err != nil {
 		statedb.RevertToSnapshot(snapshot)
@@ -179,9 +177,6 @@ func (t *StateTest) Run(subtest StateSubtest, vmconfig vm.Config) (*state.StateD
 	// of suicides, and we need to touch the coinbase _after_ it has potentially suicided.
 	if root != common.Hash(post.Root) {
 		return statedb, fmt.Errorf("post state root mismatch: got %x, want %x", root, post.Root)
-	}
-	if logs := rlpHash(statedb.Logs()); logs != common.Hash(post.Logs) {
-		return statedb, fmt.Errorf("post state logs hash mismatch: got %x, want %x", logs, post.Logs)
 	}
 	return statedb, nil
 }
