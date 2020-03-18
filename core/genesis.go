@@ -45,16 +45,25 @@ var errGenesisNoConfig = errors.New("genesis has no chain configuration")
 // Genesis specifies the header fields, state of a genesis block. It also defines hard
 // fork switch-over blocks through the chain configuration.
 type Genesis struct {
-	Config     *params.ChainConfig `json:"config"`
-	ParentHash common.Hash         `json:"parentHash"`
-	Coinbase   common.Address      `json:"miner"      gencodec:"required"`
-	Root       common.Hash         `json:"stateRoot"        gencodec:"required"`
-	TxHash     common.Hash         `json:"transactionsRoot" gencodec:"required"`
-	Difficulty *big.Int            `json:"difficulty" gencodec:"required"`
-	Number     uint64              `json:"number"`
-	Timestamp  uint64              `json:"timestamp"`
-	Mixhash    common.Hash         `json:"mixHash"`
-	Alloc      GenesisAlloc        `json:"alloc"      gencodec:"required"`
+	Config        *params.ChainConfig `json:"config"`
+	Version        byte            `json:"version"              gencodec:"required"`
+	Option         byte            `json:"option"               gencodec:"required"`
+	ChainID        common.Hash     `json:"chainid"              gencodec:"required"`
+	Number         uint64          `json:"number"               gencodec:"required"`
+	BaseTarget     *big.Int        `json:"basetarget"           gencodec:"required"`
+	Difficulty     *big.Int        `json:"difficulty"           gencodec:"required"`
+	GeSignature    common.Hash     `json:"generationsignature"  gencodec:"required"`
+	Coinbase       common.Address  `json:"tauminer"             gencodec:"required"`
+	IpfsCoinbase   common.IpfsAddress  `json:"ipfsminer"        gencodec:"required"`
+	Timestamp      uint64          `json:"timestamp"            gencodec:"required"`
+	ParentHash     common.Hash     `json:"parentHash"           gencodec:"required"`
+	Root           common.Hash     `json:"stateRoot"            gencodec:"required"`
+	TxHash         common.Hash     `json:"transactionsRoot"     gencodec:"required"`
+	RelayMARoot    common.Hash     `json:"relaymultiaddress"    gencodec:"required"`
+	MixDigest      common.Hash     `json:"mixHash"`
+	Mixhash        common.Hash     `json:"mixHash"`
+	Alloc          GenesisAlloc    `json:"alloc"      gencodec:"required"`
+
 }
 
 // GenesisAlloc specifies the initial state that is part of the genesis block.
@@ -137,11 +146,11 @@ func (e *GenesisMismatchError) Error() string {
 // error is a *params.ConfigCompatError and the new, unwritten config is returned.
 //
 // The returned chain configuration is never nil.
-func SetupGenesisBlock(db taudb.Database, genesis *Genesis) (*params.ChainConfig, common.Hash, error) {
-	return SetupGenesisBlockWithOverride(db, genesis)
+func SetupGenesisBlock(db taudb.Database, ipfsDb taudb.IpfsStore, genesis *Genesis) (*params.ChainConfig, common.Hash, error) {
+	return SetupGenesisBlockWithOverride(db, ipfsDb, genesis)
 }
 
-func SetupGenesisBlockWithOverride(db taudb.Database, genesis *Genesis) (*params.ChainConfig, common.Hash, error) {
+func SetupGenesisBlockWithOverride(db taudb.Database, ipfsDb taudb.IpfsStore, genesis *Genesis) (*params.ChainConfig, common.Hash, error) {
 	if genesis != nil && genesis.Config == nil {
 		return params.AllTauashProtocolChanges, common.Hash{}, errGenesisNoConfig
 	}
@@ -149,12 +158,12 @@ func SetupGenesisBlockWithOverride(db taudb.Database, genesis *Genesis) (*params
 	stored := rawdb.ReadCanonicalHash(db, 0)
 	if (stored == common.Hash{}) {
 		if genesis == nil {
-			log.Info("Writing default main-net genesis block")
+			log.Info("Setting default main-net genesis block")
 			genesis = DefaultGenesisBlock()
 		} else {
 			log.Info("Writing custom genesis block")
 		}
-		block, err := genesis.Commit(db)
+		block, err := genesis.Commit(db, ipfsDb)
 		if err != nil {
 			return genesis.Config, common.Hash{}, err
 		}
@@ -173,7 +182,7 @@ func SetupGenesisBlockWithOverride(db taudb.Database, genesis *Genesis) (*params
 		if hash != stored {
 			return genesis.Config, hash, &GenesisMismatchError{stored, hash}
 		}
-		block, err := genesis.Commit(db)
+		block, err := genesis.Commit(db, ipfsDb)
 		if err != nil {
 			return genesis.Config, hash, err
 		}
@@ -232,17 +241,20 @@ func (g *Genesis) configOrDefault(ghash common.Hash) *params.ChainConfig {
 
 // ToBlock creates the genesis block and writes state of a genesis specification
 // to the given database (or discards it if nil).
-func (g *Genesis) ToBlock(db taudb.Database) *types.Block {
+func (g *Genesis) ToBlock(db taudb.IpfsStore) *types.Block {
 	if db == nil {
-		db = rawdb.NewMemoryDatabase()
+		db, _= rawdb.NewIpfsDBDatabase()
 	}
+
 	statedb, _ := state.New(common.Hash{}, state.NewDatabase(db))
 	for addr, account := range g.Alloc {
 		statedb.AddBalance(addr, account.Balance)
 		statedb.SetNonce(addr, account.Nonce)
 	}
+
 	root := statedb.IntermediateRoot(false)
-	fmt.Println("state root is :", root.Hex())
+	log.Info("Genesis ToBlock", "Genesis Block Root", root.Hex())
+
 	head := &types.Header{
 		Number:     new(big.Int).SetUint64(g.Number),
 		Time:       g.Timestamp,
@@ -263,8 +275,8 @@ func (g *Genesis) ToBlock(db taudb.Database) *types.Block {
 
 // Commit writes the block and state of a genesis specification to the database.
 // The block is committed as the canonical head block.
-func (g *Genesis) Commit(db taudb.Database) (*types.Block, error) {
-	block := g.ToBlock(db)
+func (g *Genesis) Commit(db taudb.Database, ipfsDb taudb.IpfsStore) (*types.Block, error) {
+	block := g.ToBlock(ipfsDb)
 	if block.Number().Sign() != 0 {
 		return nil, fmt.Errorf("can't commit genesis block with number > 0")
 	}
@@ -285,8 +297,8 @@ func (g *Genesis) Commit(db taudb.Database) (*types.Block, error) {
 
 // MustCommit writes the genesis block and state to db, panicking on error.
 // The block is committed as the canonical head block.
-func (g *Genesis) MustCommit(db taudb.Database) *types.Block {
-	block, err := g.Commit(db)
+func (g *Genesis) MustCommit(db taudb.Database, ipfsDb taudb.IpfsStore) *types.Block {
+	block, err := g.Commit(db, ipfsDb)
 	if err != nil {
 		panic(err)
 	}
@@ -294,9 +306,9 @@ func (g *Genesis) MustCommit(db taudb.Database) *types.Block {
 }
 
 // GenesisBlockForTesting creates and writes a block in which addr has the given wei balance.
-func GenesisBlockForTesting(db taudb.Database, addr common.Address, balance *big.Int) *types.Block {
+func GenesisBlockForTesting(db taudb.Database, ipfsDb taudb.IpfsStore, addr common.Address, balance *big.Int) *types.Block {
 	g := Genesis{Alloc: GenesisAlloc{addr: {Balance: balance}}}
-	return g.MustCommit(db)
+	return g.MustCommit(db, ipfsDb)
 }
 
 // DefaultGenesisBlock returns the Tau main net genesis block.

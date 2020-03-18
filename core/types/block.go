@@ -83,7 +83,7 @@ type Header struct {
 	TxHash         common.Hash     `json:"transactionsRoot"     gencodec:"required"`
 	RelayMARoot    common.Hash     `json:"relaymultiaddress"    gencodec:"required"`
 	MixDigest      common.Hash     `json:"mixHash"`
-	Nonce          BlockNonce 
+	Nonce          BlockNonce
 }
 
 // field type overrides for gencodec
@@ -175,15 +175,6 @@ type extblock struct {
 	Txs    []*Transaction
 }
 
-// [deprecated by tau/63]
-// "storage" block encoding. used for database.
-type storageblock struct {
-	Header *Header
-	Txs    []*Transaction
-	Uncles []*Header
-	TD     *big.Int
-}
-
 // NewBlock creates a new block. The input data is copied,
 // changes to header and to the field values will not affect the
 // block.
@@ -217,11 +208,14 @@ func NewBlockWithHeader(header *Header) *Block {
 // modifying a header variable.
 func CopyHeader(h *Header) *Header {
 	cpy := *h
-	if cpy.Difficulty = new(big.Int); h.Difficulty != nil {
-		cpy.Difficulty.Set(h.Difficulty)
-	}
 	if cpy.Number = new(big.Int); h.Number != nil {
 		cpy.Number.Set(h.Number)
+	}
+	if cpy.BaseTarget = new(big.Int); h.Number != nil {
+		cpy.BaseTarget.Set(h.Number)
+	}
+	if cpy.Difficulty = new(big.Int); h.Difficulty != nil {
+		cpy.Difficulty.Set(h.Difficulty)
 	}
 	return &cpy
 }
@@ -244,16 +238,6 @@ func (b *Block) EncodeRLP(w io.Writer) error {
 		Header: b.header,
 		Txs:    b.transactions,
 	})
-}
-
-// [deprecated by tau/63]
-func (b *StorageBlock) DecodeRLP(s *rlp.Stream) error {
-	var sb storageblock
-	if err := s.Decode(&sb); err != nil {
-		return err
-	}
-	b.header, b.transactions, b.td = sb.Header, sb.Txs, sb.TD
-	return nil
 }
 
 // TODO: copies
