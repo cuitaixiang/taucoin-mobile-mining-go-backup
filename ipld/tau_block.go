@@ -190,8 +190,6 @@ func (b *TauBlock) Resolve(p []string) (interface{}, []string, error) {
 	switch first {
 	case "difficulty":
 		return b.Difficulty, nil, nil
-	case "nonce":
-		return b.Nonce, nil, nil
 	case "number":
 		return b.Number, nil, nil
 	case "time":
@@ -276,7 +274,6 @@ func (b *TauBlock) MarshalJSON() ([]byte, error) {
 	out := map[string]interface{}{
 		"time":       b.Time,
 		"difficulty": b.Difficulty,
-		"nonce":      b.Nonce,
 		"number":     b.Number,
 		"parent":     commonHashToCid(MTauBlock, b.ParentHash),
 	}

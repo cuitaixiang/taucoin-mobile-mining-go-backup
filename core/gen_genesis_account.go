@@ -7,7 +7,6 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/hexutil"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/math"
 )
@@ -16,20 +15,11 @@ var _ = (*genesisAccountMarshaling)(nil)
 
 func (g GenesisAccount) MarshalJSON() ([]byte, error) {
 	type GenesisAccount struct {
-		Code       hexutil.Bytes               `json:"code,omitempty"`
-		Storage    map[storageJSON]storageJSON `json:"storage,omitempty"`
 		Balance    *math.HexOrDecimal256       `json:"balance" gencodec:"required"`
 		Nonce      math.HexOrDecimal64         `json:"nonce,omitempty"`
 		PrivateKey hexutil.Bytes               `json:"secretKey,omitempty"`
 	}
 	var enc GenesisAccount
-	enc.Code = g.Code
-	if g.Storage != nil {
-		enc.Storage = make(map[storageJSON]storageJSON, len(g.Storage))
-		for k, v := range g.Storage {
-			enc.Storage[storageJSON(k)] = storageJSON(v)
-		}
-	}
 	enc.Balance = (*math.HexOrDecimal256)(g.Balance)
 	enc.Nonce = math.HexOrDecimal64(g.Nonce)
 	enc.PrivateKey = g.PrivateKey
@@ -38,8 +28,6 @@ func (g GenesisAccount) MarshalJSON() ([]byte, error) {
 
 func (g *GenesisAccount) UnmarshalJSON(input []byte) error {
 	type GenesisAccount struct {
-		Code       *hexutil.Bytes              `json:"code,omitempty"`
-		Storage    map[storageJSON]storageJSON `json:"storage,omitempty"`
 		Balance    *math.HexOrDecimal256       `json:"balance" gencodec:"required"`
 		Nonce      *math.HexOrDecimal64        `json:"nonce,omitempty"`
 		PrivateKey *hexutil.Bytes              `json:"secretKey,omitempty"`
@@ -47,15 +35,6 @@ func (g *GenesisAccount) UnmarshalJSON(input []byte) error {
 	var dec GenesisAccount
 	if err := json.Unmarshal(input, &dec); err != nil {
 		return err
-	}
-	if dec.Code != nil {
-		g.Code = *dec.Code
-	}
-	if dec.Storage != nil {
-		g.Storage = make(map[common.Hash]common.Hash, len(dec.Storage))
-		for k, v := range dec.Storage {
-			g.Storage[common.Hash(k)] = common.Hash(v)
-		}
 	}
 	if dec.Balance == nil {
 		return errors.New("missing required field 'balance' for GenesisAccount")

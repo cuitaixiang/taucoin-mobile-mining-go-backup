@@ -67,7 +67,6 @@ type stPostState struct {
 	Logs    common.UnprefixedHash `json:"logs"`
 	Indexes struct {
 		Data  int `json:"data"`
-		Gas   int `json:"gas"`
 		Value int `json:"value"`
 	}
 }
@@ -77,7 +76,6 @@ type stPostState struct {
 type stEnv struct {
 	Coinbase   common.Address `json:"currentCoinbase"   gencodec:"required"`
 	Difficulty *big.Int       `json:"currentDifficulty" gencodec:"required"`
-	GasLimit   uint64         `json:"currentGasLimit"   gencodec:"required"`
 	Number     uint64         `json:"currentNumber"     gencodec:"required"`
 	Timestamp  uint64         `json:"currentTimestamp"  gencodec:"required"`
 }
@@ -85,7 +83,6 @@ type stEnv struct {
 type stEnvMarshaling struct {
 	Coinbase   common.UnprefixedAddress
 	Difficulty *math.HexOrDecimal256
-	GasLimit   math.HexOrDecimal64
 	Number     math.HexOrDecimal64
 	Timestamp  math.HexOrDecimal64
 }
@@ -103,7 +100,6 @@ type stTransaction struct {
 type stTransactionMarshaling struct {
 	GasPrice   *math.HexOrDecimal256
 	Nonce      math.HexOrDecimal64
-	GasLimit   []math.HexOrDecimal64
 	PrivateKey hexutil.Bytes
 }
 
@@ -199,7 +195,6 @@ func (t *StateTest) genesis(config *params.ChainConfig) *core.Genesis {
 		Config:     config,
 		Coinbase:   t.json.Env.Coinbase,
 		Difficulty: t.json.Env.Difficulty,
-		GasLimit:   t.json.Env.GasLimit,
 		Number:     t.json.Env.Number,
 		Timestamp:  t.json.Env.Timestamp,
 		Alloc:      t.json.Pre,

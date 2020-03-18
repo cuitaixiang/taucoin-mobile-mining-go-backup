@@ -38,6 +38,7 @@ const (
 	HashLength = 32
 	// AddressLength is the expected length of the address
 	AddressLength = 20
+	IpfsAddressLength = 46
 )
 
 var (
@@ -46,7 +47,7 @@ var (
 )
 
 // Hash represents the 32 byte Keccak256 hash of arbitrary data.
-type Hash [HashLength]byte
+type Hash   [HashLength]byte
 
 // BytesToHash sets b to hash.
 // If b is larger than len(h), b will be cropped from the left.
@@ -160,6 +161,7 @@ func (h UnprefixedHash) MarshalText() ([]byte, error) {
 
 // Address represents the 20 byte address of an Tau account.
 type Address [AddressLength]byte
+type IpfsAddress [IpfsAddressLength]byte
 
 // BytesToAddress returns Address with value b.
 // If b is larger than len(h), b will be cropped from the left.

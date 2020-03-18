@@ -24,7 +24,6 @@ func (h Header) MarshalJSON() ([]byte, error) {
 		Number     *hexutil.Big   `json:"number"           gencodec:"required"`
 		Time       hexutil.Uint64 `json:"timestamp"        gencodec:"required"`
 		MixDigest  common.Hash    `json:"mixHash"`
-		Nonce      BlockNonce     `json:"nonce"`
 		Hash       common.Hash    `json:"hash"`
 	}
 	var enc Header
@@ -36,7 +35,6 @@ func (h Header) MarshalJSON() ([]byte, error) {
 	enc.Number = (*hexutil.Big)(h.Number)
 	enc.Time = hexutil.Uint64(h.Time)
 	enc.MixDigest = h.MixDigest
-	enc.Nonce = h.Nonce
 	enc.Hash = h.Hash()
 	return json.Marshal(&enc)
 }
@@ -52,7 +50,6 @@ func (h *Header) UnmarshalJSON(input []byte) error {
 		Number     *hexutil.Big    `json:"number"           gencodec:"required"`
 		Time       *hexutil.Uint64 `json:"timestamp"        gencodec:"required"`
 		MixDigest  *common.Hash    `json:"mixHash"`
-		Nonce      *BlockNonce     `json:"nonce"`
 	}
 	var dec Header
 	if err := json.Unmarshal(input, &dec); err != nil {
@@ -88,9 +85,6 @@ func (h *Header) UnmarshalJSON(input []byte) error {
 	h.Time = uint64(*dec.Time)
 	if dec.MixDigest != nil {
 		h.MixDigest = *dec.MixDigest
-	}
-	if dec.Nonce != nil {
-		h.Nonce = *dec.Nonce
 	}
 	return nil
 }

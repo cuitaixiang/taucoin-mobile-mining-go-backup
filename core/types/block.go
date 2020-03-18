@@ -68,15 +68,22 @@ func (n *BlockNonce) UnmarshalText(input []byte) error {
 
 // Header represents a block header in the Tau blockchain.
 type Header struct {
-	ParentHash common.Hash    `json:"parentHash"       gencodec:"required"`
-	Coinbase   common.Address `json:"miner"            gencodec:"required"`
-	Root       common.Hash    `json:"stateRoot"        gencodec:"required"`
-	TxHash     common.Hash    `json:"transactionsRoot" gencodec:"required"`
-	Difficulty *big.Int       `json:"difficulty"       gencodec:"required"`
-	Number     *big.Int       `json:"number"           gencodec:"required"`
-	Time       uint64         `json:"timestamp"        gencodec:"required"`
-	MixDigest  common.Hash    `json:"mixHash"`
-	Nonce      BlockNonce     `json:"nonce"`
+	Version        byte            `json:"version"              gencodec:"required"`
+	Option         byte            `json:"option"               gencodec:"required"`
+	ChainID        common.Hash     `json:"chainid"              gencodec:"required"`
+	Number         *big.Int        `json:"number"               gencodec:"required"`
+	BaseTarget     *big.Int        `json:"basetarget"           gencodec:"required"`
+	Difficulty     *big.Int        `json:"difficulty"           gencodec:"required"`
+	GeSignature    common.Hash     `json:"generationsignature"  gencodec:"required"`
+	Coinbase       common.Address  `json:"tauminer"             gencodec:"required"`
+	IpfsCoinbase   common.IpfsAddress  `json:"ipfsminer"        gencodec:"required"`
+	Time           uint64          `json:"timestamp"            gencodec:"required"`
+	ParentHash     common.Hash     `json:"parentHash"           gencodec:"required"`
+	Root           common.Hash     `json:"stateRoot"            gencodec:"required"`
+	TxHash         common.Hash     `json:"transactionsRoot"     gencodec:"required"`
+	RelayMARoot    common.Hash     `json:"relaymultiaddress"    gencodec:"required"`
+	MixDigest      common.Hash     `json:"mixHash"`
+	Nonce          BlockNonce 
 }
 
 // field type overrides for gencodec
@@ -268,7 +275,6 @@ func (b *Block) Time() uint64         { return b.header.Time }
 
 func (b *Block) NumberU64() uint64        { return b.header.Number.Uint64() }
 func (b *Block) MixDigest() common.Hash   { return b.header.MixDigest }
-func (b *Block) Nonce() uint64            { return binary.BigEndian.Uint64(b.header.Nonce[:]) }
 func (b *Block) Coinbase() common.Address { return b.header.Coinbase }
 func (b *Block) Root() common.Hash        { return b.header.Root }
 func (b *Block) ParentHash() common.Hash  { return b.header.ParentHash }
