@@ -66,6 +66,7 @@ type plainKeyJSON struct {
 
 type encryptedKeyJSONV3 struct {
 	Address string     `json:"address"`
+	Tautype string     `json:"tautype"`
 	Crypto  CryptoJSON `json:"crypto"`
 	Id      string     `json:"id"`
 	Version int        `json:"version"`

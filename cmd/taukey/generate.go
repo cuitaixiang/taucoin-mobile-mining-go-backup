@@ -25,6 +25,7 @@ import (
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/accounts/keystore"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/cmd/utils"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/crypto"
 	"github.com/pborman/uuid"
 	"gopkg.in/urfave/cli.v1"
@@ -32,7 +33,7 @@ import (
 
 type outputGenerate struct {
 	Address      string
-	AddressEIP55 string
+	AddressHuman string
 }
 
 var commandGenerate = cli.Command{
@@ -106,12 +107,14 @@ If you want to encrypt an existing private key, it can be specified by setting
 
 		// Output some information.
 		out := outputGenerate{
-			Address: key.Address.Hex(),
+			Address:      key.Address.Hex(),
+			AddressHuman: common.ToBase58(key.Address),
 		}
 		if ctx.Bool(jsonFlag.Name) {
 			mustPrintJSON(out)
 		} else {
 			fmt.Println("Address:", out.Address)
+			fmt.Println("Tautype:", out.AddressHuman)
 		}
 		return nil
 	},
