@@ -72,6 +72,7 @@ func (db *Database) Get(key []byte) ([]byte, error) {
 
 // Put inserts the given value into the key-value store.
 func (db *Database) Put(key []byte, value []byte) error {
+	log.Info("In IPFS DB", "Key", string(key))
 	return db.idb.Put(key, value)
 }
 
@@ -118,6 +119,7 @@ func (b *batch) ValueSize() int {
 
 // Write flushes any accumulated data to disk.
 func (b *batch) Write() error {
+	log.Info("ctc debug batch write")
 	return b.db.Write(b.b)
 }
 

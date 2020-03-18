@@ -97,12 +97,14 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 		return nil, err
 	}
 
+	log.Info("Open Ipfs database")
 	ipfsDb, err2 := ctx.OpenIpfsDatabase()
 	if err2 != nil {
 		return nil, err2
 	}
 
-	chainConfig, genesisHash, genesisErr := core.SetupGenesisBlockWithOverride(chainDb, config.Genesis)
+	log.Info("Start set up genesis block", "genesis config", config.Genesis)
+	chainConfig, genesisHash, genesisErr := core.SetupGenesisBlockWithOverride(chainDb, ipfsDb, config.Genesis)
 	if _, ok := genesisErr.(*params.ConfigCompatError); genesisErr != nil && !ok {
 		return nil, genesisErr
 	}

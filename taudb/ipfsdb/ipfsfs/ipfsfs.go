@@ -4,6 +4,7 @@ import (
 	"bytes"
     "context"
 
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb/ipfsdb/ipfsfs/utils"
 
 	ipfs      "github.com/ipfs/go-ipfs/lib"
@@ -30,21 +31,21 @@ func (db *IPFSdb) Put(key, value []byte) error {
 	reader := bytes.NewReader(value)
 
 	opt := func(bs *caopts.BlockPutSettings) error {
-		bs.Codec = "0xa0"
+		bs.Codec = "0x90"
 		bs.MhType = mh.KECCAK_256
 		bs.MhLength = -1
 		bs.Pin = true
 		return nil
 	}
 
-	_, err:= db.api.Block().Put(db.ctx, reader, opt)
-
+	blockStat, err:= db.api.Block().Put(db.ctx, reader, opt)
+	log.Info("IPFS Put", "block cid", blockStat.Path())
 	return err
 }
 
 func (db *IPFSdb) Get(key []byte) ([]byte, error) {
 	// key -> path
-	path, err:= utils.Keccak256ToPath(0xa0, key)
+	path, err:= utils.Keccak256ToPath(0x90, key)
 	if err != nil {
 		return nil, err
 	}

@@ -683,6 +683,7 @@ func (db *Database) Commit(node common.Hash, report bool) error {
 	// outside code doesn't see an inconsistent state (referenced data removed from
 	// memory cache during commit but not yet in persistent storage). This is ensured
 	// by only uncaching existing data when the database write finalizes.
+	log.Info("ctc debug", "hash", node)
 	start := time.Now()
 	batch := db.diskdb.NewBatch()
 
@@ -700,9 +701,11 @@ func (db *Database) Commit(node common.Hash, report bool) error {
 			batch.Reset()
 		}
 	}
+	log.Info("ctc debug1")
 	// Since we're going to replay trie node writes into the clean cache, flush out
 	// any batched pre-images before continuing.
 	if err := batch.Write(); err != nil {
+		log.Info("ctc debug", "err", err)
 		return err
 	}
 	batch.Reset()
@@ -716,10 +719,13 @@ func (db *Database) Commit(node common.Hash, report bool) error {
 		return err
 	}
 	// Trie mostly committed to disk, flush any batch leftovers
+	log.Info("ctc debug2")
 	if err := batch.Write(); err != nil {
+		log.Info("Failed to write trie to disk", "err", err)
 		log.Error("Failed to write trie to disk", "err", err)
 		return err
 	}
+	log.Info("ctc debug3")
 	// Uncache any leftovers in the last batch
 	db.lock.Lock()
 	defer db.lock.Unlock()
@@ -752,6 +758,7 @@ func (db *Database) Commit(node common.Hash, report bool) error {
 // commit is the private locked version of Commit.
 func (db *Database) commit(hash common.Hash, batch taudb.Batch, uncacher *cleaner) error {
 	// If the node does not exist, it's a previously committed node
+	log.Info("ctc debug",  "chash", hash)
 	node, ok := db.dirties[hash]
 	if !ok {
 		return nil

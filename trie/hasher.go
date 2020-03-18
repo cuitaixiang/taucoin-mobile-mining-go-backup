@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
+	//"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rlp"
 	"golang.org/x/crypto/sha3"
 )
@@ -170,12 +171,6 @@ func (h *hasher) store(n node, db *Database, force bool) (node, error) {
 	if err := rlp.Encode(&h.tmp, n); err != nil {
 		panic("encode error: " + err.Error())
 	}
-
-	/* noneed in ipfs
-	if len(h.tmp) < 32 && !force {
-		return n, nil // Nodes smaller than 32 bytes are stored inside their parent
-	}
-	*/
 
 	// Larger nodes are replaced by their hash and stored in the database.
 	hash, _ := n.cache()
