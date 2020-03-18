@@ -61,11 +61,6 @@ func (api *PublicTauAPI) Coinbase() (common.Address, error) {
 	return api.Tauerbase()
 }
 
-// Hashrate returns the POW hashrate
-func (api *PublicTauAPI) Hashrate() hexutil.Uint64 {
-	return hexutil.Uint64(api.e.Miner().HashRate())
-}
-
 // ChainId is the EIP-155 replay-protection chain id for the current tau chain config.
 func (api *PublicTauAPI) ChainId() hexutil.Uint64 {
 	chainID := new(big.Int)
@@ -139,11 +134,6 @@ func (api *PrivateMinerAPI) SetTauerbase(tauerbase common.Address) bool {
 // SetRecommitInterval updates the interval for miner sealing work recommitting.
 func (api *PrivateMinerAPI) SetRecommitInterval(interval int) {
 	api.e.Miner().SetRecommitInterval(time.Duration(interval) * time.Millisecond)
-}
-
-// GetHashrate returns the current hashrate of the miner.
-func (api *PrivateMinerAPI) GetHashrate() uint64 {
-	return api.e.miner.HashRate()
 }
 
 // PrivateAdminAPI is the collection of Tau full node-related APIs

@@ -68,22 +68,22 @@ func (n *BlockNonce) UnmarshalText(input []byte) error {
 
 // Header represents a block header in the Tau blockchain.
 type Header struct {
-	Version        byte            `json:"version"              gencodec:"required"`
-	Option         byte            `json:"option"               gencodec:"required"`
-	ChainID        common.Hash     `json:"chainid"              gencodec:"required"`
-	Number         *big.Int        `json:"number"               gencodec:"required"`
-	BaseTarget     *big.Int        `json:"basetarget"           gencodec:"required"`
-	Difficulty     *big.Int        `json:"difficulty"           gencodec:"required"`
-	GeSignature    common.Hash     `json:"generationsignature"  gencodec:"required"`
-	Coinbase       common.Address  `json:"tauminer"             gencodec:"required"`
-	IpfsCoinbase   common.IpfsAddress  `json:"ipfsminer"        gencodec:"required"`
-	Time           uint64          `json:"timestamp"            gencodec:"required"`
-	ParentHash     common.Hash     `json:"parentHash"           gencodec:"required"`
-	Root           common.Hash     `json:"stateRoot"            gencodec:"required"`
-	TxHash         common.Hash     `json:"transactionsRoot"     gencodec:"required"`
-	RelayMARoot    common.Hash     `json:"relaymultiaddress"    gencodec:"required"`
-	MixDigest      common.Hash     `json:"mixHash"`
-	Nonce          BlockNonce 
+	Version      byte               `json:"version"              gencodec:"required"`
+	Option       byte               `json:"option"               gencodec:"required"`
+	ChainID      common.Hash        `json:"chainid"              gencodec:"required"`
+	Number       *big.Int           `json:"number"               gencodec:"required"`
+	BaseTarget   *big.Int           `json:"basetarget"           gencodec:"required"`
+	Difficulty   *big.Int           `json:"difficulty"           gencodec:"required"`
+	GeSignature  common.Hash        `json:"generationsignature"  gencodec:"required"`
+	Coinbase     common.Address     `json:"tauminer"             gencodec:"required"`
+	IpfsCoinbase common.IpfsAddress `json:"ipfsminer"        gencodec:"required"`
+	Time         uint64             `json:"timestamp"            gencodec:"required"`
+	ParentHash   common.Hash        `json:"parentHash"           gencodec:"required"`
+	Root         common.Hash        `json:"stateRoot"            gencodec:"required"`
+	TxHash       common.Hash        `json:"transactionsRoot"     gencodec:"required"`
+	RelayMARoot  common.Hash        `json:"relaymultiaddress"    gencodec:"required"`
+	MixDigest    common.Hash        `json:"mixHash"`
+	Nonce        BlockNonce
 }
 
 // field type overrides for gencodec
@@ -180,7 +180,6 @@ type extblock struct {
 type storageblock struct {
 	Header *Header
 	Txs    []*Transaction
-	Uncles []*Header
 	TD     *big.Int
 }
 

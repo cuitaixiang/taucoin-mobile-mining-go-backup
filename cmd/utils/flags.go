@@ -35,7 +35,6 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/accounts/keystore"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/common/fdlimit"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus/tauhash"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/crypto"
@@ -384,10 +383,6 @@ var (
 	TauStatsURLFlag = cli.StringFlag{
 		Name:  "taustats",
 		Usage: "Reporting URL of a taustats service (nodename:secret@host:port)",
-	}
-	FakePoWFlag = cli.BoolFlag{
-		Name:  "fakepow",
-		Usage: "Disables proof-of-work verification",
 	}
 	NoCompactionFlag = cli.BoolFlag{
 		Name:  "nocompaction",
@@ -1323,18 +1318,14 @@ func MakeChain(ctx *cli.Context, stack *node.Node) (chain *core.BlockChain, chai
 	if err != nil {
 		Fatalf("%v", err)
 	}
-	var engine consensus.Engine
-	engine = tauhash.NewFaker()
-	if !ctx.GlobalBool(FakePoWFlag.Name) {
-		engine = tauhash.New(tauhash.Config{
-			CacheDir:       stack.ResolvePath(tau.DefaultConfig.Tauash.CacheDir),
-			CachesInMem:    tau.DefaultConfig.Tauash.CachesInMem,
-			CachesOnDisk:   tau.DefaultConfig.Tauash.CachesOnDisk,
-			DatasetDir:     stack.ResolvePath(tau.DefaultConfig.Tauash.DatasetDir),
-			DatasetsInMem:  tau.DefaultConfig.Tauash.DatasetsInMem,
-			DatasetsOnDisk: tau.DefaultConfig.Tauash.DatasetsOnDisk,
-		}, nil, false)
-	}
+	engine := tauhash.New(tauhash.Config{
+		CacheDir:       stack.ResolvePath(tau.DefaultConfig.Tauash.CacheDir),
+		CachesInMem:    tau.DefaultConfig.Tauash.CachesInMem,
+		CachesOnDisk:   tau.DefaultConfig.Tauash.CachesOnDisk,
+		DatasetDir:     stack.ResolvePath(tau.DefaultConfig.Tauash.DatasetDir),
+		DatasetsInMem:  tau.DefaultConfig.Tauash.DatasetsInMem,
+		DatasetsOnDisk: tau.DefaultConfig.Tauash.DatasetsOnDisk,
+	}, nil, false)
 	if gcmode := ctx.GlobalString(GCModeFlag.Name); gcmode != "full" && gcmode != "archive" {
 		Fatalf("--%s must be either 'full' or 'archive'", GCModeFlag.Name)
 	}

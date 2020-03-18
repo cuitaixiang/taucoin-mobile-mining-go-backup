@@ -139,13 +139,6 @@ func (self *Miner) Mining() bool {
 	return self.worker.isRunning()
 }
 
-func (self *Miner) HashRate() uint64 {
-	if pow, ok := self.engine.(consensus.PoW); ok {
-		return uint64(pow.Hashrate())
-	}
-	return 0
-}
-
 // SetRecommitInterval sets the interval for sealing work resubmitting.
 func (self *Miner) SetRecommitInterval(interval time.Duration) {
 	self.worker.setRecommitInterval(interval)

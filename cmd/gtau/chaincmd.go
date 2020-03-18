@@ -33,9 +33,9 @@ import (
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/rawdb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/state"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/event"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/tau/downloader"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -132,7 +132,6 @@ The export-preimages command export hash preimages to an RLP encoded stream`,
 			utils.DataDirFlag,
 			utils.CacheFlag,
 			utils.SyncModeFlag,
-			utils.FakePoWFlag,
 			utils.TestnetFlag,
 			utils.RinkebyFlag,
 		},
@@ -358,7 +357,7 @@ func importPreimages(ctx *cli.Context) error {
 	stack := makeFullNode(ctx)
 	defer stack.Close()
 
-	db, _:= utils.MakeChainDatabase(ctx, stack)
+	db, _ := utils.MakeChainDatabase(ctx, stack)
 	start := time.Now()
 
 	if err := utils.ImportPreimages(db, ctx.Args().First()); err != nil {
@@ -376,7 +375,7 @@ func exportPreimages(ctx *cli.Context) error {
 	stack := makeFullNode(ctx)
 	defer stack.Close()
 
-	db, _:= utils.MakeChainDatabase(ctx, stack)
+	db, _ := utils.MakeChainDatabase(ctx, stack)
 	start := time.Now()
 
 	if err := utils.ExportPreimages(db, ctx.Args().First()); err != nil {

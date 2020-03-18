@@ -642,13 +642,11 @@ func (s *Service) reportStats(conn *websocket.Conn) error {
 	// Gather the syncing and mining infos from the local miner instance
 	var (
 		mining   bool
-		hashrate int
 		syncing  bool
 		gasprice int
 	)
 	if s.tau != nil {
 		mining = s.tau.Miner().Mining()
-		hashrate = int(s.tau.Miner().HashRate())
 
 		sync := s.tau.Downloader().Progress()
 		syncing = s.tau.BlockChain().CurrentHeader().Number.Uint64() >= sync.HighestBlock
@@ -664,7 +662,6 @@ func (s *Service) reportStats(conn *websocket.Conn) error {
 		"stats": &nodeStats{
 			Active:   true,
 			Mining:   mining,
-			Hashrate: hashrate,
 			Peers:    s.server.PeerCount(),
 			GasPrice: gasprice,
 			Syncing:  syncing,

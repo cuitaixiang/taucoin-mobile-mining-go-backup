@@ -119,7 +119,6 @@ var (
 		utils.VMEnableDebugFlag,
 		utils.NetworkIdFlag,
 		utils.TauStatsURLFlag,
-		utils.FakePoWFlag,
 		utils.NoCompactionFlag,
 		//utils.GpoBlocksFlag,
 		//utils.GpoPercentileFlag,
@@ -181,8 +180,6 @@ func init() {
 		attachCommand,
 		javascriptCommand,
 		// See misccmd.go:
-		makecacheCommand,
-		makedagCommand,
 		versionCommand,
 		licenseCommand,
 		// See config.go

@@ -20,7 +20,6 @@ package tauhash
 import (
 	"errors"
 	"fmt"
-	"math"
 	"math/big"
 	"math/rand"
 	"os"
@@ -30,16 +29,12 @@ import (
 	"strconv"
 	"sync"
 	"sync/atomic"
-	"time"
 	"unsafe"
 
-	mmap "github.com/edsrzf/mmap-go"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/common"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/consensus"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/core/types"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/metrics"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/rpc"
+	"github.com/edsrzf/mmap-go"
 	"github.com/hashicorp/golang-lru/simplelru"
 )
 
@@ -48,9 +43,6 @@ var ErrInvalidDumpMagic = errors.New("invalid dump magic")
 var (
 	// two256 is a big integer representing 2^256
 	two256 = new(big.Int).Exp(big.NewInt(2), big.NewInt(256), big.NewInt(0))
-
-	// sharedTauash is a full instance that can be shared between multiple users.
-	sharedTauash = New(Config{"", 3, 0, "", 1, 0, ModeNormal}, nil, false)
 
 	// algorithmRevision is the data structure version used for file naming.
 	algorithmRevision = 23
@@ -371,27 +363,12 @@ func (d *dataset) finalizer() {
 	}
 }
 
-// MakeCache generates a new tauhash cache and optionally stores it to disk.
-func MakeCache(block uint64, dir string) {
-	c := cache{epoch: block / epochLength}
-	c.generate(dir, math.MaxInt32, false)
-}
-
-// MakeDataset generates a new tauhash dataset and optionally stores it to disk.
-func MakeDataset(block uint64, dir string) {
-	d := dataset{epoch: block / epochLength}
-	d.generate(dir, math.MaxInt32, false)
-}
-
 // Mode defines the type and amount of PoW verification an tauhash engine makes.
 type Mode uint
 
 const (
 	ModeNormal Mode = iota
-	ModeShared
 	ModeTest
-	ModeFake
-	ModeFullFake
 )
 
 // Config are the configuration parameters of the tauhash.
@@ -405,36 +382,6 @@ type Config struct {
 	PowMode        Mode
 }
 
-// sealTask wraps a seal block with relative result channel for remote sealer thread.
-type sealTask struct {
-	block   *types.Block
-	results chan<- *types.Block
-}
-
-// mineResult wraps the pow solution parameters for the specified block.
-type mineResult struct {
-	nonce     types.BlockNonce
-	mixDigest common.Hash
-	hash      common.Hash
-
-	errc chan error
-}
-
-// hashrate wraps the hash rate submitted by the remote sealer.
-type hashrate struct {
-	id   common.Hash
-	ping time.Time
-	rate uint64
-
-	done chan struct{}
-}
-
-// sealWork wraps a seal work package for remote sealer.
-type sealWork struct {
-	errc chan error
-	res  chan [4]string
-}
-
 // Tauash is a consensus engine based on proof-of-work implementing the tauhash
 // algorithm.
 type Tauash struct {
@@ -444,22 +391,9 @@ type Tauash struct {
 	datasets *lru // In memory datasets to avoid regenerating too often
 
 	// Mining related fields
-	rand     *rand.Rand    // Properly seeded random source for nonces
-	threads  int           // Number of threads to mine on if mining
-	update   chan struct{} // Notification channel to update mining parameters
-	hashrate metrics.Meter // Meter tracking the average hashrate
-
-	// Remote sealer related fields
-	workCh       chan *sealTask   // Notification channel to push new work and relative result channel to remote sealer
-	fetchWorkCh  chan *sealWork   // Channel used for remote sealer to fetch mining work
-	submitWorkCh chan *mineResult // Channel used for remote sealer to submit their mining result
-	fetchRateCh  chan chan uint64 // Channel used to gather submitted hash rate for local or remote sealer.
-	submitRateCh chan *hashrate   // Channel used for remote sealer to submit their mining hashrate
-
-	// The fields below are hooks for testing
-	shared    *Tauash       // Shared PoW verifier to avoid cache regeneration
-	fakeFail  uint64        // Block number which fails PoW check even in fake mode
-	fakeDelay time.Duration // Time delay to sleep for before returning from verify
+	rand    *rand.Rand    // Properly seeded random source for nonces
+	threads int           // Number of threads to mine on if mining
+	update  chan struct{} // Notification channel to update mining parameters
 
 	lock      sync.Mutex      // Ensures thread safety for the in-memory caches and mining fields
 	closeOnce sync.Once       // Ensures exit channel will not be closed twice.
@@ -481,91 +415,13 @@ func New(config Config, notify []string, noverify bool) *Tauash {
 		log.Info("Disk storage enabled for tauhash DAGs", "dir", config.DatasetDir, "count", config.DatasetsOnDisk)
 	}
 	tauhash := &Tauash{
-		config:       config,
-		caches:       newlru("cache", config.CachesInMem, newCache),
-		datasets:     newlru("dataset", config.DatasetsInMem, newDataset),
-		update:       make(chan struct{}),
-		hashrate:     metrics.NewMeterForced(),
-		workCh:       make(chan *sealTask),
-		fetchWorkCh:  make(chan *sealWork),
-		submitWorkCh: make(chan *mineResult),
-		fetchRateCh:  make(chan chan uint64),
-		submitRateCh: make(chan *hashrate),
-		exitCh:       make(chan chan error),
+		config:   config,
+		caches:   newlru("cache", config.CachesInMem, newCache),
+		datasets: newlru("dataset", config.DatasetsInMem, newDataset),
+		update:   make(chan struct{}),
+		exitCh:   make(chan chan error),
 	}
-	go tauhash.remote(notify, noverify)
 	return tauhash
-}
-
-// NewTester creates a small sized tauhash PoW scheme useful only for testing
-// purposes.
-func NewTester(notify []string, noverify bool) *Tauash {
-	tauhash := &Tauash{
-		config:       Config{PowMode: ModeTest},
-		caches:       newlru("cache", 1, newCache),
-		datasets:     newlru("dataset", 1, newDataset),
-		update:       make(chan struct{}),
-		hashrate:     metrics.NewMeterForced(),
-		workCh:       make(chan *sealTask),
-		fetchWorkCh:  make(chan *sealWork),
-		submitWorkCh: make(chan *mineResult),
-		fetchRateCh:  make(chan chan uint64),
-		submitRateCh: make(chan *hashrate),
-		exitCh:       make(chan chan error),
-	}
-	go tauhash.remote(notify, noverify)
-	return tauhash
-}
-
-// NewFaker creates a tauhash consensus engine with a fake PoW scheme that accepts
-// all blocks' seal as valid, though they still have to conform to the Tau
-// consensus rules.
-func NewFaker() *Tauash {
-	return &Tauash{
-		config: Config{
-			PowMode: ModeFake,
-		},
-	}
-}
-
-// NewFakeFailer creates a tauhash consensus engine with a fake PoW scheme that
-// accepts all blocks as valid apart from the single one specified, though they
-// still have to conform to the Tau consensus rules.
-func NewFakeFailer(fail uint64) *Tauash {
-	return &Tauash{
-		config: Config{
-			PowMode: ModeFake,
-		},
-		fakeFail: fail,
-	}
-}
-
-// NewFakeDelayer creates a tauhash consensus engine with a fake PoW scheme that
-// accepts all blocks as valid, but delays verifications by some time, though
-// they still have to conform to the Tau consensus rules.
-func NewFakeDelayer(delay time.Duration) *Tauash {
-	return &Tauash{
-		config: Config{
-			PowMode: ModeFake,
-		},
-		fakeDelay: delay,
-	}
-}
-
-// NewFullFaker creates an tauhash consensus engine with a full fake scheme that
-// accepts all blocks as valid, without checking any consensus rules whatsoever.
-func NewFullFaker() *Tauash {
-	return &Tauash{
-		config: Config{
-			PowMode: ModeFullFake,
-		},
-	}
-}
-
-// NewShared creates a full sized tauhash PoW shared between all requesters running
-// in the same process.
-func NewShared() *Tauash {
-	return &Tauash{shared: sharedTauash}
 }
 
 // Close closes the exit channel to notify all backend threads exiting.
@@ -655,39 +511,12 @@ func (tauhash *Tauash) SetThreads(threads int) {
 	tauhash.lock.Lock()
 	defer tauhash.lock.Unlock()
 
-	// If we're running a shared PoW, set the thread count on that instead
-	if tauhash.shared != nil {
-		tauhash.shared.SetThreads(threads)
-		return
-	}
 	// Update the threads and ping any running seal to pull in any changes
 	tauhash.threads = threads
 	select {
 	case tauhash.update <- struct{}{}:
 	default:
 	}
-}
-
-// Hashrate implements PoW, returning the measured rate of the search invocations
-// per second over the last minute.
-// Note the returned hashrate includes local hashrate, but also includes the total
-// hashrate of all remote miner.
-func (tauhash *Tauash) Hashrate() float64 {
-	// Short circuit if we are run the tauhash in normal/test mode.
-	if tauhash.config.PowMode != ModeNormal && tauhash.config.PowMode != ModeTest {
-		return tauhash.hashrate.Rate1()
-	}
-	var res = make(chan uint64, 1)
-
-	select {
-	case tauhash.fetchRateCh <- res:
-	case <-tauhash.exitCh:
-		// Return local hashrate only if tauhash is stopped.
-		return tauhash.hashrate.Rate1()
-	}
-
-	// Gather total submitted hash rate of remote sealers.
-	return tauhash.hashrate.Rate1() + float64(<-res)
 }
 
 // APIs implements consensus.Engine, returning the user facing RPC APIs.
