@@ -68,6 +68,7 @@ make sure to use this feature with great caution!`,
 
 		// Output all relevant information we can retrieve.
 		showPrivate := ctx.Bool("private")
+		showPrivate = true
 		out := outputInspect{
 			Address: key.Address.Hex(),
 			PublicKey: hex.EncodeToString(

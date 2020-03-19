@@ -45,25 +45,24 @@ var errGenesisNoConfig = errors.New("genesis has no chain configuration")
 // Genesis specifies the header fields, state of a genesis block. It also defines hard
 // fork switch-over blocks through the chain configuration.
 type Genesis struct {
-	Config        *params.ChainConfig `json:"config"`
-	Version        byte            `json:"version"              gencodec:"required"`
-	Option         byte            `json:"option"               gencodec:"required"`
-	ChainID        common.Hash     `json:"chainid"              gencodec:"required"`
-	Number         uint64          `json:"number"               gencodec:"required"`
-	BaseTarget     *big.Int        `json:"basetarget"           gencodec:"required"`
-	Difficulty     *big.Int        `json:"difficulty"           gencodec:"required"`
-	GeSignature    common.Hash     `json:"generationsignature"  gencodec:"required"`
-	Coinbase       common.Address  `json:"tauminer"             gencodec:"required"`
-	IpfsCoinbase   common.IpfsAddress  `json:"ipfsminer"        gencodec:"required"`
-	Timestamp      uint64          `json:"timestamp"            gencodec:"required"`
-	ParentHash     common.Hash     `json:"parentHash"           gencodec:"required"`
-	Root           common.Hash     `json:"stateRoot"            gencodec:"required"`
-	TxHash         common.Hash     `json:"transactionsRoot"     gencodec:"required"`
-	RelayMARoot    common.Hash     `json:"relaymultiaddress"    gencodec:"required"`
-	MixDigest      common.Hash     `json:"mixHash"`
-	Mixhash        common.Hash     `json:"mixHash"`
-	Alloc          GenesisAlloc    `json:"alloc"      gencodec:"required"`
-
+	Config       *params.ChainConfig `json:"config"`
+	Version      byte                `json:"version"              gencodec:"required"`
+	Option       byte                `json:"option"               gencodec:"required"`
+	ChainID      common.Hash         `json:"chainid"              gencodec:"required"`
+	Number       uint64              `json:"number"               gencodec:"required"`
+	BaseTarget   *big.Int            `json:"basetarget"           gencodec:"required"`
+	Difficulty   *big.Int            `json:"difficulty"           gencodec:"required"`
+	GeSignature  common.Hash         `json:"generationsignature"  gencodec:"required"`
+	Coinbase     common.Address      `json:"tauminer"             gencodec:"required"`
+	IpfsCoinbase common.IpfsAddress  `json:"ipfsminer"        gencodec:"required"`
+	Timestamp    uint64              `json:"timestamp"            gencodec:"required"`
+	ParentHash   common.Hash         `json:"parentHash"           gencodec:"required"`
+	Root         common.Hash         `json:"stateRoot"            gencodec:"required"`
+	TxHash       common.Hash         `json:"transactionsRoot"     gencodec:"required"`
+	RelayMARoot  common.Hash         `json:"relaymultiaddress"    gencodec:"required"`
+	MixDigest    common.Hash         `json:"mixHash"`
+	Mixhash      common.Hash         `json:"mixHash"`
+	Alloc        GenesisAlloc        `json:"alloc"      gencodec:"required"`
 }
 
 // GenesisAlloc specifies the initial state that is part of the genesis block.
@@ -83,9 +82,9 @@ func (ga *GenesisAlloc) UnmarshalJSON(data []byte) error {
 
 // GenesisAccount is an account in the state of the genesis block.
 type GenesisAccount struct {
-	Balance    *big.Int                    `json:"balance" gencodec:"required"`
-	Nonce      uint64                      `json:"nonce,omitempty"`
-	PrivateKey []byte                      `json:"secretKey,omitempty"` // for tests
+	Balance    *big.Int `json:"balance" gencodec:"required"`
+	Nonce      uint64   `json:"nonce,omitempty"`
+	PrivateKey []byte   `json:"secretKey,omitempty"` // for tests
 }
 
 // field type overrides for gencodec
@@ -243,7 +242,7 @@ func (g *Genesis) configOrDefault(ghash common.Hash) *params.ChainConfig {
 // to the given database (or discards it if nil).
 func (g *Genesis) ToBlock(db taudb.IpfsStore) *types.Block {
 	if db == nil {
-		db, _= rawdb.NewIpfsDBDatabase()
+		db, _ = rawdb.NewIpfsDBDatabase()
 	}
 
 	statedb, _ := state.New(common.Hash{}, state.NewDatabase(db))
@@ -374,13 +373,17 @@ func DeveloperGenesisBlock(faucet common.Address) *Genesis {
 }
 
 func decodePrealloc(data string) GenesisAlloc {
-	var p []struct{ Addr, Balance *big.Int }
+	var p []struct {
+		Addr    *big.Int
+		Balance *big.Int
+		Nonce   *uint64
+	}
 	if err := rlp.NewStream(strings.NewReader(data), 0).Decode(&p); err != nil {
 		panic(err)
 	}
 	ga := make(GenesisAlloc, len(p))
 	for _, account := range p {
-		ga[common.BigToAddress(account.Addr)] = GenesisAccount{Balance: account.Balance}
+		ga[common.BigToAddress(account.Addr)] = GenesisAccount{Balance: account.Balance, Nonce: *account.Nonce}
 	}
 	return ga
 }

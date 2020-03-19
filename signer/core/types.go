@@ -67,11 +67,12 @@ func (v *ValidationMessages) getWarnings() error {
 
 // SendTxArgs represents the arguments to submit a transaction
 type SendTxArgs struct {
-	From     common.MixedcaseAddress  `json:"from"`
-	To       *common.MixedcaseAddress `json:"to"`
-	Fee      hexutil.Big              `json:"fee"`
-	Value    hexutil.Big              `json:"value"`
-	Nonce    hexutil.Uint64           `json:"nonce"`
+	TxType int                      `json:"txtype"`
+	From   common.MixedcaseAddress  `json:"from"`
+	To     *common.MixedcaseAddress `json:"to"`
+	Fee    hexutil.Big              `json:"fee"`
+	Value  hexutil.Big              `json:"value"`
+	Nonce  hexutil.Uint64           `json:"nonce"`
 }
 
 func (args SendTxArgs) String() string {
