@@ -22,17 +22,17 @@ package ipfsdb
 import (
 	"context"
 
-	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
 	"github.com/Tau-Coin/taucoin-mobile-mining-go/log"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb"
+	"github.com/Tau-Coin/taucoin-mobile-mining-go/taudb/ipfsdb/ipfsfs"
 
-	"github.com/Tau-Coin/taucoin-go-p2p/taudb"
 )
 
 // Database is a persistent key-value store. Apart from basic data storage
 // functionality it also supports batch writes and iterating over the keyspace in
 // binary-alphabetical order.
 type Database struct {
-	idb *ipfsdb.IPFSdb // LevelDB instance
+	idb *ipfsfs.IPFSdb // IPFSDB instance
 
 	log log.Logger // Contextual logger tracking the database path
 }
@@ -45,15 +45,15 @@ func New() (*Database, error) {
 	var ctx context.Context
 
 	// Open the idb and recover any potential corruptions
-	ipfsdb := ipfsdb.NewIPFSdb(ctx)
+	idbTmp := ipfsfs.NewIPFSdb(ctx)
 
 	// Assemble the wrapper with all the registered metrics
-	idb := &Database{
-		idb:       ipfsdb,
+	db := &Database{
+		idb:      idbTmp,
 		log:      logger,
 	}
 
-	return idb, nil
+	return db, nil
 }
 
 // Has retrieves if a key is present in the key-value store.
@@ -86,15 +86,15 @@ func (db *Database) Delete(key []byte) error {
 func (db *Database) NewBatch() taudb.Batch {
 	return &batch{
 		db: db.idb,
-		b:  new(ipfsdb.Batch),
+		b:  new(ipfsfs.Batch),
 	}
 }
 
 // batch is a write-only leveldb batch that commits changes to its host database
 // when Write is called. A batch cannot be used concurrently.
 type batch struct {
-	db   *ipfsdb.IPFSdb
-	b    *ipfsdb.Batch
+	db   *ipfsfs.IPFSdb
+	b    *ipfsfs.Batch
 	size int
 }
 
@@ -119,7 +119,7 @@ func (b *batch) ValueSize() int {
 
 // Write flushes any accumulated data to disk.
 func (b *batch) Write() error {
-	log.Info("ctc debug batch write")
+	//log.Info("ctc debug batch write")
 	return b.db.Write(b.b)
 }
 
