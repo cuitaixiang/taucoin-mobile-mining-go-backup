@@ -39,7 +39,7 @@ func (db *IPFSdb) Put(key, value []byte) error {
 	}
 
 	blockStat, err:= db.api.Block().Put(db.ctx, reader, opt)
-	//log.Info("IPFS Put", "block cid", blockStat.Path())
+	log.Info("IPFS Put", "block cid", blockStat.Path())
 	return err
 }
 
