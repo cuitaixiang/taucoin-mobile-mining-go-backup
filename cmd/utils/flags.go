@@ -362,10 +362,6 @@ var (
 		Usage: "External signer (url or path to ipc file)",
 		Value: "",
 	}
-	VMEnableDebugFlag = cli.BoolFlag{
-		Name:  "vmdebug",
-		Usage: "Record information useful for VM and contract debugging",
-	}
 	InsecureUnlockAllowedFlag = cli.BoolFlag{
 		Name:  "allow-insecure-unlock",
 		Usage: "Allow insecure account unlocking when account-related RPCs are exposed by http",
@@ -555,17 +551,6 @@ var (
 		Name:  "metrics.influxdb.tags",
 		Usage: "Comma-separated InfluxDB tags (key/values) attached to all measurements",
 		Value: "host=localhost",
-	}
-
-	EWASMInterpreterFlag = cli.StringFlag{
-		Name:  "vm.ewasm",
-		Usage: "External ewasm configuration (default = built-in interpreter)",
-		Value: "",
-	}
-	EVMInterpreterFlag = cli.StringFlag{
-		Name:  "vm.evm",
-		Usage: "External EVM configuration (default = built-in interpreter)",
-		Value: "",
 	}
 )
 
@@ -1132,18 +1117,6 @@ func SetTauConfig(ctx *cli.Context, stack *node.Node, cfg *tau.Config) {
 	}
 	if ctx.GlobalIsSet(DocRootFlag.Name) {
 		cfg.DocRoot = ctx.GlobalString(DocRootFlag.Name)
-	}
-	if ctx.GlobalIsSet(VMEnableDebugFlag.Name) {
-		// TODO(fjl): force-enable this in --dev mode
-		cfg.EnablePreimageRecording = ctx.GlobalBool(VMEnableDebugFlag.Name)
-	}
-
-	if ctx.GlobalIsSet(EWASMInterpreterFlag.Name) {
-		cfg.EWASMInterpreter = ctx.GlobalString(EWASMInterpreterFlag.Name)
-	}
-
-	if ctx.GlobalIsSet(EVMInterpreterFlag.Name) {
-		cfg.EVMInterpreter = ctx.GlobalString(EVMInterpreterFlag.Name)
 	}
 }
 

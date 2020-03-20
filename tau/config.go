@@ -111,17 +111,8 @@ type Config struct {
 	// Transaction pool options
 	TxPool core.TxPoolConfig
 
-	// Enables tracking of SHA3 preimages in the VM
-	EnablePreimageRecording bool
-
 	// Miscellaneous options
 	DocRoot string `toml:"-"`
-
-	// Type of the EWASM interpreter ("" for default)
-	EWASMInterpreter string
-
-	// Type of the EVM interpreter ("" for default)
-	EVMInterpreter string
 
 	// Checkpoint is a hardcoded checkpoint which can be nil.
 	Checkpoint *params.TrustedCheckpoint `toml:",omitempty"`

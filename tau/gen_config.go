@@ -16,26 +16,23 @@ import (
 // MarshalTOML marshals as TOML.
 func (c Config) MarshalTOML() (interface{}, error) {
 	type Config struct {
-		Genesis                 *core.Genesis `toml:",omitempty"`
-		NetworkId               uint64
-		SyncMode                downloader.SyncMode
-		NoPruning               bool
-		NoPrefetch              bool
-		Whitelist               map[uint64]common.Hash `toml:"-"`
-		DatabaseHandles         int                    `toml:"-"`
-		DatabaseCache           int
-		DatabaseFreezer         string
-		TrieCleanCache          int
-		TrieDirtyCache          int
-		TrieTimeout             time.Duration
-		Miner                   miner.Config
-		Tauash                  tauhash.Config
-		TxPool                  core.TxPoolConfig
-		EnablePreimageRecording bool
-		DocRoot                 string `toml:"-"`
-		EWASMInterpreter        string
-		EVMInterpreter          string
-		Checkpoint              *params.TrustedCheckpoint `toml:",omitempty"`
+		Genesis         *core.Genesis `toml:",omitempty"`
+		NetworkId       uint64
+		SyncMode        downloader.SyncMode
+		NoPruning       bool
+		NoPrefetch      bool
+		Whitelist       map[uint64]common.Hash `toml:"-"`
+		DatabaseHandles int                    `toml:"-"`
+		DatabaseCache   int
+		DatabaseFreezer string
+		TrieCleanCache  int
+		TrieDirtyCache  int
+		TrieTimeout     time.Duration
+		Miner           miner.Config
+		Tauash          tauhash.Config
+		TxPool          core.TxPoolConfig
+		DocRoot         string                    `toml:"-"`
+		Checkpoint      *params.TrustedCheckpoint `toml:",omitempty"`
 	}
 	var enc Config
 	enc.Genesis = c.Genesis
@@ -53,10 +50,7 @@ func (c Config) MarshalTOML() (interface{}, error) {
 	enc.Miner = c.Miner
 	enc.Tauash = c.Tauash
 	enc.TxPool = c.TxPool
-	enc.EnablePreimageRecording = c.EnablePreimageRecording
 	enc.DocRoot = c.DocRoot
-	enc.EWASMInterpreter = c.EWASMInterpreter
-	enc.EVMInterpreter = c.EVMInterpreter
 	enc.Checkpoint = c.Checkpoint
 	return &enc, nil
 }
@@ -64,26 +58,23 @@ func (c Config) MarshalTOML() (interface{}, error) {
 // UnmarshalTOML unmarshals from TOML.
 func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	type Config struct {
-		Genesis                 *core.Genesis `toml:",omitempty"`
-		NetworkId               *uint64
-		SyncMode                *downloader.SyncMode
-		NoPruning               *bool
-		NoPrefetch              *bool
-		Whitelist               map[uint64]common.Hash `toml:"-"`
-		DatabaseHandles         *int                   `toml:"-"`
-		DatabaseCache           *int
-		DatabaseFreezer         *string
-		TrieCleanCache          *int
-		TrieDirtyCache          *int
-		TrieTimeout             *time.Duration
-		Miner                   *miner.Config
-		Tauash                  *tauhash.Config
-		TxPool                  *core.TxPoolConfig
-		EnablePreimageRecording *bool
-		DocRoot                 *string `toml:"-"`
-		EWASMInterpreter        *string
-		EVMInterpreter          *string
-		Checkpoint              *params.TrustedCheckpoint `toml:",omitempty"`
+		Genesis         *core.Genesis `toml:",omitempty"`
+		NetworkId       *uint64
+		SyncMode        *downloader.SyncMode
+		NoPruning       *bool
+		NoPrefetch      *bool
+		Whitelist       map[uint64]common.Hash `toml:"-"`
+		DatabaseHandles *int                   `toml:"-"`
+		DatabaseCache   *int
+		DatabaseFreezer *string
+		TrieCleanCache  *int
+		TrieDirtyCache  *int
+		TrieTimeout     *time.Duration
+		Miner           *miner.Config
+		Tauash          *tauhash.Config
+		TxPool          *core.TxPoolConfig
+		DocRoot         *string                   `toml:"-"`
+		Checkpoint      *params.TrustedCheckpoint `toml:",omitempty"`
 	}
 	var dec Config
 	if err := unmarshal(&dec); err != nil {
@@ -134,17 +125,8 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	if dec.TxPool != nil {
 		c.TxPool = *dec.TxPool
 	}
-	if dec.EnablePreimageRecording != nil {
-		c.EnablePreimageRecording = *dec.EnablePreimageRecording
-	}
 	if dec.DocRoot != nil {
 		c.DocRoot = *dec.DocRoot
-	}
-	if dec.EWASMInterpreter != nil {
-		c.EWASMInterpreter = *dec.EWASMInterpreter
-	}
-	if dec.EVMInterpreter != nil {
-		c.EVMInterpreter = *dec.EVMInterpreter
 	}
 	if dec.Checkpoint != nil {
 		c.Checkpoint = dec.Checkpoint

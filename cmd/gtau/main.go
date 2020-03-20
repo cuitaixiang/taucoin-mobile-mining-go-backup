@@ -114,14 +114,11 @@ var (
 		utils.TestnetFlag,
 		utils.RinkebyFlag,
 		utils.GoerliFlag,
-		utils.VMEnableDebugFlag,
 		utils.NetworkIdFlag,
 		utils.TauStatsURLFlag,
 		utils.NoCompactionFlag,
 		//utils.GpoBlocksFlag,
 		//utils.GpoPercentileFlag,
-		utils.EWASMInterpreterFlag,
-		utils.EVMInterpreterFlag,
 		configFileFlag,
 	}
 

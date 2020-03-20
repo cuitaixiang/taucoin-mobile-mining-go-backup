@@ -207,14 +207,6 @@ var AppHelpFlagGroups = []flagGroup{
 	},
 	*/
 	{
-		Name: "VIRTUAL MACHINE",
-		Flags: []cli.Flag{
-			utils.VMEnableDebugFlag,
-			utils.EVMInterpreterFlag,
-			utils.EWASMInterpreterFlag,
-		},
-	},
-	{
 		Name: "LOGGING AND DEBUGGING",
 		Flags: append([]cli.Flag{
 			utils.NoCompactionFlag,
