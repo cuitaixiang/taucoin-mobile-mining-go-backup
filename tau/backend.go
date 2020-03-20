@@ -116,7 +116,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 		ipfsDb:         ipfsDb,
 		eventMux:       ctx.EventMux,
 		accountManager: ctx.AccountManager,
-		engine:         CreateConsensusEngine(ctx, chainConfig, &config.Tauash, config.Miner.Notify, config.Miner.Noverify),
+		engine:         CreateConsensusEngine(ctx, chainConfig, &config.Tauash),
 		shutdownChan:   make(chan bool),
 		networkID:      config.NetworkId,
 		feeFloor:       config.Miner.FeeFloor,
@@ -175,7 +175,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Tau, error) {
 }
 
 // CreateConsensusEngine creates the required type of consensus engine instance for an Tau service
-func CreateConsensusEngine(ctx *node.ServiceContext, chainConfig *params.ChainConfig, config *tauhash.Config, notify []string, noverify bool) consensus.Engine {
+func CreateConsensusEngine(ctx *node.ServiceContext, chainConfig *params.ChainConfig, config *tauhash.Config) consensus.Engine {
 	engine := tauhash.New(tauhash.Config{
 		CacheDir:       ctx.ResolvePath(config.CacheDir),
 		CachesInMem:    config.CachesInMem,
@@ -183,7 +183,7 @@ func CreateConsensusEngine(ctx *node.ServiceContext, chainConfig *params.ChainCo
 		DatasetDir:     config.DatasetDir,
 		DatasetsInMem:  config.DatasetsInMem,
 		DatasetsOnDisk: config.DatasetsOnDisk,
-	}, notify, noverify)
+	})
 	engine.SetThreads(-1) // Disable CPU mining
 	return engine
 }

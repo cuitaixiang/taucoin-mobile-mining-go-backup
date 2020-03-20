@@ -331,10 +331,6 @@ var (
 		Usage: "Number of CPU threads to use for mining",
 		Value: 0,
 	}
-	MinerNotifyFlag = cli.StringFlag{
-		Name:  "miner.notify",
-		Usage: "Comma separated HTTP URL list to notify of new work packages",
-	}
 	MinerFeeFloorFlag = BigFlag{
 		Name:  "miner.feefloor",
 		Usage: "Minimum fee for mining a transaction",
@@ -349,10 +345,6 @@ var (
 		Name:  "miner.recommit",
 		Usage: "Time interval to recreate the block being mined",
 		Value: tau.DefaultConfig.Miner.Recommit,
-	}
-	MinerNoVerfiyFlag = cli.BoolFlag{
-		Name:  "miner.noverify",
-		Usage: "Disable remote sealing verification",
 	}
 	// Account settings
 	UnlockedAccountFlag = cli.StringFlag{
@@ -1023,17 +1015,11 @@ func setTauash(ctx *cli.Context, cfg *tau.Config) {
 }
 
 func setMiner(ctx *cli.Context, cfg *miner.Config) {
-	if ctx.GlobalIsSet(MinerNotifyFlag.Name) {
-		cfg.Notify = strings.Split(ctx.GlobalString(MinerNotifyFlag.Name), ",")
-	}
 	if ctx.GlobalIsSet(MinerFeeFloorFlag.Name) {
 		cfg.FeeFloor = GlobalBig(ctx, MinerFeeFloorFlag.Name)
 	}
 	if ctx.GlobalIsSet(MinerRecommitIntervalFlag.Name) {
 		cfg.Recommit = ctx.Duration(MinerRecommitIntervalFlag.Name)
-	}
-	if ctx.GlobalIsSet(MinerNoVerfiyFlag.Name) {
-		cfg.Noverify = ctx.Bool(MinerNoVerfiyFlag.Name)
 	}
 }
 
@@ -1279,7 +1265,7 @@ func MakeChain(ctx *cli.Context, stack *node.Node) (chain *core.BlockChain, chai
 		DatasetDir:     stack.ResolvePath(tau.DefaultConfig.Tauash.DatasetDir),
 		DatasetsInMem:  tau.DefaultConfig.Tauash.DatasetsInMem,
 		DatasetsOnDisk: tau.DefaultConfig.Tauash.DatasetsOnDisk,
-	}, nil, false)
+	})
 	if gcmode := ctx.GlobalString(GCModeFlag.Name); gcmode != "full" && gcmode != "archive" {
 		Fatalf("--%s must be either 'full' or 'archive'", GCModeFlag.Name)
 	}

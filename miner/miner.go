@@ -42,10 +42,8 @@ type Backend interface {
 // Config is the configuration parameters of mining.
 type Config struct {
 	Tauerbase common.Address `toml:",omitempty"` // Public address for block mining rewards (default = first account)
-	Notify    []string       `toml:",omitempty"` // HTTP URL list to be notified of new work packages(only useful in tauhash).
 	FeeFloor  *big.Int       // Minimum gas price for mining a transaction
 	Recommit  time.Duration  // The time interval for miner to re-create mining work.
-	Noverify  bool           // Disable remote mining solution verification(only useful in tauhash).
 }
 
 // Miner creates blocks and searches for proof-of-work values.

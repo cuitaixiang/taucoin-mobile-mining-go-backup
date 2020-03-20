@@ -192,11 +192,9 @@ var AppHelpFlagGroups = []flagGroup{
 		Flags: []cli.Flag{
 			utils.MiningEnabledFlag,
 			utils.MinerThreadsFlag,
-			utils.MinerNotifyFlag,
 			utils.MinerFeeFloorFlag,
 			utils.MinerTauerbaseFlag,
 			utils.MinerRecommitIntervalFlag,
-			utils.MinerNoVerfiyFlag,
 		},
 	},
 	/* tx-ctc

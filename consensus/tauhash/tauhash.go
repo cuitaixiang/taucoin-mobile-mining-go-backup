@@ -403,7 +403,7 @@ type Tauash struct {
 // New creates a full sized tauhash PoW scheme and starts a background thread for
 // remote mining, also optionally notifying a batch of remote services of new work
 // packages.
-func New(config Config, notify []string, noverify bool) *Tauash {
+func New(config Config) *Tauash {
 	if config.CachesInMem <= 0 {
 		log.Warn("One tauhash cache must always be in memory", "requested", config.CachesInMem)
 		config.CachesInMem = 1
